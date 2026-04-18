@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="/config.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SnapNexus | Live Wall</title>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Urbanist:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
-    <script src="config.js"></script>
     <style>
+        /* (keep same CSS as before) */
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family:'Urbanist',sans-serif; background:#020617; color:#ffffff; overflow:hidden; height:100vh; width:100vw; }
         h1,h2,h3 { font-family:'Syne',sans-serif; }
@@ -54,7 +55,7 @@
     </div>
 
     <script>
-        (function() {
+        document.addEventListener('DOMContentLoaded', function() {
             lucide.createIcons();
             const cfg = window.SnapNexus;
             if (!cfg) { console.error('Config not loaded'); return; }
@@ -79,8 +80,6 @@
             const layer1 = document.getElementById('layer1');
             const layer2 = document.getElementById('layer2');
             
-            cfg.log('TV.html loaded, eventId:', eventId);
-            
             async function checkEventStatus() {
                 try {
                     const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [
@@ -89,7 +88,7 @@
                     if (res.documents.length === 0) return;
                     eventActive = res.documents[0].status !== 'ended';
                     if (!eventActive) showEndedOverlay();
-                } catch(err) { cfg.error('Status check:', err); }
+                } catch(err) { console.error(err); }
             }
             
             function showEndedOverlay() {
@@ -111,7 +110,6 @@
                     const files = result.files || [];
                     const newUrls = files.map(f => storage.getFileView(cfg.BUCKET_ID, f.$id));
                     if (JSON.stringify(newUrls) !== JSON.stringify(photos)) {
-                        cfg.log('TV: Photos updated, count:', newUrls.length);
                         photos = newUrls;
                         if (photos.length > 0 && currentIndex === 0) {
                             if (activeLayer === 1) {
@@ -123,7 +121,7 @@
                             }
                         }
                     }
-                } catch(err) { cfg.error('TV fetch error:', err); }
+                } catch(err) { console.error(err); }
             }
             
             function nextSlide() {
@@ -147,7 +145,7 @@
             fetchPhotos();
             setInterval(fetchPhotos, 5000);
             slideshowInterval = setInterval(nextSlide, 6000);
-        })();
+        });
     </script>
 </body>
 </html>

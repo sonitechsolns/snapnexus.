@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="/config.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="config.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SnapNexus | Host Dashboard</title>
@@ -50,6 +50,12 @@
         .event-status { display:inline-block; padding:4px 12px; border-radius:20px; font-size:0.75rem; margin-top:8px; }
         .status-active { background:rgba(16,185,129,0.2); color:#34d399; }
         .status-ended { background:rgba(239,68,68,0.2); color:#f87171; }
+        /* Debug console styles */
+        .debug-console { position:fixed; bottom:20px; right:20px; width:350px; max-height:300px; background:rgba(0,0,0,0.9); border-radius:12px; padding:12px; font-family:monospace; font-size:12px; z-index:1000; overflow-y:auto; border-left:4px solid #fbbf24; display:flex; flex-direction:column; gap:6px; }
+        .debug-header { display:flex; justify-content:space-between; margin-bottom:8px; font-weight:bold; color:#fbbf24; }
+        .debug-log { color:#a5f3c3; border-bottom:1px solid #333; padding:4px 0; }
+        .debug-error { color:#f87171; }
+        .close-debug { cursor:pointer; background:none; border:none; color:#fbbf24; font-size:16px; }
     </style>
 </head>
 <body>
@@ -66,12 +72,41 @@
         <div id="mainContent"></div>
     </div>
 
+    <!-- Debug Console -->
+    <div id="debugConsole" class="debug-console">
+        <div class="debug-header">
+            <span>🐞 Debug Console</span>
+            <button id="closeDebug" class="close-debug">✕</button>
+        </div>
+        <div id="debugLogs"></div>
+    </div>
+
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script>
         (function() {
             lucide.createIcons(); AOS.init();
+            
+            // Debug helper
+            const debugContainer = document.getElementById('debugLogs');
+            function addDebugLog(message, isError = false) {
+                const div = document.createElement('div');
+                div.className = isError ? 'debug-error' : 'debug-log';
+                div.textContent = new Date().toLocaleTimeString() + ' - ' + message;
+                debugContainer.appendChild(div);
+                debugContainer.scrollTop = debugContainer.scrollHeight;
+                // Keep last 30 logs
+                while (debugContainer.children.length > 30) debugContainer.removeChild(debugContainer.firstChild);
+            }
+            document.getElementById('closeDebug')?.addEventListener('click', () => {
+                document.getElementById('debugConsole').style.display = 'none';
+            });
+            
             const cfg = window.SnapNexus;
-            if (!cfg) { console.error('Config missing'); return; }
+            if (!cfg) {
+                addDebugLog('❌ Config not loaded! Check /config.js path', true);
+                return;
+            }
+            addDebugLog('✅ Config loaded: ' + cfg.PROJECT_ID);
             
             const client = new Appwrite.Client()
                 .setEndpoint(cfg.ENDPOINT)
@@ -86,75 +121,90 @@
             let downloadWindowEnd = null;
             let timerInterval = null;
             
-            cfg.log('Dashboard loaded, eventId:', eventId);
+            addDebugLog('Dashboard loaded, eventId: ' + (eventId || 'none'));
             
             async function checkAuth() {
-                try { await account.get(); }
-                catch(err) { window.location.href = cfg.resolveUrl('login.html'); }
+                try {
+                    const user = await account.get();
+                    addDebugLog('✅ Auth success: ' + user.email);
+                    return user;
+                } catch(err) {
+                    addDebugLog('❌ Auth failed: ' + err.message + ' (code: ' + err.code + ')', true);
+                    window.location.href = cfg.resolveUrl('login.html');
+                    throw err;
+                }
             }
             
             async function showEventList() {
-                const user = await account.get();
-                const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [
-                    Appwrite.Query.equal('hostEmail', user.email)
-                ]);
-                const events = res.documents;
-                if (events.length === 0) {
-                    document.getElementById('mainContent').innerHTML = `
-                        <div class="glass-card" style="text-align:center;">
-                            <i data-lucide="calendar" style="width:48px;height:48px;margin-bottom:16px;"></i>
-                            <h2>No events yet</h2>
-                            <p>Click "Create New Event" to get started.</p>
-                        </div>`;
-                    lucide.createIcons();
-                    return;
-                }
-                let html = `<h2 style="margin-bottom:24px;">My Events</h2><div class="event-list">`;
-                for (const ev of events) {
-                    const statusClass = ev.status === 'active' ? 'status-active' : 'status-ended';
-                    const statusText = ev.status === 'active' ? 'Active' : 'Ended';
-                    html += `
-                        <div class="event-card" data-event-id="${ev.eventId}">
-                            <h3>${ev.eventName}</h3>
-                            <p style="color:#94a3b8; font-size:0.8rem;">ID: ${ev.eventId}</p>
-                            <span class="event-status ${statusClass}">${statusText}</span>
-                            <div style="margin-top:16px;">
-                                <button class="btn-physics manage-event" data-event-id="${ev.eventId}" style="padding:8px 16px; font-size:0.8rem;">Manage Event</button>
+                try {
+                    const user = await checkAuth();
+                    addDebugLog('Fetching events for: ' + user.email);
+                    const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [
+                        Appwrite.Query.equal('hostEmail', user.email)
+                    ]);
+                    addDebugLog('📋 Found ' + res.documents.length + ' events');
+                    const events = res.documents;
+                    if (events.length === 0) {
+                        document.getElementById('mainContent').innerHTML = `
+                            <div class="glass-card" style="text-align:center;">
+                                <i data-lucide="calendar" style="width:48px;height:48px;margin-bottom:16px;"></i>
+                                <h2>No events yet</h2>
+                                <p>Click "Create New Event" to get started.</p>
+                            </div>`;
+                        lucide.createIcons();
+                        return;
+                    }
+                    let html = `<h2 style="margin-bottom:24px;">My Events</h2><div class="event-list">`;
+                    for (const ev of events) {
+                        const statusClass = ev.status === 'active' ? 'status-active' : 'status-ended';
+                        const statusText = ev.status === 'active' ? 'Active' : 'Ended';
+                        html += `
+                            <div class="event-card" data-event-id="${ev.eventId}">
+                                <h3>${ev.eventName}</h3>
+                                <p style="color:#94a3b8; font-size:0.8rem;">ID: ${ev.eventId}</p>
+                                <span class="event-status ${statusClass}">${statusText}</span>
+                                <div style="margin-top:16px;">
+                                    <button class="btn-physics manage-event" data-event-id="${ev.eventId}" style="padding:8px 16px; font-size:0.8rem;">Manage Event</button>
+                                </div>
                             </div>
-                        </div>
-                    `;
+                        `;
+                    }
+                    html += `</div>`;
+                    document.getElementById('mainContent').innerHTML = html;
+                    lucide.createIcons();
+                    document.querySelectorAll('.manage-event').forEach(btn => {
+                        btn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            const id = btn.getAttribute('data-event-id');
+                            window.location.href = cfg.resolveUrl(`dashboard.html?event=${id}`);
+                        });
+                    });
+                    document.querySelectorAll('.event-card').forEach(card => {
+                        card.addEventListener('click', (e) => {
+                            if (e.target.classList.contains('manage-event')) return;
+                            const id = card.getAttribute('data-event-id');
+                            window.location.href = cfg.resolveUrl(`dashboard.html?event=${id}`);
+                        });
+                    });
+                } catch(err) {
+                    addDebugLog('❌ Error showing events: ' + err.message, true);
                 }
-                html += `</div>`;
-                document.getElementById('mainContent').innerHTML = html;
-                lucide.createIcons();
-                document.querySelectorAll('.manage-event').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        const id = btn.getAttribute('data-event-id');
-                        window.location.href = cfg.resolveUrl(`dashboard.html?event=${id}`);
-                    });
-                });
-                document.querySelectorAll('.event-card').forEach(card => {
-                    card.addEventListener('click', (e) => {
-                        if (e.target.classList.contains('manage-event')) return;
-                        const id = card.getAttribute('data-event-id');
-                        window.location.href = cfg.resolveUrl(`dashboard.html?event=${id}`);
-                    });
-                });
             }
             
             async function loadEventDashboard() {
                 if (!eventId) { showEventList(); return; }
                 try {
+                    addDebugLog('Loading event: ' + eventId);
                     const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [
                         Appwrite.Query.equal('eventId', eventId)
                     ]);
+                    addDebugLog('Event query returned ' + res.documents.length + ' documents');
                     if (res.documents.length === 0) throw new Error('Event not found');
                     currentEvent = res.documents[0];
-                    cfg.log('Loaded event:', currentEvent.eventName, 'status:', currentEvent.status);
+                    addDebugLog('✅ Event loaded: ' + currentEvent.eventName + ' (status: ' + currentEvent.status + ')');
                     renderEventDashboard();
                 } catch(err) {
-                    cfg.error(err);
+                    addDebugLog('❌ Event load error: ' + err.message, true);
                     document.getElementById('mainContent').innerHTML = `<div class="glass-card" style="text-align:center;"><h2>Event not found</h2><button id="backToEvents" class="btn-physics">Back to My Events</button></div>`;
                     lucide.createIcons();
                     document.getElementById('backToEvents')?.addEventListener('click', () => window.location.href = cfg.resolveUrl('dashboard.html'));
@@ -238,11 +288,11 @@
             async function updateStats() {
                 try {
                     const files = (await storage.listFiles(cfg.BUCKET_ID)).files || [];
+                    addDebugLog('📸 Storage bucket has ' + files.length + ' files');
                     document.getElementById('photoCount').innerText = files.length;
                     const totalSize = files.reduce((s,f)=> s + (f.sizeOriginal||0),0);
                     document.getElementById('storageUsed').innerText = (totalSize/(1024*1024)).toFixed(1)+' MB';
-                    document.getElementById('guestCount').innerText = '—';
-                } catch(err) { cfg.error('Stats error:', err); }
+                } catch(err) { addDebugLog('❌ Stats error: ' + err.message, true); }
             }
             
             async function loadGallery() {
@@ -281,7 +331,7 @@
                             }
                         });
                     });
-                } catch(err) { cfg.error('Gallery error:', err); }
+                } catch(err) { addDebugLog('❌ Gallery error: ' + err.message, true); }
             }
             
             async function downloadAllPhotos() {

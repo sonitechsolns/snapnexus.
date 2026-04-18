@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="/config.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,176 +12,473 @@
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:'Urbanist',sans-serif; background:#020617; color:#ffffff; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; }
-        h1 { font-family:'Syne',sans-serif; font-size:2.2rem; margin-bottom:8px; }
-        .liquid-mesh { position:fixed; top:0; left:0; width:100%; height:100%; z-index:-3; background:radial-gradient(circle at 80% 20%, #020617, #1e3a8a 30%, #3b82f6 65%, #4f46e5); background-size:200% 200%; animation:liquidShift 16s ease infinite alternate; }
-        @keyframes liquidShift { 0% { background-position:0% 0%; } 100% { background-position:100% 100%; } }
-        .noise-overlay { position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:-2; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E"); opacity:0.4; }
-        .glass-card { background:rgba(20,30,55,0.45); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,0.2); border-radius:32px; padding:48px 40px; width:100%; max-width:500px; box-shadow:0 20px 50px rgba(0,0,0,0.4); }
-        .input-group { margin-bottom:24px; text-align:left; }
-        .input-group label { display:block; font-weight:600; color:#cbd5e1; margin-bottom:8px; font-size:0.9rem; }
-        .glass-input { width:100%; padding:16px 20px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.15); border-radius:16px; color:white; font-family:'Urbanist',sans-serif; font-size:1rem; outline:none; }
-        .glass-input:focus { border-color:#3b82f6; background:rgba(255,255,255,0.1); }
-        .btn-physics { display:inline-flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:16px; font-weight:800; font-size:1.1rem; border-radius:16px; border:none; cursor:pointer; background:linear-gradient(105deg,#3b82f6,#4f46e5); color:white; }
-        .btn-physics:active { transform:scale(0.96); }
-        .btn-outline { background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); }
-        .auth-toggle { text-align:center; margin-top:24px; }
-        .auth-toggle a { color:#60a5fa; text-decoration:none; font-weight:700; }
-        .back-link { display:inline-flex; align-items:center; gap:6px; color:#94a3b8; text-decoration:none; margin-top:24px; }
-        .hidden-field { display:none; }
-        .hidden-field.show { display:block; }
-        .history-list { margin-top:24px; max-height:300px; overflow-y:auto; }
-        .history-item { background:rgba(255,255,255,0.05); border-radius:16px; padding:12px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; }
-        .history-item strong { color:#60a5fa; }
-        .history-status { font-size:0.75rem; padding:4px 8px; border-radius:20px; background:rgba(16,185,129,0.2); color:#34d399; }
-        .history-status.ended { background:rgba(239,68,68,0.2); color:#f87171; }
-        .btn-sm { padding:6px 12px; font-size:0.8rem; background:rgba(59,130,246,0.2); border:none; border-radius:20px; color:#60a5fa; cursor:pointer; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Urbanist', sans-serif;
+            background: #020617;
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        h1 { font-family: 'Syne', sans-serif; font-size: 2.2rem; margin-bottom: 8px; }
+
+        .liquid-mesh { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -3; background: radial-gradient(circle at 80% 20%, #020617, #1e3a8a 30%, #3b82f6 65%, #4f46e5); background-size: 200% 200%; animation: liquidShift 16s ease infinite alternate; }
+        @keyframes liquidShift { 0% { background-position: 0% 0%; } 100% { background-position: 100% 100%; } }
+        .noise-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -2; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E"); opacity: 0.4; }
+
+        .glass-card {
+            background: rgba(20, 30, 55, 0.45);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 32px;
+            padding: 48px 40px;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+        }
+
+        .input-group { margin-bottom: 24px; text-align: left; }
+        .input-group label { display: block; font-weight: 600; color: #cbd5e1; margin-bottom: 8px; font-size: 0.9rem; }
+        .glass-input {
+            width: 100%;
+            padding: 16px 20px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 16px;
+            color: white;
+            font-family: 'Urbanist', sans-serif;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s;
+        }
+        .glass-input:focus { border-color: #3b82f6; background: rgba(255,255,255,0.1); box-shadow: 0 0 0 4px rgba(59,130,246,0.2); }
+
+        .btn-physics {
+            display: inline-flex; align-items: center; justify-content: center; gap: 10px; width: 100%;
+            padding: 16px; font-weight: 800; font-size: 1.1rem; font-family: 'Urbanist', sans-serif;
+            border-radius: 16px; border: none; cursor: pointer; transition: all 0.15s;
+            background: linear-gradient(105deg, #3b82f6, #4f46e5); color: white; box-shadow: 0 8px 20px rgba(59,130,246,0.3);
+            text-decoration: none;
+        }
+        .btn-physics:active { transform: scale(0.96) translateY(2px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .btn-outline { background: rgba(255,255,255,0.1); box-shadow: none; border: 1px solid rgba(255,255,255,0.2); }
+
+        .auth-toggle { text-align: center; margin-top: 24px; font-size: 0.95rem; color: #cbd5e1; font-weight: 500; }
+        .auth-toggle a { color: #60a5fa; text-decoration: none; font-weight: 700; transition: 0.2s; }
+        .hidden-field { display: none; }
+        .hidden-field.show { display: block; }
+        .back-link {
+            display: inline-flex; align-items: center; gap: 6px; color: #94a3b8;
+            text-decoration: none; font-weight: 600; margin-top: 24px; font-size: 0.9rem; transition: 0.2s;
+        }
+        .back-link:hover { color: #fff; }
+        .history-list { margin-top: 24px; max-height: 300px; overflow-y: auto; }
+        .history-item { background: rgba(255,255,255,0.05); border-radius: 16px; padding: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .history-item strong { color: #60a5fa; }
+        .history-status { font-size: 0.75rem; padding: 4px 8px; border-radius: 20px; background: rgba(16,185,129,0.2); color: #34d399; }
+        .history-status.ended { background: rgba(239,68,68,0.2); color: #f87171; }
+        .btn-sm { padding: 6px 12px; font-size: 0.8rem; background: rgba(59,130,246,0.2); border: none; border-radius: 20px; color: #60a5fa; cursor: pointer; }
+        .btn-sm:hover { background: rgba(59,130,246,0.4); }
     </style>
 </head>
 <body>
-<div class="liquid-mesh"></div>
-<div class="noise-overlay"></div>
-<div class="glass-card">
-    <div style="display:flex; justify-content:center; margin-bottom:24px;"><div style="width:56px;height:56px;background:linear-gradient(135deg,#3b82f6,#4f46e5);border-radius:20px;display:flex;align-items:center;justify-content:center;"><i data-lucide="lock" style="color:white;width:28px;height:28px;"></i></div></div>
-    <div style="text-align:center; margin-bottom:32px;"><h1 id="authTitle">Host Console</h1><p id="authSubtitle" style="color:#94a3b8;">Sign in to manage your events.</p></div>
-    <form id="authForm" onsubmit="event.preventDefault();">
-        <div class="input-group hidden-field" id="nameGroup"><label>Full Name</label><input type="text" class="glass-input" id="nameInput" placeholder="Enter your full name"></div>
-        <div class="input-group"><label>Email Address</label><input type="email" class="glass-input" id="emailInput" placeholder="host@event.com" required></div>
-        <div class="input-group"><label>Password</label><input type="password" class="glass-input" id="passwordInput" placeholder="••••••••" required></div>
-        <button type="submit" class="btn-physics" id="authBtn">Sign In <i data-lucide="log-in" style="width:18px;"></i></button>
-    </form>
-    <div class="auth-toggle"><a href="#" id="toggleAuth">Create a new account</a></div>
-    <div id="historySection" style="display:none; margin-top:24px;">
-        <hr style="border-color:rgba(255,255,255,0.1); margin:16px 0;">
-        <h3 style="font-family:'Syne'; margin-bottom:16px;">📋 My Events</h3>
-        <div id="historyList" class="history-list"></div>
-        <button id="createNewEventBtn" class="btn-physics btn-outline" style="margin-top:16px;">+ Create New Event</button>
+    <div class="liquid-mesh"></div>
+    <div class="noise-overlay"></div>
+
+    <div class="glass-card" data-aos="zoom-in" data-aos-duration="800">
+        <div style="display:flex; justify-content:center; margin-bottom:24px;">
+            <div style="width:56px;height:56px;background:linear-gradient(135deg,#3b82f6,#4f46e5);border-radius:20px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 20px rgba(59,130,246,0.4);">
+                <i data-lucide="lock" style="color:white;width:28px;height:28px;"></i>
+            </div>
+        </div>
+        <div style="text-align:center; margin-bottom:32px;">
+            <h1 id="authTitle">Host Console</h1>
+            <p id="authSubtitle" style="color:#94a3b8;">Sign in to manage your events.</p>
+        </div>
+
+        <form id="authForm" onsubmit="event.preventDefault();">
+            <div class="input-group hidden-field" id="nameGroup">
+                <label>Full Name</label>
+                <input type="text" class="glass-input" id="nameInput" placeholder="Enter your full name">
+            </div>
+            <div class="input-group">
+                <label>Email Address</label>
+                <input type="email" class="glass-input" id="emailInput" placeholder="host@event.com" required>
+            </div>
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" class="glass-input" id="passwordInput" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="btn-physics" id="authBtn">Sign In <i data-lucide="log-in" style="width:18px;"></i></button>
+        </form>
+
+        <div class="auth-toggle">
+            <a href="#" id="toggleAuth">Create a new account</a>
+        </div>
+
+        <div id="historySection" style="display:none; margin-top:24px;">
+            <hr style="border-color:rgba(255,255,255,0.1); margin:16px 0;">
+            <h3 style="font-family:'Syne'; margin-bottom:16px;">📋 My Events</h3>
+            <div id="historyList" class="history-list"></div>
+            <button id="createNewEventBtn" class="btn-physics btn-outline" style="margin-top:16px;">+ Create New Event</button>
+        </div>
+
+        <div style="text-align:center;">
+            <a href="index.html" class="back-link"><i data-lucide="arrow-left" style="width:16px;"></i> Back to Home</a>
+        </div>
     </div>
-    <div style="text-align:center;"><a href="index.html" class="back-link"><i data-lucide="arrow-left" style="width:16px;"></i> Back to Home</a></div>
-</div>
-<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-<script>
-    lucide.createIcons(); AOS.init();
-    const { Client, Account, Databases, ID, Query } = Appwrite;
-    const client = new Client().setEndpoint('https://cloud.appwrite.io/v1').setProject('69d8eda100264f4e42ae');
-    const account = new Account(client);
-    const databases = new Databases(client);
-    const DB_ID = '69d8f0b0003c6d1e4d93';
-    const COLLECTION_ID = 'EventsTable';
-    const urlParams = new URLSearchParams(window.location.search);
-    const selectedPlan = urlParams.get('plan') || null;
-    let currentUser = null;
-    let isLogin = true;
 
-    const authForm = document.getElementById('authForm');
-    const emailInput = document.getElementById('emailInput');
-    const passwordInput = document.getElementById('passwordInput');
-    const nameInput = document.getElementById('nameInput');
-    const nameGroup = document.getElementById('nameGroup');
-    const authTitle = document.getElementById('authTitle');
-    const authBtn = document.getElementById('authBtn');
-    const toggleAuth = document.getElementById('toggleAuth');
-    const historySection = document.getElementById('historySection');
-    const historyList = document.getElementById('historyList');
-    const createNewEventBtn = document.getElementById('createNewEventBtn');
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+            AOS.init();
 
-    toggleAuth.addEventListener('click', (e) => {
-        e.preventDefault();
-        isLogin = !isLogin;
-        if (isLogin) {
-            authTitle.innerText = 'Host Console';
-            document.getElementById('authSubtitle').innerText = 'Sign in to manage your events.';
-            authBtn.innerHTML = 'Sign In <i data-lucide="log-in"></i>';
-            nameGroup.classList.remove('show');
-            toggleAuth.innerText = 'Create a new account';
-        } else {
-            authTitle.innerText = 'Create Account';
-            document.getElementById('authSubtitle').innerText = 'Join SnapNexus and create live photo walls.';
-            authBtn.innerHTML = 'Create Account <i data-lucide="user-plus"></i>';
-            nameGroup.classList.add('show');
-            toggleAuth.innerText = 'Back to Sign In';
-        }
-        lucide.createIcons();
-    });
+            const cfg = window.SnapNexus;
+            if (!cfg) {
+                console.error('❌ Config not loaded! Check /config.js path');
+                document.getElementById('authSubtitle').innerHTML = '⚠️ Config error: /config.js not found';
+                return;
+            }
 
-    async function showUserHistory() {
-        try {
-            const events = await databases.listDocuments(DB_ID, COLLECTION_ID, [Query.equal('hostEmail', currentUser.email)]);
-            if (events.documents.length === 0) {
-                historyList.innerHTML = '<div style="text-align:center; color:#94a3b8;">No events yet. Click "Create New Event" to start.</div>';
-            } else {
-                historyList.innerHTML = events.documents.map(ev => `
-                    <div class="history-item">
-                        <div><strong>${ev.eventName}</strong><br><span style="font-size:0.7rem;">${ev.eventId}</span></div>
-                        <div><span class="history-status ${ev.status === 'ended' ? 'ended' : ''}">${ev.status || 'active'}</span>
-                        <button class="btn-sm" data-event-id="${ev.eventId}">Manage</button></div>
+            const client = new Appwrite.Client()
+                .setEndpoint(cfg.ENDPOINT)
+                .setProject(cfg.PROJECT_ID);
+            const account = new Appwrite.Account(client);
+            const databases = new Appwrite.Databases(client);
+
+            const DB_ID = cfg.DATABASE_ID;
+            const COLLECTION_ID = cfg.COLLECTION_ID;
+            const urlParams = new URLSearchParams(window.location.search);
+            const selectedPlan = urlParams.get('plan') || null;
+
+            let currentUser = null;
+            let isLogin = true;
+
+            // DOM elements
+            const authForm = document.getElementById('authForm');
+            const emailInput = document.getElementById('emailInput');
+            const passwordInput = document.getElementById('passwordInput');
+            const nameInput = document.getElementById('nameInput');
+            const nameGroup = document.getElementById('nameGroup');
+            const authTitle = document.getElementById('authTitle');
+            const authBtn = document.getElementById('authBtn');
+            const toggleAuth = document.getElementById('toggleAuth');
+            const historySection = document.getElementById('historySection');
+            const historyList = document.getElementById('historyList');
+            const createNewEventBtn = document.getElementById('createNewEventBtn');
+
+            // Helper: show event history
+            async function showUserHistory() {
+                try {
+                    const events = await databases.listDocuments(DB_ID, COLLECTION_ID, [
+                        Appwrite.Query.equal('hostEmail', currentUser.email)
+                    ]);
+                    if (events.documents.length === 0) {
+                        historyList.innerHTML = '<div style="text-align:center; color:#94a3b8;">No events yet.</div>';
+                    } else {
+                        historyList.innerHTML = events.documents.map(ev => `
+                            <div class="history-item">
+                                <div>
+                                    <strong>${ev.eventName}</strong><br>
+                                    <span style="font-size:0.7rem;">${ev.eventId}</span>
+                                </div>
+                                <div>
+                                    <span class="history-status ${ev.status === 'ended' ? 'ended' : ''}">${ev.status || 'active'}</span>
+                                    <button class="btn-sm" data-event-id="${ev.eventId}">Manage</button>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                    document.querySelectorAll('.history-item .btn-sm').forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            const eventId = btn.getAttribute('data-event-id');
+                            window.location.href = cfg.resolveUrl(`dashboard.html?event=${eventId}`);
+                        });
+                    });
+                    historySection.style.display = 'block';
+                } catch(err) {
+                    console.error(err);
+                    historyList.innerHTML = '<div style="color:#ef4444;">Could not load events.</div>';
+                }
+            }
+
+            // Payment / event creation modals (same as before)
+            function showPaymentModal(plan, price, onSuccess) {
+                const modal = document.createElement('div');
+                modal.style.position = 'fixed';
+                modal.style.top = '0';
+                modal.style.left = '0';
+                modal.style.width = '100%';
+                modal.style.height = '100%';
+                modal.style.backgroundColor = 'rgba(0,0,0,0.85)';
+                modal.style.backdropFilter = 'blur(16px)';
+                modal.style.zIndex = '3000';
+                modal.style.display = 'flex';
+                modal.style.alignItems = 'center';
+                modal.style.justifyContent = 'center';
+                modal.innerHTML = `
+                    <div style="background: rgba(20,30,55,0.95); border-radius: 32px; padding: 40px; max-width: 400px; width: 90%; border: 1px solid rgba(255,255,255,0.2); text-align: center;">
+                        <i data-lucide="credit-card" style="width: 48px; height: 48px; color: #fbbf24; margin-bottom: 20px;"></i>
+                        <h2 style="font-family:'Syne'; margin-bottom: 16px;">Complete Payment</h2>
+                        <p style="font-size: 1.5rem; font-weight: 800; margin: 20px 0;">₹${price}</p>
+                        <p style="color: #94a3b8; margin-bottom: 24px;">${plan.toUpperCase()} Plan · One-time payment</p>
+                        <button id="simulatePayBtn" style="width:100%; padding: 16px; border-radius: 60px; background: linear-gradient(105deg, #10b981, #059669); border: none; color: white; font-weight: 800; cursor: pointer; margin-bottom: 12px;">Simulate Payment</button>
+                        <button id="cancelPayBtn" style="width:100%; padding: 12px; border-radius: 60px; background: transparent; border: 1px solid rgba(255,255,255,0.2); color: #94a3b8; cursor: pointer;">Cancel</button>
                     </div>
-                `).join('');
+                `;
+                document.body.appendChild(modal);
+                lucide.createIcons();
+                document.getElementById('simulatePayBtn').addEventListener('click', () => {
+                    modal.remove();
+                    alert('Payment successful!');
+                    onSuccess();
+                });
+                document.getElementById('cancelPayBtn').addEventListener('click', () => modal.remove());
             }
-            document.querySelectorAll('.history-item .btn-sm').forEach(btn => btn.addEventListener('click', () => {
-                window.location.href = `dashboard.html?event=${btn.getAttribute('data-event-id')}`;
-            }));
-            historySection.style.display = 'block';
-        } catch(err) { console.error(err); historyList.innerHTML = '<div style="color:#ef4444;">Could not load events.</div>'; }
-    }
 
-    async function createNewEvent() {
-        const eventName = prompt('Enter event name (e.g., "Bhavya\'s Wedding"):');
-        if (!eventName) return;
-        const newEventId = Date.now().toString() + '_' + Math.random().toString(36).substr(2, 6);
-        try {
-            await databases.createDocument(DB_ID, COLLECTION_ID, newEventId, {
-                eventName: eventName,
-                eventId: newEventId,
-                tier: selectedPlan || 'starter',
-                hostEmail: currentUser.email,
-                status: 'active'
+            function showContactSales() {
+                const modal = document.createElement('div');
+                modal.style.position = 'fixed';
+                modal.style.top = '0';
+                modal.style.left = '0';
+                modal.style.width = '100%';
+                modal.style.height = '100%';
+                modal.style.backgroundColor = 'rgba(0,0,0,0.85)';
+                modal.style.backdropFilter = 'blur(16px)';
+                modal.style.zIndex = '3000';
+                modal.style.display = 'flex';
+                modal.style.alignItems = 'center';
+                modal.style.justifyContent = 'center';
+                modal.innerHTML = `
+                    <div style="background: rgba(20,30,55,0.95); border-radius: 32px; padding: 40px; max-width: 400px; width: 90%; border: 1px solid rgba(255,255,255,0.2); text-align: center;">
+                        <i data-lucide="phone" style="width: 48px; height: 48px; color: #fbbf24; margin-bottom: 20px;"></i>
+                        <h2 style="font-family:'Syne'; margin-bottom: 16px;">Contact Sales Team</h2>
+                        <p style="color: #cbd5e1; margin-bottom: 24px;">Our VIP plan includes custom branding, priority support, and dedicated onboarding. Please reach out to our sales team.</p>
+                        <a href="mailto:sales@snapnexus.app?subject=VIP%20Plan%20Inquiry" style="display: inline-block; width: 100%; padding: 16px; border-radius: 60px; background: linear-gradient(105deg, #fbbf24, #f59e0b); color: #020617; font-weight: 800; text-decoration: none; margin-bottom: 12px;">Email sales@snapnexus.app</a>
+                        <button id="closeSalesBtn" style="width:100%; padding: 12px; border-radius: 60px; background: transparent; border: 1px solid rgba(255,255,255,0.2); color: #94a3b8; cursor: pointer;">Close</button>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+                lucide.createIcons();
+                document.getElementById('closeSalesBtn').addEventListener('click', () => modal.remove());
+            }
+
+            function showEventCreationModal(onComplete) {
+                const modal = document.createElement('div');
+                modal.style.position = 'fixed';
+                modal.style.top = '0';
+                modal.style.left = '0';
+                modal.style.width = '100%';
+                modal.style.height = '100%';
+                modal.style.backgroundColor = 'rgba(0,0,0,0.85)';
+                modal.style.backdropFilter = 'blur(16px)';
+                modal.style.zIndex = '3000';
+                modal.style.display = 'flex';
+                modal.style.alignItems = 'center';
+                modal.style.justifyContent = 'center';
+                modal.innerHTML = `
+                    <div style="background: rgba(20,30,55,0.95); border-radius: 32px; padding: 40px; max-width: 400px; width: 90%; border: 1px solid rgba(255,255,255,0.2);">
+                        <h2 style="font-family:'Syne'; margin-bottom: 20px;">Create Your Event</h2>
+                        <input type="text" id="eventNameInput" placeholder="e.g., Bhavya's Wedding" style="width:100%; padding: 14px; border-radius: 16px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; font-family:'Urbanist'; margin-bottom: 24px;">
+                        <button id="confirmCreateBtn" style="width:100%; padding: 14px; border-radius: 60px; background: linear-gradient(105deg, #3b82f6, #4f46e5); border: none; color: white; font-weight: 800; cursor: pointer;">Create Event & Continue</button>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+                lucide.createIcons();
+
+                document.getElementById('confirmCreateBtn').addEventListener('click', async () => {
+                    const eventName = document.getElementById('eventNameInput').value.trim();
+                    if (!eventName) {
+                        alert('Please enter an event name');
+                        return;
+                    }
+                    const newEventId = Appwrite.ID.unique();
+                    try {
+                        await databases.createDocument(DB_ID, COLLECTION_ID, newEventId, {
+                            eventName: eventName,
+                            eventId: newEventId,
+                            tier: selectedPlan || 'starter',
+                            hostEmail: currentUser.email,
+                            status: 'active'
+                        });
+                        modal.remove();
+                        onComplete(newEventId);
+                    } catch(err) {
+                        console.error(err);
+                        alert('Failed to create event. Check your Appwrite permissions.');
+                    }
+                });
+            }
+
+            // Auth form submit
+            authForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = emailInput.value.trim();
+                const password = passwordInput.value;
+                const name = nameInput.value.trim();
+
+                if (!email || !password) {
+                    alert('Please fill all fields');
+                    return;
+                }
+
+                authBtn.disabled = true;
+                authBtn.innerHTML = '<i data-lucide="loader" style="width:18px;"></i> Processing...';
+                lucide.createIcons();
+
+                try {
+                    if (isLogin) {
+                        await account.createEmailPasswordSession(email, password);
+                        currentUser = await account.get();
+                    } else {
+                        await account.create(Appwrite.ID.unique(), email, password, name);
+                        await account.createEmailPasswordSession(email, password);
+                        currentUser = await account.get();
+                    }
+
+                    // After successful auth
+                    if (selectedPlan) {
+                        if (selectedPlan === 'vip') {
+                            showContactSales();
+                            authBtn.disabled = false;
+                            authBtn.innerHTML = 'Sign In <i data-lucide="log-in"></i>';
+                            lucide.createIcons();
+                            return;
+                        }
+                        if (selectedPlan === 'pro') {
+                            showPaymentModal('pro', 499, () => {
+                                showEventCreationModal((eventId) => {
+                                    window.location.href = cfg.resolveUrl(`dashboard.html?event=${eventId}`);
+                                });
+                            });
+                        } else if (selectedPlan === 'premium') {
+                            showPaymentModal('premium', 999, () => {
+                                showEventCreationModal((eventId) => {
+                                    window.location.href = cfg.resolveUrl(`dashboard.html?event=${eventId}`);
+                                });
+                            });
+                        } else { // starter or free
+                            showEventCreationModal((eventId) => {
+                                window.location.href = cfg.resolveUrl(`dashboard.html?event=${eventId}`);
+                            });
+                        }
+                    } else {
+                        // No plan – show history of existing events
+                        await showUserHistory();
+                        authForm.style.display = 'none';
+                        toggleAuth.style.display = 'none';
+                        authTitle.innerText = `Welcome, ${currentUser.name || email.split('@')[0]}`;
+                        document.getElementById('authSubtitle').innerText = 'Your event dashboard';
+                    }
+                } catch(err) {
+                    console.error(err);
+                    alert(err.message || 'Authentication failed');
+                } finally {
+                    authBtn.disabled = false;
+                    authBtn.innerHTML = isLogin ? 'Sign In <i data-lucide="log-in"></i>' : 'Create Account <i data-lucide="user-plus"></i>';
+                    lucide.createIcons();
+                }
             });
-            alert('Event created!');
-            window.location.href = `dashboard.html?event=${newEventId}`;
-        } catch(err) { alert('Error: ' + err.message); }
-    }
 
-    authForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const email = emailInput.value.trim();
-        const password = passwordInput.value;
-        const name = nameInput.value.trim();
-        if (!email || !password) { alert('Please fill all fields'); return; }
-        authBtn.disabled = true; authBtn.innerHTML = '<i data-lucide="loader"></i> Processing...'; lucide.createIcons();
-        try {
-            if (isLogin) {
-                await account.createEmailPasswordSession(email, password);
-                currentUser = await account.get();
-            } else {
-                await account.create(ID.unique(), email, password, name);
-                await account.createEmailPasswordSession(email, password);
-                currentUser = await account.get();
+            // Toggle between login and signup
+            toggleAuth.addEventListener('click', (e) => {
+                e.preventDefault();
+                isLogin = !isLogin;
+                if (isLogin) {
+                    authTitle.innerText = 'Host Console';
+                    document.getElementById('authSubtitle').innerText = 'Sign in to manage your events.';
+                    authBtn.innerHTML = 'Sign In <i data-lucide="log-in"></i>';
+                    nameGroup.classList.remove('show');
+                    toggleAuth.innerHTML = 'Create a new account';
+                } else {
+                    authTitle.innerText = 'Create Account';
+                    document.getElementById('authSubtitle').innerText = 'Join SnapNexus and create live photo walls.';
+                    authBtn.innerHTML = 'Create Account <i data-lucide="user-plus"></i>';
+                    nameGroup.classList.add('show');
+                    toggleAuth.innerHTML = 'Back to Sign In';
+                }
+                lucide.createIcons();
+            });
+
+            // Create new event from history section
+            createNewEventBtn.addEventListener('click', () => {
+                // Show plan selection modal
+                const planModal = document.createElement('div');
+                planModal.style.position = 'fixed';
+                planModal.style.top = '0';
+                planModal.style.left = '0';
+                planModal.style.width = '100%';
+                planModal.style.height = '100%';
+                planModal.style.backgroundColor = 'rgba(0,0,0,0.85)';
+                planModal.style.backdropFilter = 'blur(16px)';
+                planModal.style.zIndex = '3000';
+                planModal.style.display = 'flex';
+                planModal.style.alignItems = 'center';
+                planModal.style.justifyContent = 'center';
+                planModal.innerHTML = `
+                    <div style="background: rgba(20,30,55,0.95); border-radius: 32px; padding: 40px; max-width: 400px; width: 90%; border: 1px solid rgba(255,255,255,0.2); text-align: center;">
+                        <h2 style="font-family:'Syne'; margin-bottom: 20px;">Choose a Plan</h2>
+                        <button id="starterPlan" class="btn-physics btn-outline" style="margin-bottom: 12px;">Starter (Free)</button>
+                        <button id="proPlan" class="btn-physics" style="margin-bottom: 12px;">Pro – ₹499</button>
+                        <button id="premiumPlan" class="btn-physics" style="margin-bottom: 12px;">Premium – ₹999</button>
+                        <button id="vipPlan" class="btn-physics btn-gold" style="background: linear-gradient(105deg, #fbbf24, #f59e0b);">VIP – Contact Sales</button>
+                    </div>
+                `;
+                document.body.appendChild(planModal);
+                lucide.createIcons();
+
+                const handlePlan = (plan) => {
+                    planModal.remove();
+                    if (plan === 'vip') {
+                        showContactSales();
+                    } else if (plan === 'pro') {
+                        showPaymentModal('pro', 499, () => {
+                            showEventCreationModal((eventId) => {
+                                window.location.href = cfg.resolveUrl(`dashboard.html?event=${eventId}`);
+                            });
+                        });
+                    } else if (plan === 'premium') {
+                        showPaymentModal('premium', 999, () => {
+                            showEventCreationModal((eventId) => {
+                                window.location.href = cfg.resolveUrl(`dashboard.html?event=${eventId}`);
+                            });
+                        });
+                    } else {
+                        showEventCreationModal((eventId) => {
+                            window.location.href = cfg.resolveUrl(`dashboard.html?event=${eventId}`);
+                        });
+                    }
+                };
+                document.getElementById('starterPlan').addEventListener('click', () => handlePlan('starter'));
+                document.getElementById('proPlan').addEventListener('click', () => handlePlan('pro'));
+                document.getElementById('premiumPlan').addEventListener('click', () => handlePlan('premium'));
+                document.getElementById('vipPlan').addEventListener('click', () => handlePlan('vip'));
+            });
+
+            // Check if already logged in on page load
+            async function checkSession() {
+                try {
+                    currentUser = await account.get();
+                    // Already logged in – show history
+                    await showUserHistory();
+                    authForm.style.display = 'none';
+                    toggleAuth.style.display = 'none';
+                    authTitle.innerText = `Welcome, ${currentUser.name || currentUser.email.split('@')[0]}`;
+                    document.getElementById('authSubtitle').innerText = 'Your event dashboard';
+                } catch(err) {
+                    // Not logged in – show login form
+                    authForm.style.display = 'block';
+                    toggleAuth.style.display = 'block';
+                    historySection.style.display = 'none';
+                }
             }
-            // After login, show event history
-            await showUserHistory();
-            authForm.style.display = 'none';
-            toggleAuth.style.display = 'none';
-            authTitle.innerText = `Welcome, ${currentUser.name || email.split('@')[0]}`;
-            document.getElementById('authSubtitle').innerText = 'Your events';
-        } catch(err) { alert(err.message || 'Authentication failed'); }
-        finally { authBtn.disabled=false; authBtn.innerHTML=isLogin?'Sign In <i data-lucide="log-in"></i>':'Create Account <i data-lucide="user-plus"></i>'; lucide.createIcons(); }
-    });
-
-    createNewEventBtn.addEventListener('click', createNewEvent);
-
-    async function checkSession() {
-        try {
-            currentUser = await account.get();
-            await showUserHistory();
-            authForm.style.display = 'none';
-            toggleAuth.style.display = 'none';
-            authTitle.innerText = `Welcome, ${currentUser.name || currentUser.email.split('@')[0]}`;
-            document.getElementById('authSubtitle').innerText = 'Your events';
-        } catch(err) { authForm.style.display = 'block'; toggleAuth.style.display = 'block'; historySection.style.display = 'none'; }
-    }
-    checkSession();
-</script>
+            checkSession();
+        });
+    </script>
 </body>
 </html>

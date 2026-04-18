@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="/config.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
-    <script src="config.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
     <title>SnapNexus | Guest Upload</title>
@@ -12,6 +12,7 @@
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
+        /* (same CSS as before – keep unchanged) */
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family:'Urbanist',sans-serif; background:#020617; color:#fff; overflow-x:hidden; min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; }
         h1,h2,h3 { font-family:'Syne',sans-serif; }
@@ -56,7 +57,7 @@
 
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script>
-        (function() {
+        document.addEventListener('DOMContentLoaded', function() {
             lucide.createIcons();
             AOS.init({ once: true });
             
@@ -80,8 +81,6 @@
             const statusMsg = document.getElementById('statusMsg');
             const originalBtnHTML = uploadBtn.innerHTML;
             
-            cfg.log('App.html loaded, eventId:', eventId);
-            
             async function checkEventStatus() {
                 try {
                     const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [
@@ -90,7 +89,7 @@
                     if (res.documents.length === 0) return;
                     eventActive = res.documents[0].status !== 'ended';
                     if (!eventActive) showEndedOverlay();
-                } catch(err) { cfg.error('Status check:', err); }
+                } catch(err) { console.error(err); }
             }
             
             function showEndedOverlay() {
@@ -141,7 +140,7 @@
                             } catch(err) { alert('Download failed'); }
                         });
                     });
-                } catch(err) { cfg.error('Gallery error:', err); }
+                } catch(err) { console.error(err); }
             }
             
             uploadBtn.addEventListener('click', () => fileInput.click());
@@ -162,11 +161,9 @@
                 const timestamp = Date.now().toString().slice(-8);
                 const random = Math.random().toString(36).substring(2, 6);
                 const fileId = `${shortEventId}_${timestamp}_${random}`;
-                cfg.log('Uploading fileId:', fileId);
                 
                 try {
                     await storage.createFile(cfg.BUCKET_ID, fileId, file);
-                    cfg.log('Upload successful');
                     uploadBtn.innerHTML = '<i data-lucide="check"></i> Sent to TV!';
                     statusMsg.innerText = 'Photo sent to TV wall!';
                     lucide.createIcons();
@@ -179,7 +176,7 @@
                         uploadBtn.disabled = false;
                     }, 3000);
                 } catch(err) {
-                    cfg.error('Upload failed:', err);
+                    console.error(err);
                     alert("Upload failed: " + err.message);
                     uploadBtn.innerHTML = originalBtnHTML;
                     statusMsg.innerText = 'Upload failed, try again';
@@ -193,7 +190,7 @@
             checkEventStatus();
             loadGallery();
             setInterval(loadGallery, 10000);
-        })();
+        });
     </script>
 </body>
 </html>
