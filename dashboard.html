@@ -3,6 +3,7 @@
 <head>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="config.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SnapNexus | Host Dashboard</title>
@@ -69,17 +70,14 @@
     <script>
         lucide.createIcons(); AOS.init();
 
-        const PROJECT_ID = '69d8eda100264f4e42ae';
-        const BUCKET_ID = '69d8f2b800397ad57e50';
+        const cfg = window.SnapNexusConfig;
         const client = new Appwrite.Client()
             .setEndpoint('https://cloud.appwrite.io/v1')
-            .setProject(PROJECT_ID);
+            .setProject(cfg.PROJECT_ID);
         const storage = new Appwrite.Storage(client);
         const databases = new Appwrite.Databases(client);
         const account = new Appwrite.Account(client);
 
-        const DB_ID = '69d8f0b0003c6d1e4d93';
-        const COLLECTION_ID = 'EventsTable';
         const urlParams = new URLSearchParams(window.location.search);
         const eventId = urlParams.get('event');
         
@@ -87,22 +85,26 @@
         let timerInterval = null;
         let downloadWindowEnd = null;
 
-        // Helper: ensure user is logged in
+        cfg.log('Dashboard loaded, eventId:', eventId);
+
         async function checkAuth() {
             try {
                 await account.get();
+                cfg.log('User authenticated');
             } catch(err) {
-                window.location.href = 'login.html';
+                cfg.log('Not authenticated, redirecting to login');
+                window.location.href = cfg.resolveUrl('login.html');
             }
         }
 
-        // Show list of all events for this user
         async function showEventList() {
             const user = await account.get();
-            const res = await databases.listDocuments(DB_ID, COLLECTION_ID, [
+            cfg.log('Fetching events for user:', user.email);
+            const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [
                 Appwrite.Query.equal('hostEmail', user.email)
             ]);
             const events = res.documents;
+            cfg.log('Found', events.length, 'events');
             if (events.length === 0) {
                 document.getElementById('mainContent').innerHTML = `
                     <div class="glass-card" style="text-align:center;">
@@ -136,43 +138,43 @@
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     const id = btn.getAttribute('data-event-id');
-                    window.location.href = `dashboard.html?event=${id}`;
+                    window.location.href = cfg.resolveUrl(`dashboard.html?event=${id}`);
                 });
             });
             document.querySelectorAll('.event-card').forEach(card => {
                 card.addEventListener('click', (e) => {
                     if (e.target.classList.contains('manage-event')) return;
                     const id = card.getAttribute('data-event-id');
-                    window.location.href = `dashboard.html?event=${id}`;
+                    window.location.href = cfg.resolveUrl(`dashboard.html?event=${id}`);
                 });
             });
         }
 
-        // Load single event dashboard
         async function loadEventDashboard() {
             if (!eventId) {
                 showEventList();
                 return;
             }
             try {
-                const res = await databases.listDocuments(DB_ID, COLLECTION_ID, [
+                const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [
                     Appwrite.Query.equal('eventId', eventId)
                 ]);
                 if (res.documents.length === 0) throw new Error('Event not found');
                 currentEvent = res.documents[0];
+                cfg.log('Loaded event:', currentEvent.eventName, 'status:', currentEvent.status);
                 renderEventDashboard();
             } catch(err) {
-                console.error(err);
+                cfg.error(err);
                 document.getElementById('mainContent').innerHTML = `<div class="glass-card" style="text-align:center;"><h2>Event not found</h2><button id="backToEvents" class="btn-physics">Back to My Events</button></div>`;
                 lucide.createIcons();
-                document.getElementById('backToEvents')?.addEventListener('click', () => window.location.href = 'dashboard.html');
+                document.getElementById('backToEvents')?.addEventListener('click', () => window.location.href = cfg.resolveUrl('dashboard.html'));
             }
         }
 
         async function renderEventDashboard() {
             const isEnded = currentEvent.status === 'ended';
             const tvPage = (currentEvent.tier === 'pro' || currentEvent.tier === 'premium' || currentEvent.tier === 'vip') ? 'tv_2.html' : 'tv.html';
-            const liveWallLink = `${window.location.origin}/${tvPage}?event=${eventId}`;
+            const liveWallLink = cfg.resolveUrl(`${tvPage}?event=${eventId}`);
             
             let timerHtml = '';
             if (isEnded && downloadWindowEnd && Date.now() < downloadWindowEnd) {
@@ -185,7 +187,7 @@
             document.getElementById('mainContent').innerHTML = `
                 <div style="margin-bottom:20px;">
                     <button id="backToEventsBtn" class="btn-physics btn-outline" style="background:rgba(255,255,255,0.1);"><i data-lucide="arrow-left"></i> Back to My Events</button>
-                    <a href="${liveWallLink}" target="_blank" class="btn-physics" style="margin-left:12px; background:linear-gradient(105deg,#fbbf24,#f59e0b); color:#020617;"><i data-lucide="tv"></i> View Live Wall</a>
+                    <a href="${liveWallLink}" target="_blank" id="viewWallBtn" class="btn-physics" style="margin-left:12px; background:linear-gradient(105deg,#10b981,#059669);"><i data-lucide="tv"></i> View Live Wall</a>
                 </div>
                 <h2 id="eventNameHeading" style="margin-bottom:32px;font-size:2.2rem;">${currentEvent.eventName} <span style="color:#60a5fa;">#LiveWall</span></h2>
                 <div class="stats-grid">
@@ -209,7 +211,7 @@
             `;
             lucide.createIcons();
             
-            document.getElementById('backToEventsBtn')?.addEventListener('click', () => window.location.href = 'dashboard.html');
+            document.getElementById('backToEventsBtn')?.addEventListener('click', () => window.location.href = cfg.resolveUrl('dashboard.html'));
             if (isEnded && (!downloadWindowEnd || Date.now() >= downloadWindowEnd)) {
                 document.getElementById('buyArchiveBtn')?.addEventListener('click', () => alert('Payment integration coming soon. Contact sales.'));
                 document.getElementById('downloadZipBtn').disabled = true;
@@ -218,7 +220,13 @@
                 startTimerDisplay();
             }
             
-            if (!isEnded || (isEnded && downloadWindowEnd && Date.now() < downloadWindowEnd)) {
+            if (!isEnded) {
+                updateStats();
+                loadGallery();
+                setInterval(updateStats, 10000);
+                setInterval(loadGallery, 10000);
+                attachEventListeners();
+            } else if (downloadWindowEnd && Date.now() < downloadWindowEnd) {
                 updateStats();
                 loadGallery();
                 setInterval(updateStats, 10000);
@@ -249,19 +257,19 @@
 
         async function updateStats() {
             try {
-                const prefix = eventId + '_';
-                const files = (await storage.listFiles(BUCKET_ID, { prefix })).files || [];
+                const files = (await storage.listFiles(cfg.BUCKET_ID)).files || [];
+                cfg.log('Stats: Found', files.length, 'total photos in bucket');
                 document.getElementById('photoCount').innerText = files.length;
                 const totalSize = files.reduce((s,f)=> s + (f.sizeOriginal||0),0);
                 document.getElementById('storageUsed').innerText = (totalSize/(1024*1024)).toFixed(1)+' MB';
                 document.getElementById('guestCount').innerText = '—';
-            } catch(err) { console.error(err); }
+            } catch(err) { cfg.error('Stats error:', err); }
         }
 
         async function loadGallery() {
             try {
-                const prefix = eventId + '_';
-                const files = (await storage.listFiles(BUCKET_ID, { prefix })).files || [];
+                const files = (await storage.listFiles(cfg.BUCKET_ID)).files || [];
+                cfg.log('Gallery: Rendering', files.length, 'photos');
                 const container = document.getElementById('galleryContainer');
                 if (!container) return;
                 if (files.length === 0) {
@@ -271,7 +279,7 @@
                 }
                 let html = '';
                 for (const file of files) {
-                    const fileUrl = storage.getFileView(BUCKET_ID, file.$id);
+                    const fileUrl = storage.getFileView(cfg.BUCKET_ID, file.$id);
                     html += `
                         <div class="photo-card" data-file-id="${file.$id}">
                             <img src="${fileUrl}" alt="Guest photo">
@@ -289,13 +297,13 @@
                         e.stopPropagation();
                         const fileId = btn.getAttribute('data-file-id');
                         if (confirm('Delete this photo permanently?')) {
-                            await storage.deleteFile(BUCKET_ID, fileId);
+                            await storage.deleteFile(cfg.BUCKET_ID, fileId);
                             await loadGallery();
                             await updateStats();
                         }
                     });
                 });
-            } catch(err) { console.error(err); }
+            } catch(err) { cfg.error('Gallery error:', err); }
         }
 
         async function downloadAllPhotos() {
@@ -303,15 +311,14 @@
             if (!btn) return;
             const original = btn.innerHTML;
             try {
-                const prefix = eventId + '_';
-                const files = (await storage.listFiles(BUCKET_ID, { prefix })).files || [];
+                const files = (await storage.listFiles(cfg.BUCKET_ID)).files || [];
                 if (files.length === 0) { alert("No photos to download"); return; }
                 btn.innerHTML = `<i data-lucide="loader"></i> Zipping ${files.length} photos...`;
                 lucide.createIcons();
                 const zip = new JSZip();
                 const folder = zip.folder(`SnapNexus_${eventId}`);
                 for (let i=0; i<files.length; i++) {
-                    const blob = await fetch(storage.getFileView(BUCKET_ID, files[i].$id)).then(r=>r.blob());
+                    const blob = await fetch(storage.getFileView(cfg.BUCKET_ID, files[i].$id)).then(r=>r.blob());
                     folder.file(`photo_${i+1}.jpg`, blob);
                 }
                 const content = await zip.generateAsync({ type:"blob" });
@@ -330,7 +337,7 @@
 
         function attachEventListeners() {
             document.getElementById('printQrBtn')?.addEventListener('click', () => {
-                const guestUrl = `${window.location.origin}/app.html?event=${encodeURIComponent(eventId)}`;
+                const guestUrl = cfg.resolveUrl(`app.html?event=${encodeURIComponent(eventId)}`);
                 const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(guestUrl)}`;
                 const win = window.open("", "_blank");
                 win.document.write(`
@@ -342,13 +349,13 @@
                     </body>
                 `);
             });
-            document.getElementById('viewGuestAppBtn')?.addEventListener('click', () => window.open(`app.html?event=${eventId}`, '_blank'));
+            document.getElementById('viewGuestAppBtn')?.addEventListener('click', () => window.open(cfg.resolveUrl(`app.html?event=${eventId}`), '_blank'));
             document.getElementById('downloadZipBtn')?.addEventListener('click', downloadAllPhotos);
             document.getElementById('endEventBtn')?.addEventListener('click', async () => {
                 if (!currentEvent || currentEvent.status === 'ended') return;
                 if (!confirm('End this event? Guests cannot upload more. You will have 10 minutes to download all photos for free.')) return;
                 try {
-                    await databases.updateDocument(DB_ID, COLLECTION_ID, currentEvent.$id, { status: 'ended' });
+                    await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { status: 'ended' });
                     downloadWindowEnd = Date.now() + 10 * 60 * 1000;
                     alert('Event ended. Free download window starts now (10 minutes).');
                     location.reload();
@@ -362,7 +369,7 @@
             const user = await account.get();
             const newEventId = Date.now().toString() + '_' + Math.random().toString(36).substr(2,6);
             try {
-                await databases.createDocument(DB_ID, COLLECTION_ID, newEventId, {
+                await databases.createDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, newEventId, {
                     eventName: eventName,
                     eventId: newEventId,
                     tier: 'starter',
@@ -370,13 +377,13 @@
                     status: 'active'
                 });
                 alert('Event created!');
-                window.location.href = `dashboard.html?event=${newEventId}`;
+                window.location.href = cfg.resolveUrl(`dashboard.html?event=${newEventId}`);
             } catch(err) { alert('Error: ' + err.message); }
         });
 
         document.getElementById('logoutBtn')?.addEventListener('click', async () => {
             await account.deleteSession('current');
-            window.location.href = 'login.html';
+            window.location.href = cfg.resolveUrl('login.html');
         });
 
         async function init() {
@@ -385,7 +392,6 @@
             if (storedEnd && eventId) {
                 downloadWindowEnd = parseInt(storedEnd);
                 if (Date.now() >= downloadWindowEnd) localStorage.removeItem(`downloadWindow_${eventId}`);
-                else localStorage.setItem(`downloadWindow_${eventId}`, downloadWindowEnd);
             }
             await loadEventDashboard();
         }

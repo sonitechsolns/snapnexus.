@@ -7,8 +7,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Urbanist:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
+    <script src="config.js"></script>
     <style>
-        /* Same as before */
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family:'Urbanist',sans-serif; background:#020617; color:#ffffff; overflow:hidden; height:100vh; width:100vw; }
         h1,h2,h3 { font-family:'Syne',sans-serif; }
@@ -55,19 +55,16 @@
 
     <script>
         lucide.createIcons();
+        const cfg = window.SnapNexusConfig;
         const urlParams = new URLSearchParams(window.location.search);
         const eventId = urlParams.get('event') || 'demo';
         document.getElementById('displayEventId').innerHTML = `Event: ${eventId}`;
-        const joinLink = `${window.location.origin}/app.html?event=${eventId}`;
+        const joinLink = cfg.resolveUrl(`app.html?event=${eventId}`);
         document.getElementById('qrCode').src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(joinLink)}`;
 
-        const PROJECT_ID = '69d8eda100264f4e42ae';
-        const BUCKET_ID = '69d8f2b800397ad57e50';
-        const DB_ID = '69d8f0b0003c6d1e4d93';
-        const COLLECTION_ID = 'EventsTable';
         const client = new Appwrite.Client()
             .setEndpoint('https://cloud.appwrite.io/v1')
-            .setProject(PROJECT_ID);
+            .setProject(cfg.PROJECT_ID);
         const storage = new Appwrite.Storage(client);
         const databases = new Appwrite.Databases(client);
 
@@ -79,16 +76,19 @@
         const layer1 = document.getElementById('layer1');
         const layer2 = document.getElementById('layer2');
 
+        cfg.log('TV.html initialized with eventId:', eventId);
+
         async function checkEventStatus() {
             try {
-                const res = await databases.listDocuments(DB_ID, COLLECTION_ID, [
+                const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [
                     Appwrite.Query.equal('eventId', eventId)
                 ]);
+                cfg.log('Event status check:', res.documents.length, 'documents found');
                 if (res.documents.length === 0) return;
                 const eventDoc = res.documents[0];
                 eventActive = eventDoc.status !== 'ended';
                 if (!eventActive) showEndedOverlay();
-            } catch(err) { console.error(err); }
+            } catch(err) { cfg.error('Status check failed:', err); }
         }
 
         function showEndedOverlay() {
@@ -106,11 +106,12 @@
         async function fetchPhotos() {
             if (!eventActive) return;
             try {
-                const prefix = eventId + '_';
-                const result = await storage.listFiles(BUCKET_ID, { prefix });
+                const result = await storage.listFiles(cfg.BUCKET_ID);
                 const files = result.files || [];
-                const newUrls = files.map(f => storage.getFileView(BUCKET_ID, f.$id));
+                cfg.log('TV: Found', files.length, 'total files in bucket');
+                const newUrls = files.map(f => storage.getFileView(cfg.BUCKET_ID, f.$id));
                 if (JSON.stringify(newUrls) !== JSON.stringify(photos)) {
+                    cfg.log('TV: Photos updated, new count:', newUrls.length);
                     photos = newUrls;
                     if (photos.length > 0 && currentIndex === 0) {
                         if (activeLayer === 1) {
@@ -122,7 +123,7 @@
                         }
                     }
                 }
-            } catch(err) { console.error(err); }
+            } catch(err) { cfg.error('TV fetch error:', err); }
         }
 
         function nextSlide() {
