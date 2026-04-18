@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>SnapNexus — Live Interactive Photo Wall</title>
+    <meta name="description" content="Guests scan, snap, and see photos on the big screen instantly. Premium plans for weddings & events.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Urbanist:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,600&display=swap" rel="stylesheet">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Urbanist', system-ui, sans-serif; background: #020617; color: #ffffff; overflow-x: hidden; line-height: 1.5; }
+        h1, h2, h3, .logo-text, .price, .step-number { font-family: 'Syne', sans-serif; }
+
+        .liquid-mesh { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -3; background: radial-gradient(circle at 20% 30%, #020617, #1e3a8a 30%, #3b82f6 65%, #4f46e5); background-size: 200% 200%; animation: liquidShift 16s ease infinite alternate; }
+        @keyframes liquidShift { 0% { background-position: 0% 0%; } 50% { background-position: 100% 100%; } 100% { background-position: 0% 50%; } }
+        .noise-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -2; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E"); opacity: 0.4; }
+
+        .glass-deep { background: rgba(15, 25, 45, 0.35); backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .glass-card { background: rgba(20, 30, 55, 0.45); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 32px; transition: transform 0.25s ease, box-shadow 0.3s; }
+        .glass-card:hover { transform: translateY(-4px); box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.4); }
+
+        .sticky-header { position: fixed; top: 0; left: 0; width: 100%; z-index: 1000; padding: 20px 40px; transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1); background: rgba(2, 6, 23, 0.65); backdrop-filter: blur(18px); border-bottom: 1px solid rgba(255,255,255,0.08); }
+        .sticky-header.shrink { padding: 12px 40px; background: rgba(2, 6, 23, 0.85); }
+        .header-container { max-width: 1280px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
+        .logo { display: flex; align-items: center; gap: 14px; }
+        .logo-img { width: 40px; height: 40px; border-radius: 10px; object-fit: cover; box-shadow: 0 0 15px rgba(251, 191, 36, 0.3); background: #fff; }
+        .logo-text { font-weight: 800; font-size: 1.5rem; background: linear-gradient(135deg, #fde047, #f59e0b, #d97706); -webkit-background-clip: text; background-clip: text; color: transparent; letter-spacing: -0.5px; }
+
+        .nav-links { display: flex; align-items: center; gap: 32px; }
+        .nav-links a { color: #e2e8f0; text-decoration: none; font-weight: 600; transition: 0.2s; }
+        .nav-links a:hover { color: #60a5fa; }
+
+        .btn-physics { display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 12px 28px; font-weight: 800; font-size: 1rem; font-family: 'Urbanist', sans-serif; border-radius: 60px; border: none; cursor: pointer; transition: transform 0.12s cubic-bezier(0.2, 0.9, 0.4, 1.1), box-shadow 0.2s, background 0.2s, filter 0.2s; background: linear-gradient(105deg, #3b82f6, #4f46e5); color: white; box-shadow: 0 8px 20px rgba(59,130,246,0.3); text-decoration: none; }
+        .btn-physics:hover { transform: translateX(2px) translateY(-2px); filter: brightness(1.08); box-shadow: 0 14px 28px rgba(59,130,246,0.45); }
+        .btn-physics:active { transform: scale(0.95) translateY(2px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .btn-outline { background: rgba(255,255,255,0.08); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.3); box-shadow: none; }
+        .btn-outline:hover { background: rgba(255,255,255,0.15); transform: translateX(2px) translateY(-2px); }
+        .btn-gold { background: linear-gradient(105deg, #fbbf24, #f59e0b); color: #020617; box-shadow: 0 8px 20px rgba(245,158,11,0.3); }
+        .btn-gold:hover { box-shadow: 0 14px 28px rgba(245,158,11,0.45); }
+
+        .container { max-width: 1280px; margin: 0 auto; padding: 0 32px; }
+
+        .hero { padding-top: 160px; padding-bottom: 80px; text-align: center; position: relative; }
+        .hero-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 8px 20px; border-radius: 50px; font-size: 0.9rem; font-weight: 700; color: #93c5fd; margin-bottom: 24px; animation: floatHero 4s ease-in-out infinite; }
+        @keyframes floatHero { 0% { transform: translateY(0px); } 50% { transform: translateY(-8px); } 100% { transform: translateY(0px); } }
+        .hero h1 { font-size: clamp(2.8rem, 7vw, 4.8rem); font-weight: 800; line-height: 1.1; letter-spacing: -0.03em; background: linear-gradient(135deg, #ffffff, #e2e8f0, #93c5fd); -webkit-background-clip: text; background-clip: text; color: transparent; margin: 0 0 24px; }
+        .hero-sub { font-size: 1.25rem; max-width: 680px; margin: 0 auto 40px; color: #cbd5e1; font-weight: 500; }
+        .hero-cta { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; }
+
+        .section-title { text-align: center; font-size: 2.6rem; font-weight: 800; margin: 100px 0 48px; }
+        .steps-grid { display: flex; flex-wrap: wrap; gap: 30px; justify-content: center; margin-bottom: 80px; }
+        .step-card { flex: 1; min-width: 280px; padding: 40px 32px; text-align: center; }
+        .step-icon-wrapper { width: 70px; height: 70px; margin: 0 auto 24px; background: rgba(59,130,246,0.15); border-radius: 20px; display: flex; align-items: center; justify-content: center; color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+
+        .dashboard-preview { background: rgba(2, 6, 23, 0.4); backdrop-filter: blur(16px); border-radius: 48px; padding: 56px 40px; margin: 80px 0; border: 1px solid rgba(255,255,255,0.12); }
+        .dashboard-grid { display: flex; flex-wrap: wrap; align-items: center; gap: 40px; }
+        .dashboard-text { flex: 1; min-width: 300px; }
+        .dashboard-text h3 { font-size: 2.2rem; margin-bottom: 20px; line-height: 1.2; }
+        .feature-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3); color: #fbbf24; border-radius: 40px; padding: 6px 16px; font-size: 0.85rem; font-weight: 700; margin-bottom: 24px; }
+        .mockup { flex: 1; min-width: 300px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 24px; box-shadow: inset 0 0 40px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 16px; }
+        .mockup-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; }
+        .mockup-bar { height: 12px; background: rgba(255,255,255,0.1); border-radius: 6px; width: 100%; }
+
+        .pricing-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin: 60px 0; }
+        .price-card { padding: 36px 24px; text-align: center; transition: all 0.3s; position: relative; display: flex; flex-direction: column; }
+        .price-card.vip { transform: scale(1.03); border: 1px solid rgba(251,191,36,0.6); box-shadow: 0 0 40px rgba(251,191,36,0.15); background: rgba(20, 30, 55, 0.75); z-index: 2; }
+        .most-popular { position: absolute; top: -16px; left: 50%; transform: translateX(-50%); background: linear-gradient(105deg, #fbbf24, #f59e0b); color: #020617; font-weight: 800; font-family: 'Urbanist', sans-serif; padding: 6px 20px; border-radius: 60px; font-size: 0.8rem; white-space: nowrap; box-shadow: 0 4px 12px rgba(245,158,11,0.4); }
+        .price { font-size: 2.8rem; font-weight: 800; margin: 20px 0; color: #ffffff; }
+        .price-card.vip .price { color: #facc15; }
+        .price small { font-size: 1rem; font-weight: 500; color: #94a3b8; font-family: 'Urbanist', sans-serif; }
+        .price-card ul { list-style: none; margin: 24px 0 32px; flex-grow: 1; }
+        .price-card li { margin: 14px 0; font-weight: 500; display: flex; align-items: center; text-align: left; gap: 12px; color: #e2e8f0; }
+        .price-card li i { color: #60a5fa; width: 18px; height: 18px; flex-shrink: 0; }
+        .price-card.vip li i { color: #fbbf24; }
+
+        .mobile-sticky-cta { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 1100; display: none; width: calc(100% - 40px); max-width: 360px; background: rgba(2,6,23,0.85); backdrop-filter: blur(24px); border-radius: 60px; padding: 10px; border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+        .mobile-sticky-cta .btn-physics { width: 100%; padding: 14px; }
+
+        footer { margin-top: 100px; padding: 60px 32px 40px; border-top: 1px solid rgba(255,255,255,0.08); text-align: center; }
+        .footer-links { display: flex; justify-content: center; gap: 32px; margin-bottom: 32px; flex-wrap: wrap; }
+        .footer-links a { color: #94a3b8; text-decoration: none; font-weight: 600; transition: color 0.2s; cursor: pointer; }
+
+        @media (max-width: 1024px) { .pricing-grid { grid-template-columns: repeat(2, 1fr); gap: 24px; } .price-card.vip { transform: scale(1); } }
+        @media (max-width: 768px) { .sticky-header { padding: 16px 20px; } .nav-links { display: none; } .pricing-grid { grid-template-columns: 1fr; } .mobile-sticky-cta { display: block; } .hero { padding-top: 150px; } .container { padding: 0 20px; } .dashboard-preview { padding: 40px 24px; } }
+    </style>
+</head>
+<body>
+    <div class="liquid-mesh"></div>
+    <div class="noise-overlay"></div>
+
+    <header class="sticky-header" id="stickyHeader">
+        <div class="header-container">
+            <div class="logo">
+                <img src="SNAPN.png" alt="SnapNexus Logo" class="logo-img" onerror="this.style.display='none'">
+                <span class="logo-text">SnapNexus</span>
+            </div>
+            <nav class="nav-links">
+                <a href="#features">Features</a>
+                <a href="#pricing">Pricing</a>
+                <a href="login.html">Host Login</a>
+                <a href="dashboard.html" class="btn-physics btn-outline" style="padding: 8px 20px;">Dashboard</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="hero" data-aos="fade-up" data-aos-duration="1200">
+            <div class="hero-badge"><i data-lucide="sparkles"></i> Premium Live Experience</div>
+            <h1>Live photo wall.<br>Zero app required.</h1>
+            <p class="hero-sub">Guests scan, snap, and appear instantly on the big screen. The ultimate interactive gallery for weddings, parties, and corporate events.</p>
+            <div class="hero-cta">
+                <a href="login.html" class="btn-physics">Start Free Trial <i data-lucide="arrow-right"></i></a>
+                <a href="#pricing" class="btn-physics btn-outline">View Premium Plans</a>
+            </div>
+        </section>
+
+        <div id="features" data-aos="fade-up"><h2 class="section-title">How the <span style="color:#60a5fa;">Magic</span> Happens</h2></div>
+        <div class="steps-grid">
+            <div class="glass-card step-card" data-aos="zoom-in-up" data-aos-delay="100">
+                <div class="step-icon-wrapper"><i data-lucide="qr-code" style="width:36px; height:36px;"></i></div>
+                <h3>1. Scan QR</h3>
+                <p>Display your QR. Guests scan with their native camera to instantly open the upload portal.</p>
+            </div>
+            <div class="glass-card step-card" data-aos="zoom-in-up" data-aos-delay="200">
+                <div class="step-icon-wrapper"><i data-lucide="upload-cloud" style="width:36px; height:36px;"></i></div>
+                <h3>2. Upload Photo</h3>
+                <p>Guests snap a fresh photo or choose from their gallery. No app downloads, no account creation.</p>
+            </div>
+            <div class="glass-card step-card" data-aos="zoom-in-up" data-aos-delay="300">
+                <div class="step-icon-wrapper"><i data-lucide="monitor-play" style="width:36px; height:36px;"></i></div>
+                <h3>3. Instant Display</h3>
+                <p>Photos instantly sync to the big screen via the cloud, creating a dynamic, shared visual experience.</p>
+            </div>
+        </div>
+
+        <section class="dashboard-preview glass-card" data-aos="fade-right" data-aos-duration="1000">
+            <div class="dashboard-grid">
+                <div class="dashboard-text">
+                    <div class="feature-badge"><i data-lucide="crown"></i> VIP Dashboard</div>
+                    <h3>Total Control.<br>Live Moderation.</h3>
+                    <p>Remove unwanted photos instantly, download all memories as a high-res ZIP, customize the TV loop, and watch live engagement stats.</p>
+                    <div style="display:flex; flex-direction:column; gap:12px; margin-top:20px;">
+                        <span style="display:flex; gap:8px;"><i data-lucide="shield-alert" style="color:#ef4444;"></i> Live Kill-Switch</span>
+                        <span style="display:flex; gap:8px;"><i data-lucide="image-off" style="color:#60a5fa;"></i> Ad-Free & White-Labeled</span>
+                        <span style="display:flex; gap:8px;"><i data-lucide="download" style="color:#10b981;"></i> Bulk Media Export</span>
+                    </div>
+                </div>
+                <div class="mockup">
+                    <div class="mockup-header"><span style="font-family:'Syne'; font-weight:700;">Host Console</span><i data-lucide="layout-dashboard"></i></div>
+                    <div style="display:flex; gap:12px;"><div class="mockup-bar" style="width:30%; background:rgba(59,130,246,0.3);"></div><div class="mockup-bar" style="width:70%;"></div></div>
+                    <div class="mockup-bar"></div><div class="mockup-bar" style="width:80%;"></div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px;"><div style="height:80px; background:rgba(255,255,255,0.05); border-radius:12px;"></div><div style="height:80px; background:rgba(255,255,255,0.05); border-radius:12px;"></div></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="pricing" data-aos="fade-up"><h2 class="section-title">Flexible <span style="color:#facc15;">Pricing</span> for Every Event</h2></section>
+        <div class="pricing-grid" data-aos="fade-up" data-aos-delay="50">
+            <div class="glass-card price-card" data-aos="flip-left" data-aos-delay="100">
+                <h3>Starter</h3><div class="price">₹0 <small>/event</small></div>
+                <ul><li><i data-lucide="check"></i> Basic TV loop</li><li><i data-lucide="check"></i> SnapNexus watermark</li><li><i data-lucide="check"></i> Partner Ads displayed</li><li><i data-lucide="check"></i> Max 50 photos</li></ul>
+                <a href="login.html?plan=starter" class="btn-physics btn-outline">Deploy Free Wall</a>
+            </div>
+            <div class="glass-card price-card" data-aos="flip-left" data-aos-delay="200">
+                <h3>Pro</h3><div class="price">₹499 <small>/event</small></div>
+                <ul><li><i data-lucide="check"></i> No watermark</li><li><i data-lucide="check"></i> Basic moderation</li><li><i data-lucide="check"></i> Unlimited photos</li><li><i data-lucide="check"></i> Email support</li></ul>
+                <a href="login.html?plan=pro" class="btn-physics">Choose Pro</a>
+            </div>
+            <div class="glass-card price-card" data-aos="flip-left" data-aos-delay="300">
+                <h3>Premium</h3><div class="price">₹999 <small>/event</small></div>
+                <ul><li><i data-lucide="check"></i> High-res downloads</li><li><i data-lucide="check"></i> Custom QR codes</li><li><i data-lucide="check"></i> Analytics dashboard</li><li><i data-lucide="check"></i> Priority queue</li></ul>
+                <a href="login.html?plan=premium" class="btn-physics">Go Premium</a>
+            </div>
+            <div class="glass-card price-card vip" data-aos="flip-left" data-aos-delay="400">
+                <div class="most-popular">⭐ MAXIMUM POWER</div>
+                <h3>VIP / Whale</h3><div class="price">₹2,999 <small>/mo</small></div>
+                <ul><li><i data-lucide="check"></i> Full dashboard</li><li><i data-lucide="check"></i> Live kill-switch</li><li><i data-lucide="check"></i> Custom ad injection</li><li><i data-lucide="check"></i> White‑labeled</li><li><i data-lucide="check"></i> Priority 24/7 support</li></ul>
+                <a href="login.html?plan=vip" class="btn-physics btn-gold">Secure VIP Pass</a>
+            </div>
+        </div>
+    </main>
+
+    <div class="mobile-sticky-cta"><a href="#pricing" class="btn-physics btn-gold"><i data-lucide="zap"></i> Upgrade to VIP ₹2999</a></div>
+
+    <footer class="glass-deep">
+        <div class="footer-links"><a href="#">Privacy Policy</a><a href="#">Terms of Service</a><a href="#">Security</a><a href="mailto:support@snapnexus.app">Contact Support</a></div>
+        <p>© 2026 SnapNexus. Engineered by Soni Tech Solutions.</p>
+    </footer>
+
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        lucide.createIcons();
+        AOS.init({ duration: 900, once: true, offset: 50 });
+        gsap.registerPlugin(ScrollTrigger);
+        const header = document.getElementById('stickyHeader');
+        ScrollTrigger.create({ trigger: document.body, start: "top top", end: "+=100", onUpdate: (self) => { if (self.progress > 0) header.classList.add('shrink'); else header.classList.remove('shrink'); } });
+        document.querySelectorAll('.btn-physics').forEach(btn => {
+            btn.addEventListener('mousedown', () => btn.style.transition = 'transform 0.05s ease');
+            btn.addEventListener('mouseup', () => btn.style.transition = 'transform 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1)');
+        });
+    </script>
+</body>
+</html>
