@@ -23,6 +23,7 @@
         .event-pill { display:inline-flex; align-items:center; gap:6px; background:rgba(59,130,246,0.15); border:1px solid rgba(59,130,246,0.3); color:#93c5fd; padding:6px 16px; border-radius:50px; font-size:0.85rem; font-weight:700; margin-bottom:32px; }
         .btn-physics { display:flex; align-items:center; justify-content:center; gap:12px; padding:18px 24px; font-weight:800; font-size:1.1rem; font-family:'Urbanist',sans-serif; border-radius:60px; border:none; cursor:pointer; transition:transform 0.1s; background:linear-gradient(105deg,#3b82f6,#4f46e5); color:white; box-shadow:0 8px 20px rgba(59,130,246,0.3); width:100%; }
         .btn-physics:active { transform:scale(0.96) translateY(2px); }
+        .btn-physics:disabled { opacity:0.6; cursor:not-allowed; }
         .gallery-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(100px,1fr)); gap:12px; margin-top:32px; }
         .gallery-item { position:relative; aspect-ratio:1; border-radius:16px; overflow:hidden; border:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.3); }
         .gallery-item img { width:100%; height:100%; object-fit:cover; transition:0.2s; }
@@ -32,6 +33,8 @@
         .empty-gallery { text-align:center; padding:40px 20px; color:#94a3b8; font-weight:600; }
         .footer-text { margin-top:30px; font-size:0.8rem; color:#64748b; font-weight:600; text-align:center; }
         .ended-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); backdrop-filter:blur(20px); display:flex; align-items:center; justify-content:center; z-index:1000; flex-direction:column; text-align:center; }
+        .spinner { display:inline-block; width:20px; height:20px; border:2px solid rgba(255,255,255,0.3); border-radius:50%; border-top-color:white; animation:spin 0.8s linear infinite; margin-right:8px; }
+        @keyframes spin { to { transform:rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -43,7 +46,7 @@
         <div id="uploadUI">
             <button class="btn-physics" id="uploadBtn"><i data-lucide="camera" style="width:22px;"></i> Tap to Upload</button>
             <input type="file" id="fileInput" hidden accept="image/*">
-            <p style="margin-top: 16px; font-size: 0.9rem; color: #94a3b8;">Photos appear instantly on the TV wall!</p>
+            <p style="margin-top: 16px; font-size: 0.9rem; color: #94a3b8;" id="statusMsg">Ready</p>
         </div>
         <div id="galleryContainer" class="gallery-grid" data-aos="fade-up" data-aos-delay="600">
             <div class="empty-gallery">Loading gallery...</div>
@@ -53,133 +56,144 @@
 
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script>
-        lucide.createIcons();
-        AOS.init({ once: true });
-
-        const cfg = window.SnapNexusConfig;
-        const client = new Appwrite.Client()
-            .setEndpoint('https://cloud.appwrite.io/v1')
-            .setProject(cfg.PROJECT_ID);
-        const storage = new Appwrite.Storage(client);
-        const databases = new Appwrite.Databases(client);
-
-        const urlParams = new URLSearchParams(window.location.search);
-        const eventId = urlParams.get('event') || 'demo';
-        document.getElementById('eventLabel').innerText = eventId;
-
-        let eventActive = true;
-
-        cfg.log('App.html initialized with eventId:', eventId);
-
-        async function checkEventStatus() {
-            try {
-                const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [
-                    Appwrite.Query.equal('eventId', eventId)
-                ]);
-                cfg.log('Event status check:', res.documents.length, 'documents found');
-                if (res.documents.length === 0) return;
-                const eventDoc = res.documents[0];
-                eventActive = eventDoc.status !== 'ended';
-                if (!eventActive) showEndedOverlay();
-            } catch(err) { cfg.error('Status check failed:', err); }
-        }
-
-        function showEndedOverlay() {
-            const overlay = document.createElement('div');
-            overlay.className = 'ended-overlay';
-            overlay.innerHTML = `<i data-lucide="flag" style="width:64px;height:64px;margin-bottom:20px;"></i><h2 style="color:#f87171;">Event Concluded</h2><p>This photo wall has ended. Thank you for participating.</p>`;
-            document.body.appendChild(overlay);
+        (function() {
             lucide.createIcons();
-            document.getElementById('uploadBtn').disabled = true;
-            document.getElementById('fileInput').disabled = true;
-        }
-
-        async function loadGallery() {
-            if (!eventActive) return;
-            try {
-                const result = await storage.listFiles(cfg.BUCKET_ID);
-                const files = result.files || [];
-                cfg.log('Gallery: Found', files.length, 'total files in bucket');
-                const container = document.getElementById('galleryContainer');
-                if (files.length === 0) {
-                    container.innerHTML = `<div class="empty-gallery"><i data-lucide="camera-off"></i><p>No photos yet. Be the first to share!</p></div>`;
-                    lucide.createIcons();
-                    return;
-                }
-                let html = '';
-                for (const file of files) {
-                    const viewUrl = storage.getFileView(cfg.BUCKET_ID, file.$id);
-                    html += `
-                        <div class="gallery-item" data-file-id="${file.$id}">
-                            <img src="${viewUrl}" alt="Event photo" loading="lazy">
-                            <div class="download-overlay" data-file-id="${file.$id}">
-                                <i data-lucide="download"></i>
-                            </div>
-                        </div>
-                    `;
-                }
-                container.innerHTML = html;
-                lucide.createIcons();
-                document.querySelectorAll('.download-overlay').forEach(el => {
-                    el.addEventListener('click', async (e) => {
-                        e.stopPropagation();
-                        const fileId = el.getAttribute('data-file-id');
-                        try {
-                            const downloadUrl = storage.getFileDownload(cfg.BUCKET_ID, fileId);
-                            const a = document.createElement('a');
-                            a.href = downloadUrl;
-                            a.download = '';
-                            document.body.appendChild(a);
-                            a.click();
-                            document.body.removeChild(a);
-                        } catch(err) { alert('Download failed'); }
-                    });
-                });
-            } catch(err) { cfg.error('Gallery error:', err); }
-        }
-
-        const fileInput = document.getElementById('fileInput');
-        const uploadBtn = document.getElementById('uploadBtn');
-        let originalBtnText = uploadBtn.innerHTML;
-
-        uploadBtn.addEventListener('click', () => fileInput.click());
-
-        fileInput.addEventListener('change', async (e) => {
-            if (!eventActive) { alert('This event has ended.'); fileInput.value = ''; return; }
-            const file = e.target.files[0];
-            if (!file) return;
-
-            uploadBtn.innerHTML = '<i data-lucide="loader" style="width:22px;"></i> Uploading...';
-            lucide.createIcons();
-
-            const shortEventId = eventId.substring(0, 8);
-            const timestamp = Date.now().toString().slice(-8);
-            const random = Math.random().toString(36).substring(2, 6);
-            const fileId = `${shortEventId}_${timestamp}_${random}`;
-            cfg.log('Uploading fileId:', fileId);
-
-            try {
-                await storage.createFile(cfg.BUCKET_ID, fileId, file);
-                cfg.log('Upload successful');
-                uploadBtn.innerHTML = '<i data-lucide="check" style="width:22px;"></i> Sent to TV!';
-                lucide.createIcons();
-                loadGallery();
-                setTimeout(() => {
-                    uploadBtn.innerHTML = originalBtnText;
-                    lucide.createIcons();
-                }, 3000);
-            } catch(err) {
-                cfg.error('Upload failed:', err);
-                alert("Upload failed: " + err.message);
-                uploadBtn.innerHTML = originalBtnText;
-                lucide.createIcons();
+            AOS.init({ once: true });
+            
+            const cfg = window.SnapNexus;
+            if (!cfg) { console.error('Config not loaded'); return; }
+            
+            const client = new Appwrite.Client()
+                .setEndpoint(cfg.ENDPOINT)
+                .setProject(cfg.PROJECT_ID);
+            const storage = new Appwrite.Storage(client);
+            const databases = new Appwrite.Databases(client);
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const eventId = urlParams.get('event') || 'demo';
+            document.getElementById('eventLabel').innerText = eventId;
+            let eventActive = true;
+            let isUploading = false;
+            
+            const uploadBtn = document.getElementById('uploadBtn');
+            const fileInput = document.getElementById('fileInput');
+            const statusMsg = document.getElementById('statusMsg');
+            const originalBtnHTML = uploadBtn.innerHTML;
+            
+            cfg.log('App.html loaded, eventId:', eventId);
+            
+            async function checkEventStatus() {
+                try {
+                    const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [
+                        Appwrite.Query.equal('eventId', eventId)
+                    ]);
+                    if (res.documents.length === 0) return;
+                    eventActive = res.documents[0].status !== 'ended';
+                    if (!eventActive) showEndedOverlay();
+                } catch(err) { cfg.error('Status check:', err); }
             }
-            fileInput.value = '';
-        });
-
-        checkEventStatus();
-        loadGallery();
-        setInterval(loadGallery, 10000);
+            
+            function showEndedOverlay() {
+                const overlay = document.createElement('div');
+                overlay.className = 'ended-overlay';
+                overlay.innerHTML = `<i data-lucide="flag" style="width:64px;height:64px;margin-bottom:20px;"></i><h2 style="color:#f87171;">Event Concluded</h2><p>This photo wall has ended. Thank you.</p>`;
+                document.body.appendChild(overlay);
+                lucide.createIcons();
+                uploadBtn.disabled = true;
+                fileInput.disabled = true;
+            }
+            
+            async function loadGallery() {
+                if (!eventActive) return;
+                try {
+                    const result = await storage.listFiles(cfg.BUCKET_ID);
+                    const files = result.files || [];
+                    const container = document.getElementById('galleryContainer');
+                    if (files.length === 0) {
+                        container.innerHTML = `<div class="empty-gallery"><i data-lucide="camera-off"></i><p>No photos yet. Be the first to share!</p></div>`;
+                        lucide.createIcons();
+                        return;
+                    }
+                    let html = '';
+                    for (const file of files) {
+                        const viewUrl = storage.getFileView(cfg.BUCKET_ID, file.$id);
+                        html += `
+                            <div class="gallery-item" data-file-id="${file.$id}">
+                                <img src="${viewUrl}" loading="lazy">
+                                <div class="download-overlay" data-file-id="${file.$id}"><i data-lucide="download"></i></div>
+                            </div>
+                        `;
+                    }
+                    container.innerHTML = html;
+                    lucide.createIcons();
+                    document.querySelectorAll('.download-overlay').forEach(el => {
+                        el.addEventListener('click', async (e) => {
+                            e.stopPropagation();
+                            const fileId = el.getAttribute('data-file-id');
+                            try {
+                                const downloadUrl = storage.getFileDownload(cfg.BUCKET_ID, fileId);
+                                const a = document.createElement('a');
+                                a.href = downloadUrl;
+                                a.download = '';
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                            } catch(err) { alert('Download failed'); }
+                        });
+                    });
+                } catch(err) { cfg.error('Gallery error:', err); }
+            }
+            
+            uploadBtn.addEventListener('click', () => fileInput.click());
+            
+            fileInput.addEventListener('change', async (e) => {
+                if (!eventActive) { alert('This event has ended.'); fileInput.value = ''; return; }
+                if (isUploading) { alert('Please wait, upload in progress'); return; }
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                isUploading = true;
+                uploadBtn.disabled = true;
+                uploadBtn.innerHTML = '<span class="spinner"></span> Uploading...';
+                statusMsg.innerText = 'Uploading to cloud...';
+                lucide.createIcons();
+                
+                const shortEventId = eventId.substring(0, 8);
+                const timestamp = Date.now().toString().slice(-8);
+                const random = Math.random().toString(36).substring(2, 6);
+                const fileId = `${shortEventId}_${timestamp}_${random}`;
+                cfg.log('Uploading fileId:', fileId);
+                
+                try {
+                    await storage.createFile(cfg.BUCKET_ID, fileId, file);
+                    cfg.log('Upload successful');
+                    uploadBtn.innerHTML = '<i data-lucide="check"></i> Sent to TV!';
+                    statusMsg.innerText = 'Photo sent to TV wall!';
+                    lucide.createIcons();
+                    loadGallery();
+                    setTimeout(() => {
+                        uploadBtn.innerHTML = originalBtnHTML;
+                        statusMsg.innerText = 'Ready';
+                        lucide.createIcons();
+                        isUploading = false;
+                        uploadBtn.disabled = false;
+                    }, 3000);
+                } catch(err) {
+                    cfg.error('Upload failed:', err);
+                    alert("Upload failed: " + err.message);
+                    uploadBtn.innerHTML = originalBtnHTML;
+                    statusMsg.innerText = 'Upload failed, try again';
+                    lucide.createIcons();
+                    isUploading = false;
+                    uploadBtn.disabled = false;
+                }
+                fileInput.value = '';
+            });
+            
+            checkEventStatus();
+            loadGallery();
+            setInterval(loadGallery, 10000);
+        })();
     </script>
 </body>
 </html>

@@ -54,99 +54,100 @@
     </div>
 
     <script>
-        lucide.createIcons();
-        const cfg = window.SnapNexusConfig;
-        const urlParams = new URLSearchParams(window.location.search);
-        const eventId = urlParams.get('event') || 'demo';
-        document.getElementById('displayEventId').innerHTML = `Event: ${eventId}`;
-        const joinLink = cfg.resolveUrl(`app.html?event=${eventId}`);
-        document.getElementById('qrCode').src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(joinLink)}`;
-
-        const client = new Appwrite.Client()
-            .setEndpoint('https://cloud.appwrite.io/v1')
-            .setProject(cfg.PROJECT_ID);
-        const storage = new Appwrite.Storage(client);
-        const databases = new Appwrite.Databases(client);
-
-        let photos = [];
-        let currentIndex = 0;
-        let activeLayer = 1;
-        let slideshowInterval = null;
-        let eventActive = true;
-        const layer1 = document.getElementById('layer1');
-        const layer2 = document.getElementById('layer2');
-
-        cfg.log('TV.html initialized with eventId:', eventId);
-
-        async function checkEventStatus() {
-            try {
-                const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [
-                    Appwrite.Query.equal('eventId', eventId)
-                ]);
-                cfg.log('Event status check:', res.documents.length, 'documents found');
-                if (res.documents.length === 0) return;
-                const eventDoc = res.documents[0];
-                eventActive = eventDoc.status !== 'ended';
-                if (!eventActive) showEndedOverlay();
-            } catch(err) { cfg.error('Status check failed:', err); }
-        }
-
-        function showEndedOverlay() {
-            if (document.getElementById('endedOverlay')) return;
-            const stage = document.getElementById('photoStage');
-            const overlay = document.createElement('div');
-            overlay.id = 'endedOverlay';
-            overlay.className = 'ended-overlay';
-            overlay.innerHTML = `<i data-lucide="flag" style="width:64px;height:64px;margin-bottom:20px;"></i><h2>Event Concluded</h2><p>This live wall has ended. Thank you for being part of the experience.</p>`;
-            stage.appendChild(overlay);
+        (function() {
             lucide.createIcons();
-            if (slideshowInterval) clearInterval(slideshowInterval);
-        }
-
-        async function fetchPhotos() {
-            if (!eventActive) return;
-            try {
-                const result = await storage.listFiles(cfg.BUCKET_ID);
-                const files = result.files || [];
-                cfg.log('TV: Found', files.length, 'total files in bucket');
-                const newUrls = files.map(f => storage.getFileView(cfg.BUCKET_ID, f.$id));
-                if (JSON.stringify(newUrls) !== JSON.stringify(photos)) {
-                    cfg.log('TV: Photos updated, new count:', newUrls.length);
-                    photos = newUrls;
-                    if (photos.length > 0 && currentIndex === 0) {
-                        if (activeLayer === 1) {
-                            layer1.src = photos[0];
-                            layer1.classList.add('active');
-                        } else {
-                            layer2.src = photos[0];
-                            layer2.classList.add('active');
+            const cfg = window.SnapNexus;
+            if (!cfg) { console.error('Config not loaded'); return; }
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const eventId = urlParams.get('event') || 'demo';
+            document.getElementById('displayEventId').innerHTML = `Event: ${eventId}`;
+            const joinLink = cfg.resolveUrl(`app.html?event=${eventId}`);
+            document.getElementById('qrCode').src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(joinLink)}`;
+            
+            const client = new Appwrite.Client()
+                .setEndpoint(cfg.ENDPOINT)
+                .setProject(cfg.PROJECT_ID);
+            const storage = new Appwrite.Storage(client);
+            const databases = new Appwrite.Databases(client);
+            
+            let photos = [];
+            let currentIndex = 0;
+            let activeLayer = 1;
+            let slideshowInterval = null;
+            let eventActive = true;
+            const layer1 = document.getElementById('layer1');
+            const layer2 = document.getElementById('layer2');
+            
+            cfg.log('TV.html loaded, eventId:', eventId);
+            
+            async function checkEventStatus() {
+                try {
+                    const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [
+                        Appwrite.Query.equal('eventId', eventId)
+                    ]);
+                    if (res.documents.length === 0) return;
+                    eventActive = res.documents[0].status !== 'ended';
+                    if (!eventActive) showEndedOverlay();
+                } catch(err) { cfg.error('Status check:', err); }
+            }
+            
+            function showEndedOverlay() {
+                if (document.getElementById('endedOverlay')) return;
+                const stage = document.getElementById('photoStage');
+                const overlay = document.createElement('div');
+                overlay.id = 'endedOverlay';
+                overlay.className = 'ended-overlay';
+                overlay.innerHTML = `<i data-lucide="flag" style="width:64px;height:64px;margin-bottom:20px;"></i><h2>Event Concluded</h2><p>This live wall has ended. Thank you.</p>`;
+                stage.appendChild(overlay);
+                lucide.createIcons();
+                if (slideshowInterval) clearInterval(slideshowInterval);
+            }
+            
+            async function fetchPhotos() {
+                if (!eventActive) return;
+                try {
+                    const result = await storage.listFiles(cfg.BUCKET_ID);
+                    const files = result.files || [];
+                    const newUrls = files.map(f => storage.getFileView(cfg.BUCKET_ID, f.$id));
+                    if (JSON.stringify(newUrls) !== JSON.stringify(photos)) {
+                        cfg.log('TV: Photos updated, count:', newUrls.length);
+                        photos = newUrls;
+                        if (photos.length > 0 && currentIndex === 0) {
+                            if (activeLayer === 1) {
+                                layer1.src = photos[0];
+                                layer1.classList.add('active');
+                            } else {
+                                layer2.src = photos[0];
+                                layer2.classList.add('active');
+                            }
                         }
                     }
-                }
-            } catch(err) { cfg.error('TV fetch error:', err); }
-        }
-
-        function nextSlide() {
-            if (!eventActive || photos.length === 0) return;
-            currentIndex = (currentIndex + 1) % photos.length;
-            const nextUrl = photos[currentIndex];
-            if (activeLayer === 1) {
-                layer2.src = nextUrl;
-                layer2.classList.add('active');
-                layer1.classList.remove('active');
-                activeLayer = 2;
-            } else {
-                layer1.src = nextUrl;
-                layer1.classList.add('active');
-                layer2.classList.remove('active');
-                activeLayer = 1;
+                } catch(err) { cfg.error('TV fetch error:', err); }
             }
-        }
-
-        checkEventStatus();
-        fetchPhotos();
-        setInterval(fetchPhotos, 5000);
-        slideshowInterval = setInterval(nextSlide, 6000);
+            
+            function nextSlide() {
+                if (!eventActive || photos.length === 0) return;
+                currentIndex = (currentIndex + 1) % photos.length;
+                const nextUrl = photos[currentIndex];
+                if (activeLayer === 1) {
+                    layer2.src = nextUrl;
+                    layer2.classList.add('active');
+                    layer1.classList.remove('active');
+                    activeLayer = 2;
+                } else {
+                    layer1.src = nextUrl;
+                    layer1.classList.add('active');
+                    layer2.classList.remove('active');
+                    activeLayer = 1;
+                }
+            }
+            
+            checkEventStatus();
+            fetchPhotos();
+            setInterval(fetchPhotos, 5000);
+            slideshowInterval = setInterval(nextSlide, 6000);
+        })();
     </script>
 </body>
 </html>
