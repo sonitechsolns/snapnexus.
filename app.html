@@ -6,13 +6,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
     <title>SnapNexus | Guest Upload</title>
+    <link rel="preload" as="image" href="/SNAPN.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Urbanist:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,600&display=swap" rel="stylesheet">
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        /* (same CSS as before – keep unchanged) */
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family:'Urbanist',sans-serif; background:#020617; color:#fff; overflow-x:hidden; min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; }
         h1,h2,h3 { font-family:'Syne',sans-serif; }
@@ -105,7 +105,8 @@
             async function loadGallery() {
                 if (!eventActive) return;
                 try {
-                    const result = await storage.listFiles(cfg.BUCKET_ID);
+                    const prefix = eventId + '_';
+                    const result = await storage.listFiles(cfg.BUCKET_ID, { prefix: prefix });
                     const files = result.files || [];
                     const container = document.getElementById('galleryContainer');
                     if (files.length === 0) {
@@ -157,10 +158,9 @@
                 statusMsg.innerText = 'Uploading to cloud...';
                 lucide.createIcons();
                 
-                const shortEventId = eventId.substring(0, 8);
-                const timestamp = Date.now().toString().slice(-8);
+                const timestamp = Date.now();
                 const random = Math.random().toString(36).substring(2, 6);
-                const fileId = `${shortEventId}_${timestamp}_${random}`;
+                const fileId = `${eventId}_${timestamp}_${random}`;
                 
                 try {
                     await storage.createFile(cfg.BUCKET_ID, fileId, file);

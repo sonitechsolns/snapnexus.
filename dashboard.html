@@ -4,9 +4,11 @@
     <script src="/config.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SnapNexus | Host Dashboard</title>
+    <link rel="preload" as="image" href="/SNAPN.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Urbanist:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,600&display=swap" rel="stylesheet">
@@ -50,7 +52,6 @@
         .event-status { display:inline-block; padding:4px 12px; border-radius:20px; font-size:0.75rem; margin-top:8px; }
         .status-active { background:rgba(16,185,129,0.2); color:#34d399; }
         .status-ended { background:rgba(239,68,68,0.2); color:#f87171; }
-        /* Debug console styles */
         .debug-console { position:fixed; bottom:20px; right:20px; width:350px; max-height:300px; background:rgba(0,0,0,0.9); border-radius:12px; padding:12px; font-family:monospace; font-size:12px; z-index:1000; overflow-y:auto; border-left:4px solid #fbbf24; display:flex; flex-direction:column; gap:6px; }
         .debug-header { display:flex; justify-content:space-between; margin-bottom:8px; font-weight:bold; color:#fbbf24; }
         .debug-log { color:#a5f3c3; border-bottom:1px solid #333; padding:4px 0; }
@@ -71,13 +72,8 @@
     <div class="dashboard-container">
         <div id="mainContent"></div>
     </div>
-
-    <!-- Debug Console -->
     <div id="debugConsole" class="debug-console">
-        <div class="debug-header">
-            <span>🐞 Debug Console</span>
-            <button id="closeDebug" class="close-debug">✕</button>
-        </div>
+        <div class="debug-header"><span>🐞 Debug Console</span><button id="closeDebug" class="close-debug">✕</button></div>
         <div id="debugLogs"></div>
     </div>
 
@@ -86,7 +82,6 @@
         (function() {
             lucide.createIcons(); AOS.init();
             
-            // Debug helper
             const debugContainer = document.getElementById('debugLogs');
             function addDebugLog(message, isError = false) {
                 const div = document.createElement('div');
@@ -94,7 +89,6 @@
                 div.textContent = new Date().toLocaleTimeString() + ' - ' + message;
                 debugContainer.appendChild(div);
                 debugContainer.scrollTop = debugContainer.scrollHeight;
-                // Keep last 30 logs
                 while (debugContainer.children.length > 30) debugContainer.removeChild(debugContainer.firstChild);
             }
             document.getElementById('closeDebug')?.addEventListener('click', () => {
@@ -106,7 +100,7 @@
                 addDebugLog('❌ Config not loaded! Check /config.js path', true);
                 return;
             }
-            addDebugLog('✅ Config loaded: ' + cfg.PROJECT_ID);
+            addDebugLog('✅ Config loaded');
             
             const client = new Appwrite.Client()
                 .setEndpoint(cfg.ENDPOINT)
@@ -215,13 +209,29 @@
                 const isEnded = currentEvent.status === 'ended';
                 const tvPage = (currentEvent.tier === 'pro' || currentEvent.tier === 'premium' || currentEvent.tier === 'vip') ? 'tv_2.html' : 'tv.html';
                 const liveWallLink = cfg.resolveUrl(`${tvPage}?event=${eventId}`);
+                
+                // Check if timer exists for this event (only if ended)
                 let timerHtml = '';
-                if (isEnded && downloadWindowEnd && Date.now() < downloadWindowEnd) {
-                    const minutesLeft = Math.ceil((downloadWindowEnd - Date.now()) / 60000);
-                    timerHtml = `<div class="timer-banner">⏰ Free download window: ${minutesLeft} minute${minutesLeft !== 1 ? 's' : ''} remaining. Download all photos now!</div>`;
-                } else if (isEnded && (!downloadWindowEnd || Date.now() >= downloadWindowEnd)) {
-                    timerHtml = `<div class="timer-banner"><span>⏰ Free download window expired. Photos archived.</span><button id="buyArchiveBtn">Purchase Archive (₹499)</button></div>`;
+                let downloadEnabled = false;
+                if (isEnded) {
+                    const storedEnd = localStorage.getItem(`timer_${eventId}`);
+                    if (storedEnd) {
+                        downloadWindowEnd = parseInt(storedEnd);
+                        if (Date.now() < downloadWindowEnd) {
+                            downloadEnabled = true;
+                            const minutesLeft = Math.ceil((downloadWindowEnd - Date.now()) / 60000);
+                            timerHtml = `<div class="timer-banner">⏰ Free download window: ${minutesLeft} minute${minutesLeft !== 1 ? 's' : ''} remaining. Download all photos now!</div>`;
+                        } else {
+                            localStorage.removeItem(`timer_${eventId}`);
+                            downloadEnabled = false;
+                            timerHtml = `<div class="timer-banner"><span>⏰ Free download window expired. Photos archived.</span><button id="unlockArchiveBtn" class="btn-physics" style="background:linear-gradient(105deg,#fbbf24,#f59e0b); color:#020617; margin-left:12px;">Unlock Archive (₹499)</button></div>`;
+                        }
+                    } else {
+                        downloadEnabled = false;
+                        timerHtml = `<div class="timer-banner"><span>⏰ Free download window expired. Photos archived.</span><button id="unlockArchiveBtn" class="btn-physics" style="background:linear-gradient(105deg,#fbbf24,#f59e0b); color:#020617; margin-left:12px;">Unlock Archive (₹499)</button></div>`;
+                    }
                 }
+                
                 document.getElementById('mainContent').innerHTML = `
                     <div style="margin-bottom:20px;">
                         <button id="backToEventsBtn" class="btn-physics btn-outline" style="background:rgba(255,255,255,0.1);"><i data-lucide="arrow-left"></i> Back to My Events</button>
@@ -240,7 +250,7 @@
                             <div style="display:flex; gap:12px; flex-wrap:wrap;">
                                 <button class="btn-physics" id="printQrBtn"><i data-lucide="qr-code"></i> Print QR</button>
                                 <button class="btn-physics" id="viewGuestAppBtn"><i data-lucide="smartphone"></i> View Guest App</button>
-                                <button class="btn-physics" id="downloadZipBtn"><i data-lucide="download"></i> Download ZIP</button>
+                                <button class="btn-physics" id="downloadZipBtn" ${!downloadEnabled ? 'disabled' : ''}><i data-lucide="download"></i> ${downloadEnabled ? 'Download ZIP' : 'Download ZIP (Unavailable)'}</button>
                                 ${!isEnded ? '<button class="btn-physics btn-danger" id="endEventBtn"><i data-lucide="power"></i> End Event</button>' : ''}
                             </div>
                         </div>
@@ -249,19 +259,54 @@
                 `;
                 lucide.createIcons();
                 document.getElementById('backToEventsBtn')?.addEventListener('click', () => window.location.href = cfg.resolveUrl('dashboard.html'));
-                if (isEnded && (!downloadWindowEnd || Date.now() >= downloadWindowEnd)) {
-                    document.getElementById('buyArchiveBtn')?.addEventListener('click', () => alert('Payment integration coming soon.'));
-                    document.getElementById('downloadZipBtn').disabled = true;
-                    document.getElementById('downloadZipBtn').style.opacity = 0.5;
-                } else if (isEnded && downloadWindowEnd && Date.now() < downloadWindowEnd) {
-                    startTimerDisplay();
+                
+                if (isEnded && !downloadEnabled && document.getElementById('unlockArchiveBtn')) {
+                    document.getElementById('unlockArchiveBtn').addEventListener('click', () => {
+                        // Razorpay checkout simulation – replace with your actual payment link or integration
+                        // For production, replace 'YOUR_RAZORPAY_PAYMENT_LINK' with your actual Razorpay payment link.
+                        const paymentLink = 'https://rzp.io/l/snapnexus-archive'; // Replace with your real link
+                        window.open(paymentLink, '_blank');
+                        // Alternatively, integrate Razorpay checkout:
+                        // var options = {
+                        //     key: "YOUR_KEY_ID",
+                        //     amount: 49900, // ₹499 in paise
+                        //     currency: "INR",
+                        //     name: "SnapNexus Archive",
+                        //     description: "Unlock all photos",
+                        //     handler: function(response) {
+                        //         alert("Payment successful! Reload to download.");
+                        //         localStorage.setItem(`timer_${eventId}`, (Date.now() + 10*60*1000).toString());
+                        //         location.reload();
+                        //     }
+                        // };
+                        // var rzp = new Razorpay(options);
+                        // rzp.open();
+                    });
                 }
-                if (!isEnded || (downloadWindowEnd && Date.now() < downloadWindowEnd)) {
+                
+                if (downloadEnabled && document.getElementById('downloadZipBtn')) {
+                    document.getElementById('downloadZipBtn').disabled = false;
+                    document.getElementById('downloadZipBtn').addEventListener('click', downloadAllPhotos);
+                } else if (document.getElementById('downloadZipBtn') && !downloadEnabled && !isEnded) {
+                    document.getElementById('downloadZipBtn').disabled = false;
+                    document.getElementById('downloadZipBtn').addEventListener('click', downloadAllPhotos);
+                } else if (document.getElementById('downloadZipBtn') && !downloadEnabled && isEnded) {
+                    document.getElementById('downloadZipBtn').disabled = true;
+                }
+                
+                if (!isEnded) {
                     updateStats();
                     loadGallery();
                     setInterval(updateStats, 10000);
                     setInterval(loadGallery, 10000);
                     attachEventListeners();
+                } else if (downloadEnabled) {
+                    updateStats();
+                    loadGallery();
+                    setInterval(updateStats, 10000);
+                    setInterval(loadGallery, 10000);
+                    attachEventListeners();
+                    startTimerDisplay();
                 }
             }
             
@@ -272,11 +317,14 @@
                         clearInterval(timerInterval);
                         const banner = document.querySelector('.timer-banner');
                         if (banner) {
-                            banner.innerHTML = `<span>⏰ Free download window expired. Photos archived.</span><button id="buyArchiveBtn">Purchase Archive (₹499)</button>`;
-                            document.getElementById('buyArchiveBtn')?.addEventListener('click', () => alert('Payment coming soon'));
+                            banner.innerHTML = `<span>⏰ Free download window expired. Photos archived.</span><button id="unlockArchiveBtn" class="btn-physics" style="background:linear-gradient(105deg,#fbbf24,#f59e0b); color:#020617; margin-left:12px;">Unlock Archive (₹499)</button>`;
+                            document.getElementById('unlockArchiveBtn')?.addEventListener('click', () => {
+                                const paymentLink = 'https://rzp.io/l/snapnexus-archive'; // Replace with actual link
+                                window.open(paymentLink, '_blank');
+                            });
                             document.getElementById('downloadZipBtn').disabled = true;
-                            document.getElementById('downloadZipBtn').style.opacity = 0.5;
                         }
+                        localStorage.removeItem(`timer_${eventId}`);
                     } else {
                         const minutesLeft = Math.ceil((downloadWindowEnd - Date.now()) / 60000);
                         const banner = document.querySelector('.timer-banner');
@@ -287,8 +335,9 @@
             
             async function updateStats() {
                 try {
-                    const files = (await storage.listFiles(cfg.BUCKET_ID)).files || [];
-                    addDebugLog('📸 Storage bucket has ' + files.length + ' files');
+                    const prefix = eventId + '_';
+                    const files = (await storage.listFiles(cfg.BUCKET_ID, { prefix })).files || [];
+                    addDebugLog('📸 Bucket has ' + files.length + ' files for this event');
                     document.getElementById('photoCount').innerText = files.length;
                     const totalSize = files.reduce((s,f)=> s + (f.sizeOriginal||0),0);
                     document.getElementById('storageUsed').innerText = (totalSize/(1024*1024)).toFixed(1)+' MB';
@@ -297,7 +346,8 @@
             
             async function loadGallery() {
                 try {
-                    const files = (await storage.listFiles(cfg.BUCKET_ID)).files || [];
+                    const prefix = eventId + '_';
+                    const files = (await storage.listFiles(cfg.BUCKET_ID, { prefix })).files || [];
                     const container = document.getElementById('galleryContainer');
                     if (!container) return;
                     if (files.length === 0) {
@@ -336,10 +386,11 @@
             
             async function downloadAllPhotos() {
                 const btn = document.getElementById('downloadZipBtn');
-                if (!btn) return;
+                if (!btn || btn.disabled) return;
                 const original = btn.innerHTML;
                 try {
-                    const files = (await storage.listFiles(cfg.BUCKET_ID)).files || [];
+                    const prefix = eventId + '_';
+                    const files = (await storage.listFiles(cfg.BUCKET_ID, { prefix })).files || [];
                     if (files.length === 0) { alert("No photos to download"); return; }
                     btn.innerHTML = `<i data-lucide="loader"></i> Zipping ${files.length} photos...`;
                     lucide.createIcons();
@@ -374,13 +425,13 @@
                     `);
                 });
                 document.getElementById('viewGuestAppBtn')?.addEventListener('click', () => window.open(cfg.resolveUrl(`app.html?event=${eventId}`), '_blank'));
-                document.getElementById('downloadZipBtn')?.addEventListener('click', downloadAllPhotos);
                 document.getElementById('endEventBtn')?.addEventListener('click', async () => {
                     if (!currentEvent || currentEvent.status === 'ended') return;
                     if (!confirm('End this event? Guests cannot upload more. You will have 10 minutes to download all photos for free.')) return;
                     try {
                         await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { status: 'ended' });
-                        downloadWindowEnd = Date.now() + 10 * 60 * 1000;
+                        const endTime = Date.now() + 10 * 60 * 1000;
+                        localStorage.setItem(`timer_${eventId}`, endTime.toString());
                         alert('Event ended. Free download window starts now (10 minutes).');
                         location.reload();
                     } catch(err) { alert('Failed: '+err.message); }
@@ -391,7 +442,7 @@
                 const eventName = prompt('Enter event name:');
                 if (!eventName) return;
                 const user = await account.get();
-                const newEventId = Date.now().toString() + '_' + Math.random().toString(36).substr(2,6);
+                const newEventId = Appwrite.ID.unique();
                 try {
                     await databases.createDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, newEventId, {
                         eventName: eventName,
@@ -412,11 +463,6 @@
             
             async function init() {
                 await checkAuth();
-                const storedEnd = localStorage.getItem(`downloadWindow_${eventId}`);
-                if (storedEnd && eventId) {
-                    downloadWindowEnd = parseInt(storedEnd);
-                    if (Date.now() >= downloadWindowEnd) localStorage.removeItem(`downloadWindow_${eventId}`);
-                }
                 await loadEventDashboard();
             }
             init();
