@@ -52,18 +52,14 @@
         .event-status { display:inline-block; padding:4px 12px; border-radius:20px; font-size:0.75rem; margin-top:8px; }
         .status-active { background:rgba(16,185,129,0.2); color:#34d399; }
         .status-ended { background:rgba(239,68,68,0.2); color:#f87171; }
-        .debug-console { position:fixed; bottom:20px; right:20px; width:350px; max-height:300px; background:rgba(0,0,0,0.9); border-radius:12px; padding:12px; font-family:monospace; font-size:12px; z-index:1000; overflow-y:auto; border-left:4px solid #fbbf24; display:flex; flex-direction:column; gap:6px; }
-        .debug-header { display:flex; justify-content:space-between; margin-bottom:8px; font-weight:bold; color:#fbbf24; }
-        .debug-log { color:#a5f3c3; border-bottom:1px solid #333; padding:4px 0; }
-        .debug-error { color:#f87171; }
-        .close-debug { cursor:pointer; background:none; border:none; color:#fbbf24; font-size:16px; }
+        .loading-state { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; z-index:999; flex-direction:column; gap:16px; font-family:'Syne'; }
     </style>
 </head>
 <body>
     <div class="liquid-mesh"></div>
     <div class="noise-overlay"></div>
     <div class="topbar">
-        <div class="topbar-logo"><div style="width:36px;height:36px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);border-radius:8px;display:flex;align-items:center;justify-content:center;"><i data-lucide="layout-dashboard" style="color:#60a5fa;width:20px;"></i></div>Host Dashboard</div>
+        <div class="topbar-logo"><img src="/SNAPN.png" alt="Logo" style="width:36px; height:36px; border-radius:8px; margin-right:8px;" loading="eager" fetchpriority="high"><div style="width:36px;height:36px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);border-radius:8px;display:flex;align-items:center;justify-content:center;"><i data-lucide="layout-dashboard" style="color:#60a5fa;width:20px;"></i></div>Host Dashboard</div>
         <div style="display:flex; gap:16px; align-items:center;">
             <button id="createNewEventBtn" class="btn-physics" style="background:linear-gradient(105deg,#fbbf24,#f59e0b); color:#020617;"><i data-lucide="plus"></i> Create New Event</button>
             <button id="logoutBtn" style="background:none;border:none;color:#94a3b8;cursor:pointer;"><i data-lucide="log-out"></i></button>
@@ -72,35 +68,17 @@
     <div class="dashboard-container">
         <div id="mainContent"></div>
     </div>
-    <div id="debugConsole" class="debug-console">
-        <div class="debug-header"><span>🐞 Debug Console</span><button id="closeDebug" class="close-debug">✕</button></div>
-        <div id="debugLogs"></div>
-    </div>
 
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script>
         (function() {
             lucide.createIcons(); AOS.init();
             
-            const debugContainer = document.getElementById('debugLogs');
-            function addDebugLog(message, isError = false) {
-                const div = document.createElement('div');
-                div.className = isError ? 'debug-error' : 'debug-log';
-                div.textContent = new Date().toLocaleTimeString() + ' - ' + message;
-                debugContainer.appendChild(div);
-                debugContainer.scrollTop = debugContainer.scrollHeight;
-                while (debugContainer.children.length > 30) debugContainer.removeChild(debugContainer.firstChild);
-            }
-            document.getElementById('closeDebug')?.addEventListener('click', () => {
-                document.getElementById('debugConsole').style.display = 'none';
-            });
-            
             const cfg = window.SnapNexus;
             if (!cfg) {
-                addDebugLog('❌ Config not loaded! Check /config.js path', true);
+                console.error('Config not loaded');
                 return;
             }
-            addDebugLog('✅ Config loaded');
             
             const client = new Appwrite.Client()
                 .setEndpoint(cfg.ENDPOINT)
@@ -115,28 +93,40 @@
             let downloadWindowEnd = null;
             let timerInterval = null;
             
-            addDebugLog('Dashboard loaded, eventId: ' + (eventId || 'none'));
+            function showLoading(message) {
+                let loader = document.getElementById('dashboardLoader');
+                if (!loader) {
+                    loader = document.createElement('div');
+                    loader.id = 'dashboardLoader';
+                    loader.className = 'loading-state';
+                    loader.innerHTML = `<div class="spinner"></div><div>${message}</div>`;
+                    document.body.appendChild(loader);
+                } else {
+                    loader.querySelector('div:last-child').innerText = message;
+                    loader.style.display = 'flex';
+                }
+            }
+            function hideLoading() {
+                const loader = document.getElementById('dashboardLoader');
+                if (loader) loader.style.display = 'none';
+            }
             
             async function checkAuth() {
                 try {
-                    const user = await account.get();
-                    addDebugLog('✅ Auth success: ' + user.email);
-                    return user;
+                    await account.get();
+                    return true;
                 } catch(err) {
-                    addDebugLog('❌ Auth failed: ' + err.message + ' (code: ' + err.code + ')', true);
                     window.location.href = cfg.resolveUrl('login.html');
-                    throw err;
+                    return false;
                 }
             }
             
             async function showEventList() {
                 try {
-                    const user = await checkAuth();
-                    addDebugLog('Fetching events for: ' + user.email);
+                    const user = await account.get();
                     const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [
                         Appwrite.Query.equal('hostEmail', user.email)
                     ]);
-                    addDebugLog('📋 Found ' + res.documents.length + ' events');
                     const events = res.documents;
                     if (events.length === 0) {
                         document.getElementById('mainContent').innerHTML = `
@@ -180,28 +170,26 @@
                             window.location.href = cfg.resolveUrl(`dashboard.html?event=${id}`);
                         });
                     });
-                } catch(err) {
-                    addDebugLog('❌ Error showing events: ' + err.message, true);
-                }
+                } catch(err) { console.error(err); }
             }
             
             async function loadEventDashboard() {
                 if (!eventId) { showEventList(); return; }
+                showLoading('Loading event details...');
                 try {
-                    addDebugLog('Loading event: ' + eventId);
                     const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [
                         Appwrite.Query.equal('eventId', eventId)
                     ]);
-                    addDebugLog('Event query returned ' + res.documents.length + ' documents');
                     if (res.documents.length === 0) throw new Error('Event not found');
                     currentEvent = res.documents[0];
-                    addDebugLog('✅ Event loaded: ' + currentEvent.eventName + ' (status: ' + currentEvent.status + ')');
                     renderEventDashboard();
                 } catch(err) {
-                    addDebugLog('❌ Event load error: ' + err.message, true);
+                    console.error(err);
                     document.getElementById('mainContent').innerHTML = `<div class="glass-card" style="text-align:center;"><h2>Event not found</h2><button id="backToEvents" class="btn-physics">Back to My Events</button></div>`;
                     lucide.createIcons();
                     document.getElementById('backToEvents')?.addEventListener('click', () => window.location.href = cfg.resolveUrl('dashboard.html'));
+                } finally {
+                    hideLoading();
                 }
             }
             
@@ -210,7 +198,6 @@
                 const tvPage = (currentEvent.tier === 'pro' || currentEvent.tier === 'premium' || currentEvent.tier === 'vip') ? 'tv_2.html' : 'tv.html';
                 const liveWallLink = cfg.resolveUrl(`${tvPage}?event=${eventId}`);
                 
-                // Check if timer exists for this event (only if ended)
                 let timerHtml = '';
                 let downloadEnabled = false;
                 if (isEnded) {
@@ -250,7 +237,7 @@
                             <div style="display:flex; gap:12px; flex-wrap:wrap;">
                                 <button class="btn-physics" id="printQrBtn"><i data-lucide="qr-code"></i> Print QR</button>
                                 <button class="btn-physics" id="viewGuestAppBtn"><i data-lucide="smartphone"></i> View Guest App</button>
-                                <button class="btn-physics" id="downloadZipBtn" ${!downloadEnabled ? 'disabled' : ''}><i data-lucide="download"></i> ${downloadEnabled ? 'Download ZIP' : 'Download ZIP (Unavailable)'}</button>
+                                <button class="btn-physics" id="downloadZipBtn" ${!downloadEnabled && isEnded ? 'disabled' : ''}><i data-lucide="download"></i> ${downloadEnabled ? 'Download ZIP' : (isEnded ? 'Download ZIP (Unavailable)' : 'Download ZIP')}</button>
                                 ${!isEnded ? '<button class="btn-physics btn-danger" id="endEventBtn"><i data-lucide="power"></i> End Event</button>' : ''}
                             </div>
                         </div>
@@ -262,35 +249,46 @@
                 
                 if (isEnded && !downloadEnabled && document.getElementById('unlockArchiveBtn')) {
                     document.getElementById('unlockArchiveBtn').addEventListener('click', () => {
-                        // Razorpay checkout simulation – replace with your actual payment link or integration
-                        // For production, replace 'YOUR_RAZORPAY_PAYMENT_LINK' with your actual Razorpay payment link.
-                        const paymentLink = 'https://rzp.io/l/snapnexus-archive'; // Replace with your real link
-                        window.open(paymentLink, '_blank');
-                        // Alternatively, integrate Razorpay checkout:
-                        // var options = {
-                        //     key: "YOUR_KEY_ID",
-                        //     amount: 49900, // ₹499 in paise
-                        //     currency: "INR",
-                        //     name: "SnapNexus Archive",
-                        //     description: "Unlock all photos",
-                        //     handler: function(response) {
-                        //         alert("Payment successful! Reload to download.");
-                        //         localStorage.setItem(`timer_${eventId}`, (Date.now() + 10*60*1000).toString());
-                        //         location.reload();
-                        //     }
-                        // };
-                        // var rzp = new Razorpay(options);
-                        // rzp.open();
+                        // Razorpay Checkout
+                        const options = {
+                            key: 'rzp_test_YourTestKey', // Replace with your actual test key
+                            amount: 49900, // ₹499 in paise
+                            currency: 'INR',
+                            name: 'SnapNexus',
+                            description: 'Unlock Event Archive',
+                            image: '/SNAPN.png',
+                            handler: async function(response) {
+                                // Payment successful – reactivate event and reset timer
+                                try {
+                                    await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, {
+                                        status: 'active'
+                                    });
+                                    localStorage.removeItem(`timer_${eventId}`);
+                                    alert('Payment successful! Your archive is now unlocked. You can download photos for free again.');
+                                    location.reload();
+                                } catch(err) {
+                                    alert('Payment recorded but failed to update event. Please contact support.');
+                                }
+                            },
+                            prefill: {
+                                email: (await account.get()).email,
+                            },
+                            theme: {
+                                color: '#fbbf24'
+                            }
+                        };
+                        const rzp = new Razorpay(options);
+                        rzp.open();
                     });
                 }
                 
                 if (downloadEnabled && document.getElementById('downloadZipBtn')) {
                     document.getElementById('downloadZipBtn').disabled = false;
                     document.getElementById('downloadZipBtn').addEventListener('click', downloadAllPhotos);
-                } else if (document.getElementById('downloadZipBtn') && !downloadEnabled && !isEnded) {
+                } else if (document.getElementById('downloadZipBtn') && !isEnded) {
                     document.getElementById('downloadZipBtn').disabled = false;
                     document.getElementById('downloadZipBtn').addEventListener('click', downloadAllPhotos);
-                } else if (document.getElementById('downloadZipBtn') && !downloadEnabled && isEnded) {
+                } else if (document.getElementById('downloadZipBtn') && isEnded && !downloadEnabled) {
                     document.getElementById('downloadZipBtn').disabled = true;
                 }
                 
@@ -318,10 +316,31 @@
                         const banner = document.querySelector('.timer-banner');
                         if (banner) {
                             banner.innerHTML = `<span>⏰ Free download window expired. Photos archived.</span><button id="unlockArchiveBtn" class="btn-physics" style="background:linear-gradient(105deg,#fbbf24,#f59e0b); color:#020617; margin-left:12px;">Unlock Archive (₹499)</button>`;
-                            document.getElementById('unlockArchiveBtn')?.addEventListener('click', () => {
-                                const paymentLink = 'https://rzp.io/l/snapnexus-archive'; // Replace with actual link
-                                window.open(paymentLink, '_blank');
-                            });
+                            const unlockBtn = document.getElementById('unlockArchiveBtn');
+                            if (unlockBtn) {
+                                unlockBtn.addEventListener('click', () => {
+                                    const options = {
+                                        key: 'rzp_test_YourTestKey',
+                                        amount: 49900,
+                                        currency: 'INR',
+                                        name: 'SnapNexus',
+                                        description: 'Unlock Event Archive',
+                                        image: '/SNAPN.png',
+                                        handler: async function(response) {
+                                            try {
+                                                await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { status: 'active' });
+                                                localStorage.removeItem(`timer_${eventId}`);
+                                                alert('Payment successful! Archive unlocked.');
+                                                location.reload();
+                                            } catch(err) { alert('Error: ' + err.message); }
+                                        },
+                                        prefill: { email: (await account.get()).email },
+                                        theme: { color: '#fbbf24' }
+                                    };
+                                    const rzp = new Razorpay(options);
+                                    rzp.open();
+                                });
+                            }
                             document.getElementById('downloadZipBtn').disabled = true;
                         }
                         localStorage.removeItem(`timer_${eventId}`);
@@ -337,11 +356,10 @@
                 try {
                     const prefix = eventId + '_';
                     const files = (await storage.listFiles(cfg.BUCKET_ID, { prefix })).files || [];
-                    addDebugLog('📸 Bucket has ' + files.length + ' files for this event');
                     document.getElementById('photoCount').innerText = files.length;
                     const totalSize = files.reduce((s,f)=> s + (f.sizeOriginal||0),0);
                     document.getElementById('storageUsed').innerText = (totalSize/(1024*1024)).toFixed(1)+' MB';
-                } catch(err) { addDebugLog('❌ Stats error: ' + err.message, true); }
+                } catch(err) { console.error(err); }
             }
             
             async function loadGallery() {
@@ -381,7 +399,7 @@
                             }
                         });
                     });
-                } catch(err) { addDebugLog('❌ Gallery error: ' + err.message, true); }
+                } catch(err) { console.error(err); }
             }
             
             async function downloadAllPhotos() {
@@ -462,7 +480,8 @@
             });
             
             async function init() {
-                await checkAuth();
+                const authed = await checkAuth();
+                if (!authed) return;
                 await loadEventDashboard();
             }
             init();

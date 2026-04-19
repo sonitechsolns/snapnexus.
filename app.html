@@ -36,6 +36,7 @@
         .ended-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); backdrop-filter:blur(20px); display:flex; align-items:center; justify-content:center; z-index:1000; flex-direction:column; text-align:center; }
         .spinner { display:inline-block; width:20px; height:20px; border:2px solid rgba(255,255,255,0.3); border-radius:50%; border-top-color:white; animation:spin 0.8s linear infinite; margin-right:8px; }
         @keyframes spin { to { transform:rotate(360deg); } }
+        .loading-state { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; z-index:999; flex-direction:column; gap:16px; font-family:'Syne'; }
     </style>
 </head>
 <body>
@@ -75,25 +76,63 @@
             document.getElementById('eventLabel').innerText = eventId;
             let eventActive = true;
             let isUploading = false;
+            let statusCheckDone = false;
             
             const uploadBtn = document.getElementById('uploadBtn');
             const fileInput = document.getElementById('fileInput');
             const statusMsg = document.getElementById('statusMsg');
             const originalBtnHTML = uploadBtn.innerHTML;
             
+            // Show loading state while checking status
+            function showLoading(message = 'Loading event...') {
+                let loader = document.getElementById('appLoader');
+                if (!loader) {
+                    loader = document.createElement('div');
+                    loader.id = 'appLoader';
+                    loader.className = 'loading-state';
+                    loader.innerHTML = `<div class="spinner"></div><div>${message}</div>`;
+                    document.body.appendChild(loader);
+                } else {
+                    loader.querySelector('div:last-child').innerText = message;
+                    loader.style.display = 'flex';
+                }
+            }
+            function hideLoading() {
+                const loader = document.getElementById('appLoader');
+                if (loader) loader.style.display = 'none';
+            }
+            
             async function checkEventStatus() {
+                showLoading('Checking event status...');
                 try {
                     const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [
                         Appwrite.Query.equal('eventId', eventId)
                     ]);
-                    if (res.documents.length === 0) return;
-                    eventActive = res.documents[0].status !== 'ended';
-                    if (!eventActive) showEndedOverlay();
-                } catch(err) { console.error(err); }
+                    if (res.documents.length === 0) {
+                        // Event not found – treat as active? We'll assume active but show warning.
+                        cfg.log('Event not found in DB, assuming active');
+                        eventActive = true;
+                    } else {
+                        const eventDoc = res.documents[0];
+                        // Explicitly check for 'ended' string, otherwise treat as active
+                        eventActive = eventDoc.status !== 'ended';
+                    }
+                    if (!eventActive) {
+                        showEndedOverlay();
+                    }
+                } catch(err) {
+                    cfg.error('Status check failed:', err);
+                    eventActive = true; // fallback to active to avoid false ended
+                } finally {
+                    statusCheckDone = true;
+                    hideLoading();
+                }
             }
             
             function showEndedOverlay() {
+                if (document.getElementById('endedOverlay')) return;
                 const overlay = document.createElement('div');
+                overlay.id = 'endedOverlay';
                 overlay.className = 'ended-overlay';
                 overlay.innerHTML = `<i data-lucide="flag" style="width:64px;height:64px;margin-bottom:20px;"></i><h2 style="color:#f87171;">Event Concluded</h2><p>This photo wall has ended. Thank you.</p>`;
                 document.body.appendChild(overlay);
@@ -103,7 +142,7 @@
             }
             
             async function loadGallery() {
-                if (!eventActive) return;
+                if (!eventActive || !statusCheckDone) return;
                 try {
                     const prefix = eventId + '_';
                     const result = await storage.listFiles(cfg.BUCKET_ID, { prefix: prefix });
@@ -187,9 +226,13 @@
                 fileInput.value = '';
             });
             
-            checkEventStatus();
-            loadGallery();
-            setInterval(loadGallery, 10000);
+            (async function init() {
+                await checkEventStatus();
+                if (eventActive) {
+                    await loadGallery();
+                    setInterval(loadGallery, 10000);
+                }
+            })();
         });
     </script>
 </body>

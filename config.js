@@ -6,7 +6,7 @@ window.SnapNexus = {
     DATABASE_ID: '69d8f0b0003c6d1e4d93',
     COLLECTION_ID: 'EventsTable',
     
-    // Helper: build absolute URL for internal links (works on custom domain)
+    // Helper: build absolute URL for internal links
     resolveUrl: function(relativePath) {
         if (relativePath.startsWith('/')) {
             return window.location.origin + relativePath;
@@ -14,7 +14,7 @@ window.SnapNexus = {
         return window.location.origin + '/' + relativePath;
     },
     
-    debug: true,
+    debug: false,  // set to true only for debugging
     log: function(...args) {
         if (this.debug) console.log('[SnapNexus]', ...args);
     },
