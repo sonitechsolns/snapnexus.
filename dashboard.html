@@ -8,6 +8,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SnapNexus | Host Dashboard</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <meta property="og:image" content="https://snapnexus.in/SNAPN.png">
     <link rel="preload" as="image" href="/SNAPN.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -55,6 +57,9 @@
         .loading-state { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; z-index:999; flex-direction:column; gap:16px; font-family:'Syne'; }
         .spinner { display:inline-block; width:20px; height:20px; border:2px solid rgba(255,255,255,0.3); border-radius:50%; border-top-color:white; animation:spin 0.8s linear infinite; margin-right:8px; }
         @keyframes spin { to { transform:rotate(360deg); } }
+        .vip-section { margin-top:30px; border:1px solid #fbbf24; border-radius:20px; padding:20px; background:rgba(251,191,36,0.05); }
+        .vip-section h3 { color:#fbbf24; margin-bottom:16px; }
+        .file-input-label { display:inline-block; background:#3b82f6; padding:8px 16px; border-radius:40px; cursor:pointer; margin-top:10px; }
     </style>
 </head>
 <body>
@@ -62,7 +67,7 @@
     <div class="noise-overlay"></div>
     <div class="topbar">
         <div class="topbar-logo">
-            <img src="/SNAPN.png" alt="Logo" style="width:36px; height:36px; border-radius:8px; margin-right:8px;" loading="eager" fetchpriority="high">
+            <img src="/SNAPN.png" alt="Logo" style="width:36px; height:36px; border-radius:8px; margin-right:8px;" fetchpriority="high">
             <div style="width:36px;height:36px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);border-radius:8px;display:flex;align-items:center;justify-content:center;"><i data-lucide="layout-dashboard" style="color:#60a5fa;width:20px;"></i></div>
             Host Dashboard
         </div>
@@ -202,7 +207,8 @@
             
             async function renderEventDashboard() {
                 const isEnded = currentEvent.status === 'ended';
-                const tvPage = (currentEvent.tier === 'pro' || currentEvent.tier === 'premium' || currentEvent.tier === 'vip') ? 'tv_2.html' : 'tv.html';
+                const isVip = currentEvent.tier === 'vip';
+                const tvPage = (isVip || currentEvent.tier === 'pro' || currentEvent.tier === 'premium') ? 'tv_2.html' : 'tv.html';
                 const liveWallLink = cfg.resolveUrl(`${tvPage}?event=${eventId}`);
                 
                 let timerHtml = '';
@@ -226,6 +232,22 @@
                     }
                 }
                 
+                let vipHtml = '';
+                if (isVip && !isEnded) {
+                    vipHtml = `
+                        <div class="vip-section">
+                            <h3>👑 VIP Logo Forge</h3>
+                            <p>Upload your custom SVG watermark. It will be applied to all new guest uploads (only while event is active).</p>
+                            <label class="file-input-label">
+                                <i data-lucide="upload"></i> Upload SVG
+                                <input type="file" id="vipSvgInput" accept=".svg" style="display:none;">
+                            </label>
+                            <div id="vipWatermarkStatus" style="margin-top:12px; font-size:0.8rem;"></div>
+                            ${currentEvent.customWatermark ? `<div id="currentWatermarkPreview"><strong>Current watermark:</strong><br><img src="${currentEvent.customWatermark}" style="max-width:150px; margin-top:8px;"></div>` : ''}
+                        </div>
+                    `;
+                }
+                
                 document.getElementById('mainContent').innerHTML = `
                     <div style="margin-bottom:20px;">
                         <button id="backToEventsBtn" class="btn-physics btn-outline" style="background:rgba(255,255,255,0.1);"><i data-lucide="arrow-left"></i> Back to My Events</button>
@@ -238,6 +260,7 @@
                         <div class="glass-card stat-card"><div class="stat-icon"><i data-lucide="database"></i></div><div><div class="stat-value" id="storageUsed">0 MB</div><div class="stat-label">Storage Used</div></div></div>
                     </div>
                     ${timerHtml}
+                    ${vipHtml}
                     <div class="glass-card">
                         <div class="toolbar">
                             <h3 style="font-size:1.5rem;">Event Controls</h3>
@@ -254,12 +277,44 @@
                 lucide.createIcons();
                 document.getElementById('backToEventsBtn')?.addEventListener('click', () => window.location.href = cfg.resolveUrl('dashboard.html'));
                 
+                // VIP SVG upload logic
+                if (isVip && !isEnded) {
+                    const svgInput = document.getElementById('vipSvgInput');
+                    const fileLabel = document.querySelector('.file-input-label');
+                    if (fileLabel) {
+                        fileLabel.addEventListener('click', () => svgInput.click());
+                    }
+                    svgInput.addEventListener('change', async (e) => {
+                        const file = e.target.files[0];
+                        if (!file) return;
+                        if (file.type !== 'image/svg+xml') {
+                            alert('Only SVG files are allowed.');
+                            return;
+                        }
+                        const statusDiv = document.getElementById('vipWatermarkStatus');
+                        statusDiv.innerHTML = '<span class="spinner"></span> Uploading...';
+                        try {
+                            const fileId = `watermark_${eventId}_${Date.now()}.svg`;
+                            await storage.createFile(cfg.BUCKET_ID, fileId, file);
+                            const fileUrl = storage.getFileView(cfg.BUCKET_ID, fileId);
+                            await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, {
+                                customWatermark: fileUrl
+                            });
+                            statusDiv.innerHTML = '✅ Watermark uploaded successfully!';
+                            // Refresh to show preview
+                            setTimeout(() => location.reload(), 1500);
+                        } catch(err) {
+                            statusDiv.innerHTML = '❌ Upload failed: ' + err.message;
+                        }
+                    });
+                }
+                
                 if (isEnded && !downloadEnabled && document.getElementById('unlockArchiveBtn')) {
                     const unlockBtn = document.getElementById('unlockArchiveBtn');
                     unlockBtn.addEventListener('click', async () => {
                         const user = await account.get();
                         const options = {
-                            key: 'rzp_test_YourTestKey', // Replace with your actual Razorpay test key
+                            key: 'rzp_test_YourTestKey', // Replace with your actual test key
                             amount: 49900,
                             currency: 'INR',
                             name: 'SnapNexus',
@@ -267,22 +322,16 @@
                             image: '/SNAPN.png',
                             handler: async function(response) {
                                 try {
-                                    await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, {
-                                        status: 'active'
-                                    });
+                                    await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { status: 'active' });
                                     localStorage.removeItem(`timer_${eventId}`);
-                                    alert('Payment successful! Your archive is now unlocked. You can download photos for free again.');
+                                    alert('Payment successful! Archive unlocked.');
                                     location.reload();
                                 } catch(err) {
                                     alert('Payment recorded but failed to update event. Please contact support.');
                                 }
                             },
-                            prefill: {
-                                email: user.email,
-                            },
-                            theme: {
-                                color: '#fbbf24'
-                            }
+                            prefill: { email: user.email },
+                            theme: { color: '#fbbf24' }
                         };
                         const rzp = new Razorpay(options);
                         rzp.open();
@@ -410,6 +459,7 @@
                 } catch(err) { console.error(err); }
             }
             
+            // Memory-safe ZIP download: process in batches of 10
             async function downloadAllPhotos() {
                 const btn = document.getElementById('downloadZipBtn');
                 if (!btn || btn.disabled) return;
@@ -418,22 +468,40 @@
                     const prefix = eventId + '_';
                     const files = (await storage.listFiles(cfg.BUCKET_ID, { prefix: prefix })).files || [];
                     if (files.length === 0) { alert("No photos to download"); return; }
-                    btn.innerHTML = `<i data-lucide="loader"></i> Zipping ${files.length} photos...`;
+                    btn.innerHTML = `<i data-lucide="loader"></i> Preparing ${files.length} photos...`;
                     lucide.createIcons();
+                    
                     const zip = new JSZip();
                     const folder = zip.folder(`SnapNexus_${eventId}`);
-                    for (let i=0; i<files.length; i++) {
-                        const blob = await fetch(storage.getFileView(cfg.BUCKET_ID, files[i].$id)).then(r=>r.blob());
-                        folder.file(`photo_${i+1}.jpg`, blob);
+                    const batchSize = 10;
+                    let processed = 0;
+                    
+                    for (let i = 0; i < files.length; i += batchSize) {
+                        const batch = files.slice(i, i + batchSize);
+                        const batchPromises = batch.map(async (file) => {
+                            const blob = await fetch(storage.getFileView(cfg.BUCKET_ID, file.$id)).then(r => r.blob());
+                            const fileName = `photo_${file.$id}.jpg`;
+                            folder.file(fileName, blob);
+                        });
+                        await Promise.all(batchPromises);
+                        processed += batch.length;
+                        btn.innerHTML = `<i data-lucide="loader"></i> Zipping ${processed}/${files.length}...`;
+                        lucide.createIcons();
                     }
-                    const content = await zip.generateAsync({ type:"blob" });
+                    
+                    const content = await zip.generateAsync({ type: "blob" });
                     const link = document.createElement('a');
                     link.href = URL.createObjectURL(content);
                     link.download = `SnapNexus_${eventId}_Memories.zip`;
                     link.click();
+                    URL.revokeObjectURL(link.href);
                     btn.innerHTML = `<i data-lucide="check-circle"></i> Done!`;
                     setTimeout(() => { btn.innerHTML = original; lucide.createIcons(); }, 3000);
-                } catch(err) { alert("Download failed: "+err.message); btn.innerHTML = original; lucide.createIcons(); }
+                } catch(err) {
+                    alert("Download failed: "+err.message);
+                    btn.innerHTML = original;
+                    lucide.createIcons();
+                }
             }
             
             function attachEventListeners() {

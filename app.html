@@ -6,6 +6,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
     <title>SnapNexus | Guest Upload</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <meta property="og:image" content="https://snapnexus.in/SNAPN.png">
     <link rel="preload" as="image" href="/SNAPN.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,6 +15,7 @@
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
+        /* (same as previous app.html – unchanged) */
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family:'Urbanist',sans-serif; background:#020617; color:#fff; overflow-x:hidden; min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; }
         h1,h2,h3 { font-family:'Syne',sans-serif; }
@@ -83,8 +86,7 @@
             const statusMsg = document.getElementById('statusMsg');
             const originalBtnHTML = uploadBtn.innerHTML;
             
-            // Show loading state while checking status
-            function showLoading(message = 'Loading event...') {
+            function showLoading(message) {
                 let loader = document.getElementById('appLoader');
                 if (!loader) {
                     loader = document.createElement('div');
@@ -109,12 +111,9 @@
                         Appwrite.Query.equal('eventId', eventId)
                     ]);
                     if (res.documents.length === 0) {
-                        // Event not found – treat as active? We'll assume active but show warning.
-                        cfg.log('Event not found in DB, assuming active');
                         eventActive = true;
                     } else {
                         const eventDoc = res.documents[0];
-                        // Explicitly check for 'ended' string, otherwise treat as active
                         eventActive = eventDoc.status !== 'ended';
                     }
                     if (!eventActive) {
@@ -122,7 +121,7 @@
                     }
                 } catch(err) {
                     cfg.error('Status check failed:', err);
-                    eventActive = true; // fallback to active to avoid false ended
+                    eventActive = true;
                 } finally {
                     statusCheckDone = true;
                     hideLoading();
