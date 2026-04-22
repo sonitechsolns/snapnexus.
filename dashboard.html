@@ -60,6 +60,7 @@
         .vip-section { margin-top:30px; border:1px solid #fbbf24; border-radius:20px; padding:20px; background:rgba(251,191,36,0.05); }
         .vip-section h3 { color:#fbbf24; margin-bottom:16px; }
         .file-input-label { display:inline-block; background:#3b82f6; padding:8px 16px; border-radius:40px; cursor:pointer; margin-top:10px; }
+        .zip-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; z-index:2000; flex-direction:column; gap:16px; }
     </style>
 </head>
 <body>
@@ -77,539 +78,556 @@
         </div>
     </div>
     <div class="dashboard-container">
-        <div id="mainContent"></div>
+        <div id="mainContent">Loading dashboard...</div>
     </div>
 
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script>
-        (function() {
-            lucide.createIcons();
-            AOS.init();
-            
-            const cfg = window.SnapNexus;
-            if (!cfg) {
-                console.error('Config not loaded');
-                return;
+        // ==================== GLOBAL DECLARATIONS (ONCE) ====================
+        lucide.createIcons();
+        AOS.init();
+        
+        const cfg = window.SnapNexus;
+        if (!cfg) {
+            console.error('❌ Config not loaded');
+            document.getElementById('mainContent').innerHTML = '<div class="glass-card" style="text-align:center; color:#f87171;"><h2>Configuration Error</h2><p>config.js not found. Please ensure it exists in the root directory.</p></div>';
+            throw new Error('Missing config.js');
+        }
+        
+        const client = new Appwrite.Client()
+            .setEndpoint(cfg.ENDPOINT)
+            .setProject(cfg.PROJECT_ID);
+        const storage = new Appwrite.Storage(client);
+        const databases = new Appwrite.Databases(client);
+        const account = new Appwrite.Account(client);
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const eventId = urlParams.get('event');
+        let currentEvent = null;
+        let downloadWindowEnd = null;
+        let timerInterval = null;
+        
+        console.log('🔍 Dashboard started. eventId from URL:', eventId);
+        
+        // ==================== HELPER FUNCTIONS ====================
+        function showLoading(message) {
+            let loader = document.getElementById('dashboardLoader');
+            if (!loader) {
+                loader = document.createElement('div');
+                loader.id = 'dashboardLoader';
+                loader.className = 'loading-state';
+                loader.innerHTML = `<div class="spinner"></div><div>${message}</div>`;
+                document.body.appendChild(loader);
+            } else {
+                loader.querySelector('div:last-child').innerText = message;
+                loader.style.display = 'flex';
             }
-            
-            // ---------- SINGLE DECLARATIONS (NO REDECLARATION INSIDE FUNCTIONS) ----------
-            const client = new Appwrite.Client()
-                .setEndpoint(cfg.ENDPOINT)
-                .setProject(cfg.PROJECT_ID);
-            const storage = new Appwrite.Storage(client);
-            const databases = new Appwrite.Databases(client);
-            const account = new Appwrite.Account(client);   // declared once here
-            
-            const urlParams = new URLSearchParams(window.location.search);
-            const eventId = urlParams.get('event');
-            let currentEvent = null;
-            let downloadWindowEnd = null;
-            let timerInterval = null;
-            
-            // ---------- HELPER: SHOW/HIDE LOADING ----------
-            function showLoading(message) {
-                let loader = document.getElementById('dashboardLoader');
-                if (!loader) {
-                    loader = document.createElement('div');
-                    loader.id = 'dashboardLoader';
-                    loader.className = 'loading-state';
-                    loader.innerHTML = `<div class="spinner"></div><div>${message}</div>`;
-                    document.body.appendChild(loader);
-                } else {
-                    loader.querySelector('div:last-child').innerText = message;
-                    loader.style.display = 'flex';
-                }
+        }
+        function hideLoading() {
+            const loader = document.getElementById('dashboardLoader');
+            if (loader) loader.style.display = 'none';
+        }
+        
+        async function checkAuth() {
+            try {
+                const user = await account.get();
+                console.log('✅ Authenticated:', user.email);
+                return true;
+            } catch(err) {
+                console.warn('❌ Auth failed, redirecting to login');
+                window.location.href = cfg.resolveUrl('login.html');
+                return false;
             }
-            function hideLoading() {
-                const loader = document.getElementById('dashboardLoader');
-                if (loader) loader.style.display = 'none';
+        }
+        
+        // ==================== EVENT STATUS (FIXED: default active) ====================
+        async function checkEventStatus() {
+            if (!eventId) {
+                console.log('No eventId, will show event list');
+                return null;
             }
-            
-            // ---------- AUTH CHECK ----------
-            async function checkAuth() {
-                try {
-                    await account.get();
-                    return true;
-                } catch(err) {
-                    window.location.href = cfg.resolveUrl('login.html');
-                    return false;
-                }
-            }
-            
-            // ---------- EVENT LIST (MY EVENTS) ----------
-            async function showEventList() {
-                try {
-                    const user = await account.get();
-                    const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [
-                        Appwrite.Query.equal('hostEmail', user.email)
-                    ]);
-                    const events = res.documents;
-                    if (events.length === 0) {
-                        document.getElementById('mainContent').innerHTML = `
-                            <div class="glass-card" style="text-align:center;">
-                                <i data-lucide="calendar" style="width:48px;height:48px;margin-bottom:16px;"></i>
-                                <h2>No events yet</h2>
-                                <p>Click "Create New Event" to get started.</p>
-                            </div>`;
-                        lucide.createIcons();
-                        return;
-                    }
-                    let html = `<h2 style="margin-bottom:24px;">My Events</h2><div class="event-list">`;
-                    for (const ev of events) {
-                        const statusClass = ev.status === 'active' ? 'status-active' : 'status-ended';
-                        const statusText = ev.status === 'active' ? 'Active' : 'Ended';
-                        html += `
-                            <div class="event-card" data-event-id="${ev.eventId}">
-                                <h3>${ev.eventName}</h3>
-                                <p style="color:#94a3b8; font-size:0.8rem;">ID: ${ev.eventId}</p>
-                                <span class="event-status ${statusClass}">${statusText}</span>
-                                <div style="margin-top:16px;">
-                                    <button class="btn-physics manage-event" data-event-id="${ev.eventId}" style="padding:8px 16px; font-size:0.8rem;">Manage Event</button>
-                                </div>
-                            </div>
-                        `;
-                    }
-                    html += `</div>`;
-                    document.getElementById('mainContent').innerHTML = html;
-                    lucide.createIcons();
-                    document.querySelectorAll('.manage-event').forEach(btn => {
-                        btn.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            const id = btn.getAttribute('data-event-id');
-                            window.location.href = cfg.resolveUrl(`dashboard.html?event=${id}`);
-                        });
-                    });
-                    document.querySelectorAll('.event-card').forEach(card => {
-                        card.addEventListener('click', (e) => {
-                            if (e.target.classList.contains('manage-event')) return;
-                            const id = card.getAttribute('data-event-id');
-                            window.location.href = cfg.resolveUrl(`dashboard.html?event=${id}`);
-                        });
-                    });
-                } catch(err) { console.error(err); }
-            }
-            
-            // ---------- CHECK EVENT STATUS (FIXED: default to active) ----------
-            async function checkEventStatus() {
-                // Default to active unless proven otherwise
-                let active = true;
-                try {
-                    const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [
-                        Appwrite.Query.equal('eventId', eventId)
-                    ]);
-                    if (res.documents.length === 0) {
-                        // Event not found – show error but do NOT mark as ended
-                        console.error('❌ Event not found:', eventId);
-                        document.getElementById('mainContent').innerHTML = `
-                            <div class="glass-card" style="text-align:center; color:#f87171;">
-                                <i data-lucide="alert-triangle" style="width:48px;height:48px;"></i>
-                                <h2>Event not found</h2>
-                                <p>The event ID "${eventId}" does not exist. Please check your link.</p>
-                                <button id="backToEvents" class="btn-physics">Back to My Events</button>
-                            </div>`;
-                        lucide.createIcons();
-                        document.getElementById('backToEvents')?.addEventListener('click', () => window.location.href = cfg.resolveUrl('dashboard.html'));
-                        return false;
-                    }
-                    const eventDoc = res.documents[0];
-                    console.log('✅ DB Status:', eventDoc.status);
-                    // ONLY mark ended if status is exactly 'ended'
-                    active = (eventDoc.status !== 'ended');
-                    currentEvent = eventDoc;
-                    return active;
-                } catch(err) {
-                    console.error('Status check error:', err);
-                    return true; // on network error, assume active
-                }
-            }
-            
-            // ---------- TIMER HELPERS (only used if event is ended and timer exists) ----------
-            function initTimerIfNeeded() {
-                const storedEnd = localStorage.getItem(`timer_${eventId}`);
-                if (!storedEnd) return false;
-                const endTime = parseInt(storedEnd);
-                if (isNaN(endTime)) {
-                    localStorage.removeItem(`timer_${eventId}`);
-                    return false;
-                }
-                if (Date.now() < endTime) {
-                    downloadWindowEnd = endTime;
-                    startTimerDisplay();
-                    return true;
-                } else {
-                    localStorage.removeItem(`timer_${eventId}`);
-                    return false;
-                }
-            }
-            
-            function startTimerDisplay() {
-                if (timerInterval) clearInterval(timerInterval);
-                timerInterval = setInterval(() => {
-                    if (!downloadWindowEnd || Date.now() >= downloadWindowEnd) {
-                        clearInterval(timerInterval);
-                        const banner = document.querySelector('.timer-banner');
-                        if (banner) {
-                            banner.innerHTML = `<span>⏰ Free download window expired. Photos archived.</span><button id="unlockArchiveBtn" class="btn-physics" style="background:linear-gradient(105deg,#fbbf24,#f59e0b); color:#020617; margin-left:12px;">Unlock Archive (₹499)</button>`;
-                            const unlockBtn = document.getElementById('unlockArchiveBtn');
-                            if (unlockBtn) {
-                                unlockBtn.removeEventListener('click', openRazorpayForArchive);
-                                unlockBtn.addEventListener('click', openRazorpayForArchive);
-                            }
-                            document.getElementById('downloadZipBtn').disabled = true;
-                        }
-                        localStorage.removeItem(`timer_${eventId}`);
-                    } else {
-                        const minutesLeft = Math.ceil((downloadWindowEnd - Date.now()) / 60000);
-                        const banner = document.querySelector('.timer-banner');
-                        if (banner) banner.innerHTML = `<span>⏰ Free download window: ${minutesLeft} minute${minutesLeft !== 1 ? 's' : ''} remaining. Download all photos now!</span>`;
-                    }
-                }, 60000);
-            }
-            
-            // ---------- RAZORPAY (FIXED KEY + MODAL.ONDISMISS) ----------
-            async function openRazorpayForArchive() {
-                const user = await account.get().catch(() => null);
-                const options = {
-                    key: 'rzp_test_Sf5GBrljv03Pmk',   // <-- FIXED TEST KEY
-                    amount: 49900,
-                    currency: 'INR',
-                    name: 'SnapNexus',
-                    description: 'Unlock Event Archive – Download all photos',
-                    image: '/SNAPN.png',
-                    handler: async function(response) {
-                        console.log('Razorpay success:', response);
-                        try {
-                            await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, {
-                                status: 'active'
-                            });
-                            localStorage.removeItem(`timer_${eventId}`);
-                            alert('Payment successful! Your archive is now unlocked. You can download photos now.');
-                            location.reload();
-                        } catch(err) {
-                            alert('Payment recorded but failed to update event. Please contact support.');
-                            console.error(err);
-                        }
-                    },
-                    modal: {
-                        ondismiss: function() {
-                            console.log('Payment popup closed by user');
-                        }
-                    },
-                    prefill: {
-                        email: user ? user.email : 'guest@snapnexus.in'
-                    },
-                    theme: {
-                        color: '#fbbf24'
-                    }
-                };
-                const rzp = new Razorpay(options);
-                rzp.open();
-            }
-            
-            // ---------- MAIN DASHBOARD RENDER ----------
-            async function loadEventDashboard() {
-                if (!eventId) { showEventList(); return; }
-                showLoading('Loading event details...');
-                try {
-                    const isActive = await checkEventStatus();
-                    if (isActive === false) return; // event not found error already shown
-                    if (!currentEvent) throw new Error('Event not loaded');
-                    await renderEventDashboard();
-                } catch(err) {
-                    console.error(err);
-                    document.getElementById('mainContent').innerHTML = `<div class="glass-card" style="text-align:center;"><h2>Error loading event</h2><button id="backToEvents" class="btn-physics">Back to My Events</button></div>`;
+            try {
+                const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [
+                    Appwrite.Query.equal('eventId', eventId)
+                ]);
+                if (res.documents.length === 0) {
+                    console.error('❌ Event not found:', eventId);
+                    document.getElementById('mainContent').innerHTML = `
+                        <div class="glass-card" style="text-align:center; color:#f87171;">
+                            <i data-lucide="alert-triangle" style="width:48px;height:48px;"></i>
+                            <h2>Event not found</h2>
+                            <p>The event ID "${eventId}" does not exist. Please check your link.</p>
+                            <button id="backToEvents" class="btn-physics">Back to My Events</button>
+                        </div>`;
                     lucide.createIcons();
                     document.getElementById('backToEvents')?.addEventListener('click', () => window.location.href = cfg.resolveUrl('dashboard.html'));
-                } finally {
-                    hideLoading();
+                    return false;
                 }
+                const eventDoc = res.documents[0];
+                console.log('✅ DB Status:', eventDoc.status, 'Event name:', eventDoc.eventName);
+                currentEvent = eventDoc;
+                return eventDoc.status !== 'ended';
+            } catch(err) {
+                console.error('Status check error:', err);
+                return true; // On error, assume active to avoid false ended
             }
-            
-            async function renderEventDashboard() {
-                const isEnded = currentEvent.status === 'ended';
-                const isVip = currentEvent.tier === 'vip';
-                const tvPage = (isVip || currentEvent.tier === 'pro' || currentEvent.tier === 'premium') ? 'tv_2.html' : 'tv.html';
-                const liveWallLink = cfg.resolveUrl(`${tvPage}?event=${eventId}`);
-                
-                let timerHtml = '';
-                let downloadEnabled = false;
-                if (isEnded) {
-                    const timerExists = initTimerIfNeeded();
-                    if (timerExists) {
-                        downloadEnabled = true;
-                        timerHtml = `<div class="timer-banner">⏰ Free download window: <span id="timerMinutes"></span> remaining. Download all photos now!</div>`;
-                    } else {
-                        downloadEnabled = false;
-                        timerHtml = `<div class="timer-banner"><span>⏰ Free download window expired. Photos archived.</span><button id="unlockArchiveBtn" class="btn-physics" style="background:linear-gradient(105deg,#fbbf24,#f59e0b); color:#020617; margin-left:12px;">Unlock Archive (₹499)</button></div>`;
+        }
+        
+        // ==================== TIMER LOGIC (only if ended and localStorage timer exists) ====================
+        function initTimerIfNeeded() {
+            if (!currentEvent || currentEvent.status !== 'ended') return false;
+            const storedEnd = localStorage.getItem(`timer_${eventId}`);
+            if (!storedEnd) return false;
+            const endTime = parseInt(storedEnd);
+            if (isNaN(endTime) || Date.now() >= endTime) {
+                localStorage.removeItem(`timer_${eventId}`);
+                return false;
+            }
+            downloadWindowEnd = endTime;
+            startTimerDisplay();
+            return true;
+        }
+        
+        function startTimerDisplay() {
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (!downloadWindowEnd || Date.now() >= downloadWindowEnd) {
+                    clearInterval(timerInterval);
+                    const banner = document.querySelector('.timer-banner');
+                    if (banner) {
+                        banner.innerHTML = `<span>⏰ Free download window expired. Photos archived.</span><button id="unlockArchiveBtn" class="btn-physics" style="background:linear-gradient(105deg,#fbbf24,#f59e0b); color:#020617; margin-left:12px;">Unlock Archive (₹499)</button>`;
+                        const unlockBtn = document.getElementById('unlockArchiveBtn');
+                        if (unlockBtn) {
+                            unlockBtn.removeEventListener('click', openRazorpayForArchive);
+                            unlockBtn.addEventListener('click', openRazorpayForArchive);
+                        }
+                        const zipBtn = document.getElementById('downloadZipBtn');
+                        if (zipBtn) zipBtn.disabled = true;
                     }
+                    localStorage.removeItem(`timer_${eventId}`);
+                } else {
+                    const minutesLeft = Math.ceil((downloadWindowEnd - Date.now()) / 60000);
+                    const banner = document.querySelector('.timer-banner');
+                    if (banner) banner.innerHTML = `<span>⏰ Free download window: ${minutesLeft} minute${minutesLeft !== 1 ? 's' : ''} remaining. Download all photos now!</span>`;
                 }
-                
-                let vipHtml = '';
-                if (isVip && !isEnded) {
-                    vipHtml = `
-                        <div class="vip-section">
-                            <h3>👑 VIP Logo Forge</h3>
-                            <p>Upload your custom SVG watermark. It will be applied to all new guest uploads (only while event is active).</p>
-                            <label class="file-input-label">
-                                <i data-lucide="upload"></i> Upload SVG
-                                <input type="file" id="vipSvgInput" accept=".svg" style="display:none;">
-                            </label>
-                            <div id="vipWatermarkStatus" style="margin-top:12px; font-size:0.8rem;"></div>
-                            ${currentEvent.customWatermark ? `<div id="currentWatermarkPreview"><strong>Current watermark:</strong><br><img src="${currentEvent.customWatermark}" style="max-width:150px; margin-top:8px;"></div>` : ''}
+            }, 60000);
+        }
+        
+        // ==================== RAZORPAY ====================
+        async function openRazorpayForArchive() {
+            const user = await account.get().catch(() => null);
+            const options = {
+                key: 'rzp_test_Sf5GBrljv03Pmk',
+                amount: 49900,
+                currency: 'INR',
+                name: 'SnapNexus',
+                description: 'Unlock Event Archive – Download all photos',
+                image: '/SNAPN.png',
+                handler: async function(response) {
+                    console.log('Razorpay success:', response);
+                    try {
+                        await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, {
+                            tier: 'pro',
+                            status: 'active'
+                        });
+                        localStorage.removeItem(`timer_${eventId}`);
+                        alert('Payment successful! Your archive is now unlocked. You can download photos now.');
+                        location.reload();
+                    } catch(err) {
+                        alert('Payment recorded but failed to update event. Please contact support.');
+                        console.error(err);
+                    }
+                },
+                modal: {
+                    ondismiss: function() {
+                        console.log('Payment popup closed by user');
+                    }
+                },
+                prefill: {
+                    email: user ? user.email : 'guest@snapnexus.in'
+                },
+                theme: {
+                    color: '#fbbf24'
+                }
+            };
+            const rzp = new Razorpay(options);
+            rzp.open();
+        }
+        
+        // ==================== STATS & GALLERY (Appwrite v14 queries) ====================
+        async function updateStats() {
+            if (!eventId) return;
+            try {
+                const files = await storage.listFiles(cfg.BUCKET_ID, [
+                    Appwrite.Query.startsWith('name', eventId + '_'),
+                    Appwrite.Query.limit(100),
+                    Appwrite.Query.orderDesc('$createdAt')
+                ]);
+                const count = files.total || (files.files ? files.files.length : 0);
+                document.getElementById('photoCount').innerText = count;
+                let totalSize = 0;
+                if (files.files) {
+                    totalSize = files.files.reduce((s, f) => s + (f.sizeOriginal || 0), 0);
+                }
+                document.getElementById('storageUsed').innerText = (totalSize / (1024 * 1024)).toFixed(1) + ' MB';
+                console.log(`📸 Stats: ${count} photos, ${(totalSize/(1024*1024)).toFixed(1)} MB`);
+            } catch(err) { console.error('Stats error:', err); }
+        }
+        
+        async function loadGallery() {
+            if (!eventId) return;
+            try {
+                const result = await storage.listFiles(cfg.BUCKET_ID, [
+                    Appwrite.Query.startsWith('name', eventId + '_'),
+                    Appwrite.Query.limit(100),
+                    Appwrite.Query.orderDesc('$createdAt')
+                ]);
+                const files = result.files || [];
+                const container = document.getElementById('galleryContainer');
+                if (!container) return;
+                if (files.length === 0) {
+                    container.innerHTML = `<div class="empty-gallery"><i data-lucide="camera-off"></i><p>No photos uploaded yet.</p></div>`;
+                    lucide.createIcons();
+                    return;
+                }
+                let html = '';
+                for (const file of files) {
+                    const fileUrl = storage.getFileView(cfg.BUCKET_ID, file.$id);
+                    html += `
+                        <div class="photo-card" data-file-id="${file.$id}">
+                            <img src="${fileUrl}" alt="Guest photo">
+                            <div class="photo-overlay">
+                                <button class="remove-btn" data-file-id="${file.$id}">
+                                    <i data-lucide="trash-2" style="width:16px;"></i> Remove
+                                </button>
+                            </div>
                         </div>
                     `;
                 }
-                
-                document.getElementById('mainContent').innerHTML = `
-                    <div style="margin-bottom:20px;">
-                        <button id="backToEventsBtn" class="btn-physics btn-outline" style="background:rgba(255,255,255,0.1);"><i data-lucide="arrow-left"></i> Back to My Events</button>
-                        <a href="${liveWallLink}" target="_blank" id="viewWallBtn" class="btn-physics" style="margin-left:12px; background:linear-gradient(105deg,#10b981,#059669);"><i data-lucide="tv"></i> View Live Wall</a>
-                    </div>
-                    <h2 style="margin-bottom:32px;font-size:2.2rem;">${currentEvent.eventName} <span style="color:#60a5fa;">#LiveWall</span></h2>
-                    <div class="stats-grid">
-                        <div class="glass-card stat-card"><div class="stat-icon"><i data-lucide="image"></i></div><div><div class="stat-value" id="photoCount">0</div><div class="stat-label">Photos Uploaded</div></div></div>
-                        <div class="glass-card stat-card"><div class="stat-icon"><i data-lucide="users"></i></div><div><div class="stat-value" id="guestCount">0</div><div class="stat-label">Active Guests</div></div></div>
-                        <div class="glass-card stat-card"><div class="stat-icon"><i data-lucide="database"></i></div><div><div class="stat-value" id="storageUsed">0 MB</div><div class="stat-label">Storage Used</div></div></div>
-                    </div>
-                    ${timerHtml}
-                    ${vipHtml}
-                    <div class="glass-card">
-                        <div class="toolbar">
-                            <h3 style="font-size:1.5rem;">Event Controls</h3>
-                            <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                                <button class="btn-physics" id="printQrBtn"><i data-lucide="qr-code"></i> Print QR</button>
-                                <button class="btn-physics" id="viewGuestAppBtn"><i data-lucide="smartphone"></i> View Guest App</button>
-                                <button class="btn-physics" id="downloadZipBtn" ${!downloadEnabled && isEnded ? 'disabled' : ''}><i data-lucide="download"></i> ${downloadEnabled ? 'Download ZIP' : (isEnded ? 'Download ZIP (Unavailable)' : 'Download ZIP')}</button>
-                                ${!isEnded ? '<button class="btn-physics btn-danger" id="endEventBtn"><i data-lucide="power"></i> End Event</button>' : ''}
+                container.innerHTML = html;
+                lucide.createIcons();
+                document.querySelectorAll('.remove-btn').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        const fileId = btn.getAttribute('data-file-id');
+                        if (confirm('Delete this photo permanently?')) {
+                            await storage.deleteFile(cfg.BUCKET_ID, fileId);
+                            await loadGallery();
+                            await updateStats();
+                        }
+                    });
+                });
+            } catch(err) { console.error('Gallery error:', err); }
+        }
+        
+        // ==================== MEMORY-SAFE ZIP DOWNLOAD ====================
+        async function downloadAllPhotos() {
+            const btn = document.getElementById('downloadZipBtn');
+            if (!btn || btn.disabled) return;
+            // Show progress overlay
+            const overlay = document.createElement('div');
+            overlay.id = 'zipOverlay';
+            overlay.className = 'zip-overlay';
+            overlay.innerHTML = `<div class="spinner"></div><div id="zipProgress">Compiling Archive (0 photos)...</div><div style="font-size:0.8rem;">This may take a minute for large events</div>`;
+            document.body.appendChild(overlay);
+            const progressDiv = document.getElementById('zipProgress');
+            try {
+                const result = await storage.listFiles(cfg.BUCKET_ID, [
+                    Appwrite.Query.startsWith('name', eventId + '_'),
+                    Appwrite.Query.limit(1000)
+                ]);
+                const files = result.files || [];
+                if (files.length === 0) { alert("No photos to download"); overlay.remove(); return; }
+                const zip = new JSZip();
+                const folder = zip.folder(`SnapNexus_${eventId}`);
+                const batchSize = 10;
+                let processed = 0;
+                for (let i = 0; i < files.length; i += batchSize) {
+                    const batch = files.slice(i, i + batchSize);
+                    const batchPromises = batch.map(async (file) => {
+                        const blob = await fetch(storage.getFileView(cfg.BUCKET_ID, file.$id)).then(r => r.blob());
+                        const safeName = file.name.replace(/[^a-z0-9._-]/gi, '_');
+                        folder.file(safeName, blob);
+                    });
+                    await Promise.all(batchPromises);
+                    processed += batch.length;
+                    progressDiv.innerText = `Compiling Archive (${processed}/${files.length} photos)...`;
+                }
+                const content = await zip.generateAsync({ type: "blob" });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(content);
+                link.download = `SnapNexus_${eventId}_Memories.zip`;
+                link.click();
+                URL.revokeObjectURL(link.href);
+                overlay.remove();
+                alert('Download started! Check your browser\'s download folder.');
+            } catch(err) {
+                overlay.remove();
+                alert("Download failed: "+err.message);
+                console.error(err);
+            }
+        }
+        
+        // ==================== RENDER DASHBOARD ====================
+        async function showEventList() {
+            try {
+                const user = await account.get();
+                const events = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [
+                    Appwrite.Query.equal('hostEmail', user.email)
+                ]);
+                const docs = events.documents;
+                if (docs.length === 0) {
+                    document.getElementById('mainContent').innerHTML = `
+                        <div class="glass-card" style="text-align:center;">
+                            <i data-lucide="calendar" style="width:48px;height:48px;margin-bottom:16px;"></i>
+                            <h2>No events yet</h2>
+                            <p>Click "Create New Event" to get started.</p>
+                        </div>`;
+                    lucide.createIcons();
+                    return;
+                }
+                let html = `<h2 style="margin-bottom:24px;">My Events</h2><div class="event-list">`;
+                for (const ev of docs) {
+                    const statusClass = ev.status === 'active' ? 'status-active' : 'status-ended';
+                    const statusText = ev.status === 'active' ? 'Active' : 'Ended';
+                    html += `
+                        <div class="event-card" data-event-id="${ev.eventId}">
+                            <h3>${ev.eventName}</h3>
+                            <p style="color:#94a3b8; font-size:0.8rem;">ID: ${ev.eventId}</p>
+                            <span class="event-status ${statusClass}">${statusText}</span>
+                            <div style="margin-top:16px;">
+                                <button class="btn-physics manage-event" data-event-id="${ev.eventId}" style="padding:8px 16px; font-size:0.8rem;">Manage Event</button>
                             </div>
                         </div>
-                        <div id="galleryContainer" class="gallery-grid"><div class="empty-gallery"><i data-lucide="camera-off"></i><p>No photos uploaded yet.</p></div></div>
+                    `;
+                }
+                html += `</div>`;
+                document.getElementById('mainContent').innerHTML = html;
+                lucide.createIcons();
+                document.querySelectorAll('.manage-event').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const id = btn.getAttribute('data-event-id');
+                        window.location.href = cfg.resolveUrl(`dashboard.html?event=${id}`);
+                    });
+                });
+                document.querySelectorAll('.event-card').forEach(card => {
+                    card.addEventListener('click', (e) => {
+                        if (e.target.classList.contains('manage-event')) return;
+                        const id = card.getAttribute('data-event-id');
+                        window.location.href = cfg.resolveUrl(`dashboard.html?event=${id}`);
+                    });
+                });
+            } catch(err) { console.error(err); }
+        }
+        
+        async function loadEventDashboard() {
+            if (!eventId) {
+                console.log('No eventId, showing event list');
+                await showEventList();
+                return;
+            }
+            showLoading('Loading event details...');
+            try {
+                const isActive = await checkEventStatus();
+                if (isActive === false) {
+                    console.log('Event not found or error, aborting');
+                    hideLoading();
+                    return;
+                }
+                if (!currentEvent) throw new Error('Event not loaded');
+                await renderEventDashboard();
+            } catch(err) {
+                console.error('Error loading event dashboard:', err);
+                document.getElementById('mainContent').innerHTML = `<div class="glass-card" style="text-align:center;"><h2>Error loading event</h2><button id="backToEvents" class="btn-physics">Back to My Events</button></div>`;
+                lucide.createIcons();
+                document.getElementById('backToEvents')?.addEventListener('click', () => window.location.href = cfg.resolveUrl('dashboard.html'));
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        async function renderEventDashboard() {
+            console.log('Rendering dashboard for event:', currentEvent.eventName);
+            const isEnded = currentEvent.status === 'ended';
+            const isVip = currentEvent.tier === 'vip';
+            const tvPage = (isVip || currentEvent.tier === 'pro' || currentEvent.tier === 'premium') ? 'tv_2.html' : 'tv.html';
+            const liveWallLink = cfg.resolveUrl(`${tvPage}?event=${eventId}`);
+            
+            let timerHtml = '';
+            let downloadEnabled = false;
+            if (isEnded) {
+                const timerExists = initTimerIfNeeded();
+                if (timerExists) {
+                    downloadEnabled = true;
+                    timerHtml = `<div class="timer-banner">⏰ Free download window: <span id="timerMinutes"></span> remaining. Download all photos now!</div>`;
+                } else {
+                    downloadEnabled = false;
+                    timerHtml = `<div class="timer-banner"><span>⏰ Free download window expired. Photos archived.</span><button id="unlockArchiveBtn" class="btn-physics" style="background:linear-gradient(105deg,#fbbf24,#f59e0b); color:#020617; margin-left:12px;">Unlock Archive (₹499)</button></div>`;
+                }
+            }
+            
+            let vipHtml = '';
+            if (isVip && !isEnded) {
+                vipHtml = `
+                    <div class="vip-section">
+                        <h3>👑 VIP Logo Forge</h3>
+                        <p>Upload your custom SVG watermark. It will be applied to all new guest uploads (only while event is active).</p>
+                        <label class="file-input-label">
+                            <i data-lucide="upload"></i> Upload SVG
+                            <input type="file" id="vipSvgInput" accept=".svg" style="display:none;">
+                        </label>
+                        <div id="vipWatermarkStatus" style="margin-top:12px; font-size:0.8rem;"></div>
+                        ${currentEvent.customWatermark ? `<div id="currentWatermarkPreview"><strong>Current watermark:</strong><br><img src="${currentEvent.customWatermark}" style="max-width:150px; margin-top:8px;"></div>` : ''}
                     </div>
                 `;
-                lucide.createIcons();
-                document.getElementById('backToEventsBtn')?.addEventListener('click', () => window.location.href = cfg.resolveUrl('dashboard.html'));
-                
-                // VIP SVG upload
-                if (isVip && !isEnded) {
-                    const svgInput = document.getElementById('vipSvgInput');
-                    const fileLabel = document.querySelector('.file-input-label');
-                    if (fileLabel) {
-                        fileLabel.addEventListener('click', () => svgInput.click());
-                    }
-                    svgInput.addEventListener('change', async (e) => {
-                        const file = e.target.files[0];
-                        if (!file) return;
-                        if (file.type !== 'image/svg+xml') {
-                            alert('Only SVG files are allowed.');
-                            return;
-                        }
-                        const statusDiv = document.getElementById('vipWatermarkStatus');
-                        statusDiv.innerHTML = '<span class="spinner"></span> Uploading...';
-                        try {
-                            const fileId = `watermark_${eventId}_${Date.now()}.svg`;
-                            await storage.createFile(cfg.BUCKET_ID, fileId, file);
-                            const fileUrl = storage.getFileView(cfg.BUCKET_ID, fileId);
-                            await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, {
-                                customWatermark: fileUrl
-                            });
-                            statusDiv.innerHTML = '✅ Watermark uploaded successfully!';
-                            setTimeout(() => location.reload(), 1500);
-                        } catch(err) {
-                            statusDiv.innerHTML = '❌ Upload failed: ' + err.message;
-                        }
-                    });
-                }
-                
-                // Unlock archive button (if expired)
-                const unlockBtn = document.getElementById('unlockArchiveBtn');
-                if (unlockBtn) {
-                    unlockBtn.removeEventListener('click', openRazorpayForArchive);
-                    unlockBtn.addEventListener('click', openRazorpayForArchive);
-                }
-                
-                // Download button
-                if (downloadEnabled && document.getElementById('downloadZipBtn')) {
-                    document.getElementById('downloadZipBtn').disabled = false;
-                    document.getElementById('downloadZipBtn').addEventListener('click', downloadAllPhotos);
-                } else if (document.getElementById('downloadZipBtn') && !isEnded) {
-                    document.getElementById('downloadZipBtn').disabled = false;
-                    document.getElementById('downloadZipBtn').addEventListener('click', downloadAllPhotos);
-                } else if (document.getElementById('downloadZipBtn') && isEnded && !downloadEnabled) {
-                    document.getElementById('downloadZipBtn').disabled = true;
-                }
-                
-                if (!isEnded) {
-                    updateStats();
-                    loadGallery();
-                    setInterval(updateStats, 10000);
-                    setInterval(loadGallery, 10000);
-                    attachEventListeners();
-                } else if (downloadEnabled) {
-                    updateStats();
-                    loadGallery();
-                    setInterval(updateStats, 10000);
-                    setInterval(loadGallery, 10000);
-                    attachEventListeners();
-                }
             }
             
-            // ---------- STATS & GALLERY (with eventId prefix isolation) ----------
-            async function updateStats() {
-                try {
-                    const prefix = eventId + '_';
-                    const files = (await storage.listFiles(cfg.BUCKET_ID, { prefix: prefix })).files || [];
-                    document.getElementById('photoCount').innerText = files.length;
-                    const totalSize = files.reduce((s,f)=> s + (f.sizeOriginal||0),0);
-                    document.getElementById('storageUsed').innerText = (totalSize/(1024*1024)).toFixed(1)+' MB';
-                } catch(err) { console.error(err); }
-            }
+            document.getElementById('mainContent').innerHTML = `
+                <div style="margin-bottom:20px;">
+                    <button id="backToEventsBtn" class="btn-physics btn-outline" style="background:rgba(255,255,255,0.1);"><i data-lucide="arrow-left"></i> Back to My Events</button>
+                    <a href="${liveWallLink}" target="_blank" id="viewWallBtn" class="btn-physics" style="margin-left:12px; background:linear-gradient(105deg,#10b981,#059669);"><i data-lucide="tv"></i> View Live Wall</a>
+                </div>
+                <h2 style="margin-bottom:32px;font-size:2.2rem;">${currentEvent.eventName} <span style="color:#60a5fa;">#LiveWall</span></h2>
+                <div class="stats-grid">
+                    <div class="glass-card stat-card"><div class="stat-icon"><i data-lucide="image"></i></div><div><div class="stat-value" id="photoCount">0</div><div class="stat-label">Photos Uploaded</div></div></div>
+                    <div class="glass-card stat-card"><div class="stat-icon"><i data-lucide="users"></i></div><div><div class="stat-value" id="guestCount">0</div><div class="stat-label">Active Guests</div></div></div>
+                    <div class="glass-card stat-card"><div class="stat-icon"><i data-lucide="database"></i></div><div><div class="stat-value" id="storageUsed">0 MB</div><div class="stat-label">Storage Used</div></div></div>
+                </div>
+                ${timerHtml}
+                ${vipHtml}
+                <div class="glass-card">
+                    <div class="toolbar">
+                        <h3 style="font-size:1.5rem;">Event Controls</h3>
+                        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                            <button class="btn-physics" id="printQrBtn"><i data-lucide="qr-code"></i> Print QR</button>
+                            <button class="btn-physics" id="viewGuestAppBtn"><i data-lucide="smartphone"></i> View Guest App</button>
+                            <button class="btn-physics" id="downloadZipBtn" ${!downloadEnabled && isEnded ? 'disabled' : ''}><i data-lucide="download"></i> ${downloadEnabled ? 'Download ZIP' : (isEnded ? 'Download ZIP (Unavailable)' : 'Download ZIP')}</button>
+                            ${!isEnded ? '<button class="btn-physics btn-danger" id="endEventBtn"><i data-lucide="power"></i> End Event</button>' : ''}
+                        </div>
+                    </div>
+                    <div id="galleryContainer" class="gallery-grid"><div class="empty-gallery"><i data-lucide="camera-off"></i><p>No photos uploaded yet.</p></div></div>
+                </div>
+            `;
+            lucide.createIcons();
             
-            async function loadGallery() {
-                try {
-                    const prefix = eventId + '_';
-                    const files = (await storage.listFiles(cfg.BUCKET_ID, { prefix: prefix })).files || [];
-                    const container = document.getElementById('galleryContainer');
-                    if (!container) return;
-                    if (files.length === 0) {
-                        container.innerHTML = `<div class="empty-gallery"><i data-lucide="camera-off"></i><p>No photos uploaded yet.</p></div>`;
-                        lucide.createIcons();
+            document.getElementById('backToEventsBtn')?.addEventListener('click', () => window.location.href = cfg.resolveUrl('dashboard.html'));
+            
+            // VIP SVG upload
+            if (isVip && !isEnded) {
+                const svgInput = document.getElementById('vipSvgInput');
+                const fileLabel = document.querySelector('.file-input-label');
+                if (fileLabel) {
+                    fileLabel.addEventListener('click', () => svgInput.click());
+                }
+                svgInput.addEventListener('change', async (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    if (file.type !== 'image/svg+xml') {
+                        alert('Only SVG files are allowed.');
                         return;
                     }
-                    let html = '';
-                    for (const file of files) {
-                        const fileUrl = storage.getFileView(cfg.BUCKET_ID, file.$id);
-                        html += `
-                            <div class="photo-card" data-file-id="${file.$id}">
-                                <img src="${fileUrl}" alt="Guest photo">
-                                <div class="photo-overlay">
-                                    <button class="remove-btn" data-file-id="${file.$id}">
-                                        <i data-lucide="trash-2" style="width:16px;"></i> Remove
-                                    </button>
-                                </div>
-                            </div>
-                        `;
-                    }
-                    container.innerHTML = html; lucide.createIcons();
-                    document.querySelectorAll('.remove-btn').forEach(btn => {
-                        btn.addEventListener('click', async (e) => {
-                            e.stopPropagation();
-                            const fileId = btn.getAttribute('data-file-id');
-                            if (confirm('Delete this photo permanently?')) {
-                                await storage.deleteFile(cfg.BUCKET_ID, fileId);
-                                await loadGallery();
-                                await updateStats();
-                            }
-                        });
-                    });
-                } catch(err) { console.error(err); }
-            }
-            
-            // ---------- MEMORY-SAFE ZIP DOWNLOAD (BATCHES OF 10) ----------
-            async function downloadAllPhotos() {
-                const btn = document.getElementById('downloadZipBtn');
-                if (!btn || btn.disabled) return;
-                const original = btn.innerHTML;
-                try {
-                    const prefix = eventId + '_';
-                    const files = (await storage.listFiles(cfg.BUCKET_ID, { prefix: prefix })).files || [];
-                    if (files.length === 0) { alert("No photos to download"); return; }
-                    btn.innerHTML = `<i data-lucide="loader"></i> Preparing ${files.length} photos...`;
-                    lucide.createIcons();
-                    
-                    const zip = new JSZip();
-                    const folder = zip.folder(`SnapNexus_${eventId}`);
-                    const batchSize = 10;
-                    let processed = 0;
-                    
-                    for (let i = 0; i < files.length; i += batchSize) {
-                        const batch = files.slice(i, i + batchSize);
-                        const batchPromises = batch.map(async (file) => {
-                            const blob = await fetch(storage.getFileView(cfg.BUCKET_ID, file.$id)).then(r => r.blob());
-                            const fileName = `photo_${file.$id}.jpg`;
-                            folder.file(fileName, blob);
-                        });
-                        await Promise.all(batchPromises);
-                        processed += batch.length;
-                        btn.innerHTML = `<i data-lucide="loader"></i> Zipping ${processed}/${files.length}...`;
-                        lucide.createIcons();
-                    }
-                    
-                    const content = await zip.generateAsync({ type: "blob" });
-                    const link = document.createElement('a');
-                    link.href = URL.createObjectURL(content);
-                    link.download = `SnapNexus_${eventId}_Memories.zip`;
-                    link.click();
-                    URL.revokeObjectURL(link.href);
-                    btn.innerHTML = `<i data-lucide="check-circle"></i> Done!`;
-                    setTimeout(() => { btn.innerHTML = original; lucide.createIcons(); }, 3000);
-                } catch(err) {
-                    alert("Download failed: "+err.message);
-                    btn.innerHTML = original;
-                    lucide.createIcons();
-                }
-            }
-            
-            // ---------- EVENT LISTENERS ----------
-            function attachEventListeners() {
-                document.getElementById('printQrBtn')?.addEventListener('click', () => {
-                    const guestUrl = cfg.resolveUrl(`app.html?event=${encodeURIComponent(eventId)}`);
-                    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(guestUrl)}`;
-                    const win = window.open("", "_blank");
-                    win.document.write(`
-                        <body style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;">
-                            <h1>Scan to Join: ${currentEvent?.eventName || eventId}</h1>
-                            <img src="${qrUrl}" style="width:300px;height:300px;">
-                            <p>Point your camera here to upload photos!</p>
-                            <button onclick="window.print()">Print Poster</button>
-                        </body>
-                    `);
-                });
-                document.getElementById('viewGuestAppBtn')?.addEventListener('click', () => window.open(cfg.resolveUrl(`app.html?event=${eventId}`), '_blank'));
-                document.getElementById('endEventBtn')?.addEventListener('click', async () => {
-                    if (!currentEvent || currentEvent.status === 'ended') return;
-                    if (!confirm('End this event? Guests cannot upload more. You will have 10 minutes to download all photos for free.')) return;
+                    const statusDiv = document.getElementById('vipWatermarkStatus');
+                    statusDiv.innerHTML = '<span class="spinner"></span> Uploading...';
                     try {
-                        await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { status: 'ended' });
-                        const endTime = Date.now() + 10 * 60 * 1000;
-                        localStorage.setItem(`timer_${eventId}`, endTime.toString());
-                        alert('Event ended. Free download window starts now (10 minutes).');
-                        location.reload();
-                    } catch(err) { alert('Failed: '+err.message); }
+                        const fileId = Appwrite.ID.unique();
+                        await storage.createFile(cfg.BUCKET_ID, fileId, file);
+                        const fileUrl = storage.getFileView(cfg.BUCKET_ID, fileId);
+                        await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, {
+                            customWatermark: fileUrl
+                        });
+                        statusDiv.innerHTML = '✅ Watermark uploaded successfully!';
+                        setTimeout(() => location.reload(), 1500);
+                    } catch(err) {
+                        statusDiv.innerHTML = '❌ Upload failed: ' + err.message;
+                    }
                 });
             }
             
-            // ---------- CREATE NEW EVENT ----------
-            document.getElementById('createNewEventBtn')?.addEventListener('click', async () => {
-                const eventName = prompt('Enter event name:');
-                if (!eventName) return;
-                const user = await account.get();
-                const newEventId = Appwrite.ID.unique();
-                try {
-                    await databases.createDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, newEventId, {
-                        eventName: eventName,
-                        eventId: newEventId,
-                        tier: 'starter',
-                        hostEmail: user.email,
-                        status: 'active'
-                    });
-                    alert('Event created!');
-                    window.location.href = cfg.resolveUrl(`dashboard.html?event=${newEventId}`);
-                } catch(err) { alert('Error: ' + err.message); }
-            });
-            
-            document.getElementById('logoutBtn')?.addEventListener('click', async () => {
-                await account.deleteSession('current');
-                window.location.href = cfg.resolveUrl('login.html');
-            });
-            
-            // ---------- INIT ----------
-            async function init() {
-                const authed = await checkAuth();
-                if (!authed) return;
-                await loadEventDashboard();
+            const unlockBtn = document.getElementById('unlockArchiveBtn');
+            if (unlockBtn) {
+                unlockBtn.removeEventListener('click', openRazorpayForArchive);
+                unlockBtn.addEventListener('click', openRazorpayForArchive);
             }
-            init();
-        })();
+            
+            const downloadBtn = document.getElementById('downloadZipBtn');
+            if (downloadBtn && !downloadBtn.disabled) {
+                downloadBtn.removeEventListener('click', downloadAllPhotos);
+                downloadBtn.addEventListener('click', downloadAllPhotos);
+            }
+            
+            if (!isEnded || (isEnded && downloadEnabled)) {
+                await updateStats();
+                await loadGallery();
+                setInterval(updateStats, 10000);
+                setInterval(loadGallery, 10000);
+                attachEventListeners();
+            }
+        }
+        
+        function attachEventListeners() {
+            document.getElementById('printQrBtn')?.addEventListener('click', () => {
+                const guestUrl = cfg.resolveUrl(`app.html?event=${encodeURIComponent(eventId)}`);
+                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(guestUrl)}`;
+                const win = window.open("", "_blank");
+                win.document.write(`
+                    <body style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;">
+                        <h1>Scan to Join: ${currentEvent?.eventName || eventId}</h1>
+                        <img src="${qrUrl}" style="width:300px;height:300px;">
+                        <p>Point your camera here to upload photos!</p>
+                        <button onclick="window.print()">Print Poster</button>
+                    </body>
+                `);
+            });
+            document.getElementById('viewGuestAppBtn')?.addEventListener('click', () => window.open(cfg.resolveUrl(`app.html?event=${eventId}`), '_blank'));
+            document.getElementById('endEventBtn')?.addEventListener('click', async () => {
+                if (!currentEvent || currentEvent.status === 'ended') return;
+                if (!confirm('End this event? Guests cannot upload more. You will have 10 minutes to download all photos for free.')) return;
+                try {
+                    await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { status: 'ended' });
+                    const endTime = Date.now() + 10 * 60 * 1000;
+                    localStorage.setItem(`timer_${eventId}`, endTime.toString());
+                    alert('Event ended. Free download window starts now (10 minutes).');
+                    location.reload();
+                } catch(err) { alert('Failed: '+err.message); }
+            });
+        }
+        
+        document.getElementById('createNewEventBtn')?.addEventListener('click', async () => {
+            const eventName = prompt('Enter event name:');
+            if (!eventName) return;
+            const user = await account.get();
+            const newEventId = Appwrite.ID.unique();
+            console.log('Creating event with ID:', newEventId);
+            try {
+                await databases.createDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, newEventId, {
+                    eventName: eventName,
+                    eventId: newEventId,
+                    tier: 'starter',
+                    hostEmail: user.email,
+                    status: 'active'
+                });
+                console.log('Event created, redirecting to dashboard?event=', newEventId);
+                alert('Event created!');
+                window.location.href = cfg.resolveUrl(`dashboard.html?event=${newEventId}`);
+            } catch(err) { 
+                console.error('Creation error:', err);
+                alert('Error: ' + err.message); 
+            }
+        });
+        
+        document.getElementById('logoutBtn')?.addEventListener('click', async () => {
+            await account.deleteSession('current');
+            window.location.href = cfg.resolveUrl('login.html');
+        });
+        
+        // ==================== INIT ====================
+        async function init() {
+            const authed = await checkAuth();
+            if (!authed) return;
+            await loadEventDashboard();
+        }
+        init();
     </script>
 </body>
 </html>
