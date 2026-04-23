@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>SnapNexus — Live Interactive Photo Wall</title>
     <meta name="description" content="Guests scan, snap, and see photos on the big screen instantly. Premium plans for weddings & events.">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <meta property="og:image" content="https://snapnexus.in/SNAPN.png">
+    <link rel="preload" as="image" href="/SNAPN.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Urbanist:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,600&display=swap" rel="stylesheet">
@@ -96,93 +99,35 @@
 
     <header class="sticky-header" id="stickyHeader">
         <div class="header-container">
-            <div class="logo">
-                <img src="SNAPN.png" alt="SnapNexus Logo" class="logo-img" onerror="this.style.display='none'">
-                <span class="logo-text">SnapNexus</span>
-            </div>
-            <nav class="nav-links">
-                <a href="#features">Features</a>
-                <a href="#pricing">Pricing</a>
-                <a href="login.html">Host Login</a>
-                <a href="dashboard.html" class="btn-physics btn-outline" style="padding: 8px 20px;">Dashboard</a>
-            </nav>
+            <div class="logo"><img src="SNAPN.png" alt="SnapNexus Logo" class="logo-img" onerror="this.style.display='none'"><span class="logo-text">SnapNexus</span></div>
+            <nav class="nav-links"><a href="#features">Features</a><a href="#pricing">Pricing</a><a href="login.html">Host Login</a><a href="dashboard.html" class="btn-physics btn-outline" style="padding: 8px 20px;">Dashboard</a></nav>
         </div>
     </header>
 
     <main class="container">
         <section class="hero" data-aos="fade-up" data-aos-duration="1200">
-            <div class="hero-badge"><i data-lucide="sparkles"></i> Premium Live Experience</div>
+            <div class="hero-badge"><i data-lucide="sparkles" style="width:16px; height:16px;"></i> Premium Live Experience</div>
             <h1>Live photo wall.<br>Zero app required.</h1>
             <p class="hero-sub">Guests scan, snap, and appear instantly on the big screen. The ultimate interactive gallery for weddings, parties, and corporate events.</p>
             <div class="hero-cta">
-                <a href="login.html" class="btn-physics">Start Free Trial <i data-lucide="arrow-right"></i></a>
+                <!-- [MEGA PATCH] Added demo button -->
+                <a href="app.html?event=demo_live_room" class="btn-physics btn-gold">✨ Try Live Demo Now</a>
+                <a href="login.html" class="btn-physics">Start Free Trial <i data-lucide="arrow-right" style="width:18px;"></i></a>
                 <a href="#pricing" class="btn-physics btn-outline">View Premium Plans</a>
             </div>
         </section>
 
         <div id="features" data-aos="fade-up"><h2 class="section-title">How the <span style="color:#60a5fa;">Magic</span> Happens</h2></div>
-        <div class="steps-grid">
-            <div class="glass-card step-card" data-aos="zoom-in-up" data-aos-delay="100">
-                <div class="step-icon-wrapper"><i data-lucide="qr-code" style="width:36px; height:36px;"></i></div>
-                <h3>1. Scan QR</h3>
-                <p>Display your QR. Guests scan with their native camera to instantly open the upload portal.</p>
-            </div>
-            <div class="glass-card step-card" data-aos="zoom-in-up" data-aos-delay="200">
-                <div class="step-icon-wrapper"><i data-lucide="upload-cloud" style="width:36px; height:36px;"></i></div>
-                <h3>2. Upload Photo</h3>
-                <p>Guests snap a fresh photo or choose from their gallery. No app downloads, no account creation.</p>
-            </div>
-            <div class="glass-card step-card" data-aos="zoom-in-up" data-aos-delay="300">
-                <div class="step-icon-wrapper"><i data-lucide="monitor-play" style="width:36px; height:36px;"></i></div>
-                <h3>3. Instant Display</h3>
-                <p>Photos instantly sync to the big screen via the cloud, creating a dynamic, shared visual experience.</p>
-            </div>
-        </div>
+        <div class="steps-grid"><div class="glass-card step-card" data-aos="zoom-in-up" data-aos-delay="100"><div class="step-icon-wrapper"><i data-lucide="qr-code" style="width:36px; height:36px;"></i></div><h3 style="margin: 16px 0;">1. Scan QR</h3><p>Display your QR. Guests scan with their native camera to instantly open the upload portal.</p></div><div class="glass-card step-card" data-aos="zoom-in-up" data-aos-delay="200"><div class="step-icon-wrapper"><i data-lucide="upload-cloud" style="width:36px; height:36px;"></i></div><h3 style="margin: 16px 0;">2. Upload Photo</h3><p>Guests snap a fresh photo or choose from their gallery. No app downloads, no account creation.</p></div><div class="glass-card step-card" data-aos="zoom-in-up" data-aos-delay="300"><div class="step-icon-wrapper"><i data-lucide="monitor-play" style="width:36px; height:36px;"></i></div><h3 style="margin: 16px 0;">3. Instant Display</h3><p>Photos instantly sync to the big screen via the cloud, creating a dynamic, shared visual experience.</p></div></div>
 
-        <section class="dashboard-preview glass-card" data-aos="fade-right" data-aos-duration="1000">
-            <div class="dashboard-grid">
-                <div class="dashboard-text">
-                    <div class="feature-badge"><i data-lucide="crown"></i> VIP Dashboard</div>
-                    <h3>Total Control.<br>Live Moderation.</h3>
-                    <p>Remove unwanted photos instantly, download all memories as a high-res ZIP, customize the TV loop, and watch live engagement stats.</p>
-                    <div style="display:flex; flex-direction:column; gap:12px; margin-top:20px;">
-                        <span style="display:flex; gap:8px;"><i data-lucide="shield-alert" style="color:#ef4444;"></i> Live Kill-Switch</span>
-                        <span style="display:flex; gap:8px;"><i data-lucide="image-off" style="color:#60a5fa;"></i> Ad-Free & White-Labeled</span>
-                        <span style="display:flex; gap:8px;"><i data-lucide="download" style="color:#10b981;"></i> Bulk Media Export</span>
-                    </div>
-                </div>
-                <div class="mockup">
-                    <div class="mockup-header"><span style="font-family:'Syne'; font-weight:700;">Host Console</span><i data-lucide="layout-dashboard"></i></div>
-                    <div style="display:flex; gap:12px;"><div class="mockup-bar" style="width:30%; background:rgba(59,130,246,0.3);"></div><div class="mockup-bar" style="width:70%;"></div></div>
-                    <div class="mockup-bar"></div><div class="mockup-bar" style="width:80%;"></div>
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px;"><div style="height:80px; background:rgba(255,255,255,0.05); border-radius:12px;"></div><div style="height:80px; background:rgba(255,255,255,0.05); border-radius:12px;"></div></div>
-                </div>
-            </div>
-        </section>
+        <section class="dashboard-preview glass-card" data-aos="fade-right" data-aos-duration="1000"><div class="dashboard-grid"><div class="dashboard-text"><div class="feature-badge"><i data-lucide="crown" style="width:14px; height:14px;"></i> VIP Dashboard</div><h3>Total Control.<br>Live Moderation.</h3><p>Remove unwanted photos instantly, download all memories as a high-res ZIP, customize the TV loop, and watch live engagement stats.</p><div style="display:flex; flex-direction:column; gap:12px; margin-top:20px;"><span style="display:flex; gap:8px;"><i data-lucide="shield-alert" style="color:#ef4444;"></i> Live Kill-Switch</span><span style="display:flex; gap:8px;"><i data-lucide="image-off" style="color:#60a5fa;"></i> Ad-Free & White-Labeled</span><span style="display:flex; gap:8px;"><i data-lucide="download" style="color:#10b981;"></i> Bulk Media Export</span></div></div><div class="mockup"><div class="mockup-header"><span style="font-family:'Syne'; font-weight:700;">Host Console</span><i data-lucide="layout-dashboard" style="width:20px; color:#cbd5e1;"></i></div><div style="display:flex; gap:12px;"><div class="mockup-bar" style="width:30%; background:rgba(59,130,246,0.3);"></div><div class="mockup-bar" style="width:70%;"></div></div><div class="mockup-bar"></div><div class="mockup-bar" style="width:80%;"></div><div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px;"><div style="height:80px; background:rgba(255,255,255,0.05); border-radius:12px;"></div><div style="height:80px; background:rgba(255,255,255,0.05); border-radius:12px;"></div></div></div></div></section>
 
         <section id="pricing" data-aos="fade-up"><h2 class="section-title">Flexible <span style="color:#facc15;">Pricing</span> for Every Event</h2></section>
         <div class="pricing-grid" data-aos="fade-up" data-aos-delay="50">
-            <div class="glass-card price-card" data-aos="flip-left" data-aos-delay="100">
-                <h3>Starter</h3><div class="price">₹0 <small>/event</small></div>
-                <ul><li><i data-lucide="check"></i> Basic TV loop</li><li><i data-lucide="check"></i> SnapNexus watermark</li><li><i data-lucide="check"></i> Partner Ads displayed</li><li><i data-lucide="check"></i> Max 50 photos</li></ul>
-                <a href="login.html?plan=starter" class="btn-physics btn-outline">Deploy Free Wall</a>
-            </div>
-            <div class="glass-card price-card" data-aos="flip-left" data-aos-delay="200">
-                <h3>Pro</h3><div class="price">₹499 <small>/event</small></div>
-                <ul><li><i data-lucide="check"></i> No watermark</li><li><i data-lucide="check"></i> Basic moderation</li><li><i data-lucide="check"></i> Unlimited photos</li><li><i data-lucide="check"></i> Email support</li></ul>
-                <a href="login.html?plan=pro" class="btn-physics">Choose Pro</a>
-            </div>
-            <div class="glass-card price-card" data-aos="flip-left" data-aos-delay="300">
-                <h3>Premium</h3><div class="price">₹999 <small>/event</small></div>
-                <ul><li><i data-lucide="check"></i> High-res downloads</li><li><i data-lucide="check"></i> Custom QR codes</li><li><i data-lucide="check"></i> Analytics dashboard</li><li><i data-lucide="check"></i> Priority queue</li></ul>
-                <a href="login.html?plan=premium" class="btn-physics">Go Premium</a>
-            </div>
-            <div class="glass-card price-card vip" data-aos="flip-left" data-aos-delay="400">
-                <div class="most-popular">⭐ MAXIMUM POWER</div>
-                <h3>VIP / Whale</h3><div class="price">₹2,999 <small>/mo</small></div>
-                <ul><li><i data-lucide="check"></i> Full dashboard</li><li><i data-lucide="check"></i> Live kill-switch</li><li><i data-lucide="check"></i> Custom ad injection</li><li><i data-lucide="check"></i> White‑labeled</li><li><i data-lucide="check"></i> Priority 24/7 support</li></ul>
-                <a href="login.html?plan=vip" class="btn-physics btn-gold">Secure VIP Pass</a>
-            </div>
+            <div class="glass-card price-card" data-aos="flip-left" data-aos-delay="100"><h3>Starter</h3><div class="price">₹0 <small>/event</small></div><ul><li><i data-lucide="check"></i> Basic TV loop</li><li><i data-lucide="check"></i> SnapNexus watermark</li><li><i data-lucide="check"></i> Partner Ads displayed</li><li><i data-lucide="check"></i> Max 50 photos</li></ul><a href="login.html?plan=starter" class="btn-physics btn-outline">Deploy Free Wall</a></div>
+            <div class="glass-card price-card" data-aos="flip-left" data-aos-delay="200"><h3>Pro</h3><div class="price">₹499 <small>/event</small></div><ul><li><i data-lucide="check"></i> No watermark</li><li><i data-lucide="check"></i> Basic moderation</li><li><i data-lucide="check"></i> Unlimited photos</li><li><i data-lucide="check"></i> Email support</li></ul><a href="login.html?plan=pro" class="btn-physics">Choose Pro</a></div>
+            <div class="glass-card price-card" data-aos="flip-left" data-aos-delay="300"><h3>Premium</h3><div class="price">₹999 <small>/event</small></div><ul><li><i data-lucide="check"></i> High-res downloads</li><li><i data-lucide="check"></i> Custom QR codes</li><li><i data-lucide="check"></i> Analytics dashboard</li><li><i data-lucide="check"></i> Priority queue</li></ul><a href="login.html?plan=premium" class="btn-physics">Go Premium</a></div>
+            <div class="glass-card price-card vip" data-aos="flip-left" data-aos-delay="400"><div class="most-popular">⭐ MAXIMUM POWER</div><h3>VIP / Whale</h3><div class="price">₹2,999 <small>/mo</small></div><ul><li><i data-lucide="check"></i> Full dashboard</li><li><i data-lucide="check"></i> Live kill-switch</li><li><i data-lucide="check"></i> Custom ad injection</li><li><i data-lucide="check"></i> White‑labeled</li><li><i data-lucide="check"></i> Priority 24/7 support</li></ul><a href="login.html?plan=vip" class="btn-physics btn-gold">Secure VIP Pass</a></div>
         </div>
     </main>
 

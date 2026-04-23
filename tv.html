@@ -1,15 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script src="/config.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SnapNexus | Live Wall</title>
+    <title>SnapNexus | Free Live Wall</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <meta property="og:image" content="https://snapnexus.in/SNAPN.png">
+    <link rel="preload" as="image" href="/SNAPN.png">
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Urbanist:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
+    <script src="/config.js"></script>
     <style>
-        /* (keep same CSS as before) */
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family:'Urbanist',sans-serif; background:#020617; color:#ffffff; overflow:hidden; height:100vh; width:100vw; }
         h1,h2,h3 { font-family:'Syne',sans-serif; }
@@ -37,115 +39,106 @@
     <div class="liquid-mesh"></div>
     <div class="tv-layout">
         <div class="sidebar glass-card">
-            <div><div class="logo-text">SnapNexus</div><div class="event-info"><h2 id="displayEventId">Guest Wall</h2><p><i data-lucide="radio" style="width:16px;"></i> Free Tier</p></div></div>
+            <div><div class="logo-text">SnapNexus</div><div class="event-info"><h2 id="displayEventName">Guest Wall</h2><p><i data-lucide="radio" style="width:16px;"></i> Free Tier</p></div></div>
             <div><div class="qr-container"><img id="qrCode"></div><div style="font-weight:800;">Scan to Join</div></div>
         </div>
         <div class="main-content">
             <div class="photo-stage glass-card" id="photoStage">
-                <img id="layer1" class="photo-layer active" src="">
-                <img id="layer2" class="photo-layer" src="">
+                <img id="layer1" class="photo-layer active" src=""><img id="layer2" class="photo-layer" src="">
                 <div class="watermark">SnapNexus</div>
             </div>
-            <div class="bottom-ad-bar glass-card">
-                <div class="ad-badge-mini">SPONSORED</div>
-                <img class="ad-banner-img" src="https://images.unsplash.com/photo-1551316679-9c6ae9dec224?auto=format&fit=crop&w=400&q=80">
-                <div><h3>Upgrade to VIP</h3><p style="color:#94a3b8;">Remove ads and unlock Fullscreen Mode today.</p></div>
-            </div>
+            <div class="bottom-ad-bar glass-card"><div class="ad-badge-mini">SPONSORED</div><img class="ad-banner-img" src="https://images.unsplash.com/photo-1551316679-9c6ae9dec224?auto=format&fit=crop&w=400&q=80"><div><h3>Upgrade to VIP</h3><p style="color:#94a3b8;">Remove ads and unlock Fullscreen Mode today.</p></div></div>
         </div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            lucide.createIcons();
-            const cfg = window.SnapNexus;
-            if (!cfg) { console.error('Config not loaded'); return; }
-            
-            const urlParams = new URLSearchParams(window.location.search);
-            const eventId = urlParams.get('event') || 'demo';
-            document.getElementById('displayEventId').innerHTML = `Event: ${eventId}`;
-            const joinLink = cfg.resolveUrl(`app.html?event=${eventId}`);
-            document.getElementById('qrCode').src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(joinLink)}`;
-            
-            const client = new Appwrite.Client()
-                .setEndpoint(cfg.ENDPOINT)
-                .setProject(cfg.PROJECT_ID);
-            const storage = new Appwrite.Storage(client);
-            const databases = new Appwrite.Databases(client);
-            
-            let photos = [];
-            let currentIndex = 0;
-            let activeLayer = 1;
-            let slideshowInterval = null;
-            let eventActive = true;
-            const layer1 = document.getElementById('layer1');
-            const layer2 = document.getElementById('layer2');
-            
-            async function checkEventStatus() {
-                try {
-                    const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [
-                        Appwrite.Query.equal('eventId', eventId)
-                    ]);
-                    if (res.documents.length === 0) return;
-                    eventActive = res.documents[0].status !== 'ended';
+        lucide.createIcons();
+        const cfg = window.SnapNexus;
+        if (!cfg) { console.error('Config missing'); }
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const eventId = urlParams.get('event') || 'demo';
+        
+        const joinLink = cfg.resolveUrl(`app.html?event=${eventId}`);
+        document.getElementById('qrCode').src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(joinLink)}`;
+        
+        const client = new Appwrite.Client()
+            .setEndpoint(cfg.ENDPOINT)
+            .setProject(cfg.PROJECT_ID);
+        const storage = new Appwrite.Storage(client);
+        const databases = new Appwrite.Databases(client);
+        
+        let photos = [];
+        let currentIndex = 0;
+        let activeLayer = 1;
+        let slideshowInterval = null;
+        let eventActive = true;
+        const layer1 = document.getElementById('layer1'), layer2 = document.getElementById('layer2');
+        
+        // [MEGA PATCH] Fetch event name from database
+        async function fetchEventNameAndStatus() {
+            try {
+                const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [
+                    Appwrite.Query.equal('eventId', eventId)
+                ]);
+                if (res.documents.length > 0) {
+                    const ev = res.documents[0];
+                    document.getElementById('displayEventName').innerHTML = `${ev.eventName}<br><span style="font-size:0.8rem;">${eventId}</span>`;
+                    eventActive = ev.status !== 'ended';
                     if (!eventActive) showEndedOverlay();
-                } catch(err) { console.error(err); }
-            }
-            
-            function showEndedOverlay() {
-                if (document.getElementById('endedOverlay')) return;
-                const stage = document.getElementById('photoStage');
-                const overlay = document.createElement('div');
-                overlay.id = 'endedOverlay';
-                overlay.className = 'ended-overlay';
-                overlay.innerHTML = `<i data-lucide="flag" style="width:64px;height:64px;margin-bottom:20px;"></i><h2>Event Concluded</h2><p>This live wall has ended. Thank you.</p>`;
-                stage.appendChild(overlay);
-                lucide.createIcons();
-                if (slideshowInterval) clearInterval(slideshowInterval);
-            }
-            
-            async function fetchPhotos() {
-                if (!eventActive) return;
-                try {
-                    const result = await storage.listFiles(cfg.BUCKET_ID);
-                    const files = result.files || [];
-                    const newUrls = files.map(f => storage.getFileView(cfg.BUCKET_ID, f.$id));
-                    if (JSON.stringify(newUrls) !== JSON.stringify(photos)) {
-                        photos = newUrls;
-                        if (photos.length > 0 && currentIndex === 0) {
-                            if (activeLayer === 1) {
-                                layer1.src = photos[0];
-                                layer1.classList.add('active');
-                            } else {
-                                layer2.src = photos[0];
-                                layer2.classList.add('active');
-                            }
-                        }
-                    }
-                } catch(err) { console.error(err); }
-            }
-            
-            function nextSlide() {
-                if (!eventActive || photos.length === 0) return;
-                currentIndex = (currentIndex + 1) % photos.length;
-                const nextUrl = photos[currentIndex];
-                if (activeLayer === 1) {
-                    layer2.src = nextUrl;
-                    layer2.classList.add('active');
-                    layer1.classList.remove('active');
-                    activeLayer = 2;
                 } else {
-                    layer1.src = nextUrl;
-                    layer1.classList.add('active');
-                    layer2.classList.remove('active');
-                    activeLayer = 1;
+                    document.getElementById('displayEventName').innerHTML = `Event: ${eventId}`;
                 }
+            } catch(err) { console.error(err); }
+        }
+        
+        function showEndedOverlay() {
+            if (document.getElementById('endedOverlay')) return;
+            const stage = document.getElementById('photoStage');
+            const overlay = document.createElement('div');
+            overlay.id = 'endedOverlay';
+            overlay.className = 'ended-overlay';
+            overlay.innerHTML = `<i data-lucide="flag" style="width:64px;height:64px;margin-bottom:20px;"></i><h2>Event Concluded</h2><p>This live wall has ended.</p>`;
+            stage.appendChild(overlay);
+            lucide.createIcons();
+            if (slideshowInterval) clearInterval(slideshowInterval);
+        }
+        
+        async function fetchPhotos() {
+            if (!eventActive) return;
+            try {
+                const result = await storage.listFiles(cfg.BUCKET_ID, [
+                    Appwrite.Query.startsWith('name', eventId + '_'),
+                    Appwrite.Query.limit(100),
+                    Appwrite.Query.orderDesc('$createdAt')
+                ]);
+                const files = result.files || [];
+                const newUrls = files.map(f => storage.getFileView(cfg.BUCKET_ID, f.$id));
+                if (JSON.stringify(newUrls) !== JSON.stringify(photos)) {
+                    photos = newUrls;
+                    if (photos.length && currentIndex===0) {
+                        if (activeLayer===1) { layer1.src = photos[0]; layer1.classList.add('active'); }
+                        else { layer2.src = photos[0]; layer2.classList.add('active'); }
+                    }
+                }
+            } catch(err) { console.error(err); }
+        }
+        
+        function nextSlide() {
+            if (!eventActive || photos.length===0) return;
+            currentIndex = (currentIndex+1) % photos.length;
+            const nextUrl = photos[currentIndex];
+            if (activeLayer===1) {
+                layer2.src = nextUrl; layer2.classList.add('active'); layer1.classList.remove('active'); activeLayer=2;
+            } else {
+                layer1.src = nextUrl; layer1.classList.add('active'); layer2.classList.remove('active'); activeLayer=1;
             }
-            
-            checkEventStatus();
-            fetchPhotos();
-            setInterval(fetchPhotos, 5000);
-            slideshowInterval = setInterval(nextSlide, 6000);
-        });
+        }
+        
+        fetchEventNameAndStatus();
+        fetchPhotos();
+        setInterval(fetchPhotos, 5000);
+        slideshowInterval = setInterval(nextSlide, 6000);
     </script>
 </body>
 </html>
