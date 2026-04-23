@@ -439,7 +439,7 @@
             if (!eventId) {
                 // No event ID, show user's event list (redirect to login which handles it)
                 window.location.href = cfg.resolveUrl('login.html');
-                return;
+                throw new Error("Redirecting");
             }
             showLoading('Loading event...');
             try {
