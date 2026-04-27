@@ -1,157 +1,125 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="/config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SnapNexus | VIP Ad-Free Live Wall</title>
-    <link rel="icon" type="image/png" href="/favicon.png">
-    <meta property="og:image" content="https://snapnexus.in/SNAPN.png">
-    <link rel="preload" as="image" href="/SNAPN.png">
+    <title>SnapNexus | VIP Live TV</title>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Urbanist:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
-    <script src="/config.js"></script>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:'Urbanist',sans-serif; background:#020617; color:#ffffff; overflow:hidden; height:100vh; width:100vw; }
-        h1,h2,h3 { font-family:'Syne',sans-serif; }
-        .liquid-mesh { position:fixed; top:0; left:0; width:100%; height:100%; z-index:-3; background:radial-gradient(circle at 20% 30%, #020617, #1e3a8a 30%, #3b82f6 65%, #4f46e5); background-size:200% 200%; animation:liquidShift 20s ease infinite alternate; }
-        @keyframes liquidShift { 0% { background-position:0% 0%; } 100% { background-position:100% 100%; } }
-        .glass-card { background:rgba(20,30,55,0.45); backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,0.15); border-radius:24px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.5); }
-        .tv-layout { display:flex; width:100%; height:100%; padding:30px; gap:30px; }
-        .sidebar { width:20%; display:flex; flex-direction:column; align-items:center; justify-content:space-between; padding:30px 20px; text-align:center; flex-shrink:0; transition:width 0.3s; }
-        .sidebar.collapsed { width:0; padding:0; overflow:hidden; visibility:hidden; }
-        .main-content { flex:1; display:flex; flex-direction:column; gap:30px; }
-        .logo-text { font-weight:800; font-size:1.8rem; background:linear-gradient(135deg,#fde047,#f59e0b); -webkit-background-clip:text; background-clip:text; color:transparent; margin-bottom:10px; }
-        .event-info h2 { font-size:1.8rem; line-height:1.1; }
-        .qr-container { background:white; padding:12px; border-radius:20px; margin:20px 0; }
-        .qr-container img { width:100%; max-width:180px; display:block; }
-        .photo-stage { flex:1; position:relative; border-radius:24px; overflow:hidden; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.4); }
-        .photo-layer { position:absolute; top:0; left:0; width:100%; height:100%; object-fit:contain; opacity:0; transition:opacity 1.2s ease-in-out; }
-        .photo-layer.active { opacity:1; }
-        .bottom-ad-bar { height:120px; width:100%; display:flex; align-items:center; padding:0 30px; gap:20px; }
-        .ad-badge-mini { background:linear-gradient(105deg,#fbbf24,#f59e0b); color:#020617; padding:4px 12px; border-radius:50px; font-weight:900; font-size:0.75rem; }
-        .ad-banner-img { height:80px; width:150px; border-radius:12px; object-fit:cover; }
-        .watermark { position:absolute; bottom:20px; right:25px; font-family:'Syne'; font-weight:800; font-size:1.2rem; color:rgba(255,255,255,0.3); z-index:10; }
-        .ended-overlay { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); backdrop-filter:blur(12px); display:flex; align-items:center; justify-content:center; z-index:20; flex-direction:column; text-align:center; color:#f87171; }
-        .control-buttons { position:fixed; bottom:30px; right:30px; display:flex; gap:16px; z-index:200; }
-        .ctrl-btn { background:rgba(20,30,55,0.8); backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,0.25); border-radius:60px; padding:12px 20px; font-weight:800; font-size:0.9rem; color:#fde047; cursor:pointer; display:flex; align-items:center; gap:8px; }
-        .ctrl-btn:hover { background:rgba(251,191,36,0.3); transform:translateY(-2px); }
+        body { font-family:'Urbanist',sans-serif; background:#000000; color:#ffffff; overflow:hidden; height:100vh; width:100vw; }
+        
+        .slideshow-container { width: 100vw; height: 100vh; position: relative; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%); }
+        .photo-layer { position: absolute; max-width: 95%; max-height: 95%; object-fit: contain; opacity: 0; transition: opacity 1.5s ease-in-out; border-radius: 8px; }
+        .photo-layer.active { opacity: 1; }
+        
+        /* Collapsible Sidebar for VIP */
+        .sidebar { position: absolute; left: 0; top: 0; width: 300px; height: 100vh; background: rgba(0,0,0,0.6); padding: 40px 20px; display: flex; flex-direction: column; align-items: center; z-index: 10; transition: transform 0.4s ease; border-right: 1px solid rgba(255,255,255,0.1); }
+        .sidebar.collapsed { transform: translateX(-100%); }
+        .sidebar h1 { font-family: 'Syne'; font-size: 2rem; margin-bottom: 20px; text-align: center; }
+        .qr-placeholder { width: 200px; height: 200px; background: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+        
+        .controls { position: absolute; top: 20px; right: 20px; z-index: 20; display: flex; gap: 10px; }
+        .ctrl-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 10px 15px; border-radius: 8px; cursor: pointer; transition: 0.2s; backdrop-filter: blur(5px); display: flex; align-items: center; gap: 5px; }
+        .ctrl-btn:hover { background: rgba(255,255,255,0.2); }
+
+        .custom-watermark { position: absolute; bottom: 40px; right: 50px; max-height: 80px; max-width: 200px; object-fit: contain; z-index: 10; opacity: 0.8; }
     </style>
 </head>
 <body>
-    <div class="liquid-mesh"></div>
-    <div class="tv-layout">
-        <div class="sidebar glass-card" id="sidebar">
-            <div><div class="logo-text">SnapNexus</div><div class="event-info"><h2 id="displayEventName">Guest Wall</h2><p><i data-lucide="radio"></i> VIP Tier</p></div></div>
-            <div><div class="qr-container"><img id="qrCode"></div><div style="font-weight:800;">Scan to Join</div></div>
-        </div>
-        <div class="main-content">
-            <div class="photo-stage glass-card" id="photoStage">
-                <img id="layer1" class="photo-layer active" src=""><img id="layer2" class="photo-layer" src="">
-                <div class="watermark">SnapNexus</div>
-            </div>
-            <div class="bottom-ad-bar glass-card" id="adBar" style="display:none;"><div class="ad-badge-mini">SPONSORED</div><img class="ad-banner-img" src="https://images.unsplash.com/photo-1551316679-9c6ae9dec224?auto=format&fit=crop&w=400&q=80"><div><h3>Upgrade to VIP</h3><p style="color:#94a3b8;">Remove ads and unlock Fullscreen Mode today.</p></div></div>
+    
+    <div class="sidebar" id="sidebar">
+        <h1 id="tvEventName">VIP Event</h1>
+        <p style="margin-bottom: 10px; color: #bfdbfe;">Scan to join!</p>
+        <div class="qr-placeholder">
+            <img id="qrImage" src="" style="width: 100%; border-radius: 10px;">
         </div>
     </div>
-    <div class="control-buttons"><div class="ctrl-btn" id="collapseSidebarBtn"><span>◀</span> Collapse Sidebar</div><div class="ctrl-btn" id="fullscreenBtn"><span>⛶</span> Fullscreen</div></div>
+
+    <div class="controls">
+        <button class="ctrl-btn" id="collapseSidebarBtn"><i data-lucide="layout-panel-left"></i> Toggle QR</button>
+        <button class="ctrl-btn" id="fullscreenBtn"><i data-lucide="maximize"></i> Fullscreen</button>
+    </div>
+
+    <div class="slideshow-container">
+        <img id="layer1" class="photo-layer" src="" alt="">
+        <img id="layer2" class="photo-layer" src="" alt="">
+    </div>
+
+    <img id="vipLogo" class="custom-watermark" src="" style="display: none;">
 
     <script>
-        lucide.createIcons();
-        document.getElementById('adBar').style.display = 'none';
         const cfg = window.SnapNexus;
-        if (!cfg) console.error('Config missing');
-        
-        const urlParams = new URLSearchParams(window.location.search);
-        const eventId = urlParams.get('event') || 'demo';
-        const joinLink = cfg.resolveUrl(`app.html?event=${eventId}`);
-        document.getElementById('qrCode').src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(joinLink)}`;
-        
-        const client = new Appwrite.Client()
-            .setEndpoint(cfg.ENDPOINT)
-            .setProject(cfg.PROJECT_ID);
-        const storage = new Appwrite.Storage(client);
+        const client = new Appwrite.Client().setEndpoint(cfg.ENDPOINT).setProject(cfg.PROJECT_ID);
         const databases = new Appwrite.Databases(client);
-        
+        const storage = new Appwrite.Storage(client);
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const eventId = urlParams.get('event');
+        if (!eventId) { document.body.innerHTML = '<h1 style="color:white; text-align:center; padding-top:20vh;">Invalid TV Link</h1>'; throw new Error("Halt"); }
+
+        document.getElementById('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://snapnexus.in/app.html?event=${eventId}`;
+
         let photos = [];
         let currentIndex = 0;
         let activeLayer = 1;
-        let slideshowInterval = null;
-        let eventActive = true;
-        const layer1 = document.getElementById('layer1'), layer2 = document.getElementById('layer2');
-        
-        async function fetchEventNameAndStatus() {
-            try {
-                const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [
-                    Appwrite.Query.equal('eventId', eventId)
-                ]);
-                if (res.documents.length > 0) {
-                    const ev = res.documents[0];
-                    document.getElementById('displayEventName').innerHTML = `${ev.eventName}<br><span style="font-size:0.8rem;">${eventId}</span>`;
-                    eventActive = ev.status !== 'ended';
-                    if (!eventActive) showEndedOverlay();
-                } else {
-                    document.getElementById('displayEventName').innerHTML = `Event: ${eventId}`;
-                }
-            } catch(err) { console.error(err); }
-        }
-        
-        function showEndedOverlay() {
-            if (document.getElementById('endedOverlay')) return;
-            const stage = document.getElementById('photoStage');
-            const overlay = document.createElement('div');
-            overlay.id = 'endedOverlay';
-            overlay.className = 'ended-overlay';
-            overlay.innerHTML = `<i data-lucide="flag" style="width:64px;height:64px;margin-bottom:20px;"></i><h2>Event Concluded</h2><p>This live wall has ended.</p>`;
-            stage.appendChild(overlay);
+
+        document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
-            if (slideshowInterval) clearInterval(slideshowInterval);
-        }
-        
-        async function fetchPhotos() {
-            if (!eventActive) return;
+            const layer1 = document.getElementById('layer1');
+            const layer2 = document.getElementById('layer2');
+
             try {
-                const result = await storage.listFiles(cfg.BUCKET_ID, [
-                    Appwrite.Query.startsWith('name', eventId + '_'),
-                    Appwrite.Query.limit(100),
-                    Appwrite.Query.orderDesc('$createdAt')
-                ]);
-                const files = result.files || [];
-                const newUrls = files.map(f => storage.getFileView(cfg.BUCKET_ID, f.$id));
-                if (JSON.stringify(newUrls) !== JSON.stringify(photos)) {
-                    photos = newUrls;
-                    if (photos.length && currentIndex===0) {
-                        if (activeLayer===1) { layer1.src = photos[0]; layer1.classList.add('active'); }
-                        else { layer2.src = photos[0]; layer2.classList.add('active'); }
+                const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [ Appwrite.Query.equal('eventId', eventId) ]);
+                if (res.documents.length > 0) {
+                    const doc = res.documents[0];
+                    document.getElementById('tvEventName').innerText = doc.eventName;
+                    if (doc.customWatermark) {
+                        const logoEl = document.getElementById('vipLogo');
+                        logoEl.src = doc.customWatermark;
+                        logoEl.style.display = 'block';
                     }
                 }
-            } catch(err) { console.error(err); }
-        }
-        
-        function nextSlide() {
-            if (!eventActive || photos.length===0) return;
-            currentIndex = (currentIndex+1) % photos.length;
-            const nextUrl = photos[currentIndex];
-            if (activeLayer===1) {
-                layer2.src = nextUrl; layer2.classList.add('active'); layer1.classList.remove('active'); activeLayer=2;
-            } else {
-                layer1.src = nextUrl; layer1.classList.add('active'); layer2.classList.remove('active'); activeLayer=1;
+            } catch(e) { console.error(e); }
+
+            async function fetchPhotos() {
+                try {
+                    const res = await storage.listFiles(cfg.BUCKET_ID, [
+                        Appwrite.Query.startsWith('name', eventId + '_'), Appwrite.Query.limit(100), Appwrite.Query.orderDesc('$createdAt')
+                    ]);
+                    const newUrls = res.files.map(f => storage.getFileView(cfg.BUCKET_ID, f.$id).href);
+                    if (JSON.stringify(newUrls) !== JSON.stringify(photos)) {
+                        photos = newUrls;
+                        if (photos.length > 0 && !layer1.classList.contains('active') && !layer2.classList.contains('active')) {
+                            layer1.src = photos[0]; layer1.classList.add('active');
+                        }
+                    }
+                } catch(e) {}
             }
-        }
-        
-        const sidebar = document.getElementById('sidebar');
-        document.getElementById('collapseSidebarBtn').addEventListener('click', () => sidebar.classList.toggle('collapsed'));
-        const fullscreenBtn = document.getElementById('fullscreenBtn');
-        fullscreenBtn.addEventListener('click', () => {
-            if (!document.fullscreenElement) { document.documentElement.requestFullscreen(); fullscreenBtn.innerHTML='<span>✖</span> Exit'; }
-            else { document.exitFullscreen(); fullscreenBtn.innerHTML='<span>⛶</span> Fullscreen'; }
+
+            function nextSlide() {
+                if (photos.length === 0) return;
+                currentIndex = (currentIndex + 1) % photos.length;
+                const nextUrl = photos[currentIndex];
+                if (activeLayer === 1) { layer2.src = nextUrl; layer2.classList.add('active'); layer1.classList.remove('active'); activeLayer = 2; }
+                else { layer1.src = nextUrl; layer1.classList.add('active'); layer2.classList.remove('active'); activeLayer = 1; }
+            }
+
+            const sidebar = document.getElementById('sidebar');
+            document.getElementById('collapseSidebarBtn').addEventListener('click', () => { sidebar.classList.toggle('collapsed'); });
+            
+            const fullscreenBtn = document.getElementById('fullscreenBtn');
+            fullscreenBtn.addEventListener('click', () => {
+                if (!document.fullscreenElement) { document.documentElement.requestFullscreen(); fullscreenBtn.innerHTML='<i data-lucide="minimize"></i> Exit'; } 
+                else { document.exitFullscreen(); fullscreenBtn.innerHTML='<i data-lucide="maximize"></i> Fullscreen'; }
+                lucide.createIcons();
+            });
+
+            fetchPhotos(); setInterval(fetchPhotos, 5000); setInterval(nextSlide, 5000);
         });
-        document.addEventListener('fullscreenchange', () => fullscreenBtn.innerHTML = document.fullscreenElement ? '<span>✖</span> Exit' : '<span>⛶</span> Fullscreen');
-        
-        fetchEventNameAndStatus();
-        fetchPhotos();
-        setInterval(fetchPhotos, 5000);
-        slideshowInterval = setInterval(nextSlide, 4000);
     </script>
 </body>
 </html>

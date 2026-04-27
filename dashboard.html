@@ -3,488 +3,136 @@
 <head>
     <script src="/config.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SnapNexus | Host Dashboard</title>
-    <link rel="icon" type="image/png" href="/favicon.png">
-    <meta property="og:image" content="https://snapnexus.in/SNAPN.png">
-    <link rel="preload" as="image" href="/SNAPN.png">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Urbanist:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,600&display=swap" rel="stylesheet">
-    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Urbanist:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:'Urbanist',sans-serif; background:#020617; color:#ffffff; min-height:100vh; overflow-x:hidden; }
-        h1,h2,h3 { font-family:'Syne',sans-serif; }
-        .liquid-mesh { position:fixed; top:0; left:0; width:100%; height:100%; z-index:-3; background:radial-gradient(circle at 0% 100%, #020617, #1e3a8a 30%, #3b82f6 65%, #4f46e5); background-size:200% 200%; animation:liquidShift 16s ease infinite alternate; }
-        @keyframes liquidShift { 0% { background-position:0% 0%; } 100% { background-position:100% 100%; } }
-        .noise-overlay { position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:-2; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E"); opacity:0.4; }
-        .glass-card { background:rgba(20,30,55,0.45); backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,0.2); border-radius:24px; padding:24px; }
-        .topbar { display:flex; justify-content:space-between; align-items:center; padding:20px 40px; background:rgba(2,6,23,0.7); backdrop-filter:blur(16px); border-bottom:1px solid rgba(255,255,255,0.1); position:sticky; top:0; z-index:100; }
-        .topbar-logo { display:flex; align-items:center; gap:12px; font-family:'Syne'; font-size:1.4rem; font-weight:800; }
-        .dashboard-container { padding:40px; max-width:1400px; margin:0 auto; }
-        .stats-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(250px,1fr)); gap:24px; margin-bottom:40px; }
-        .stat-card { display:flex; align-items:center; gap:20px; }
-        .stat-icon { width:56px; height:56px; border-radius:16px; background:rgba(59,130,246,0.15); display:flex; align-items:center; justify-content:center; color:#60a5fa; }
-        .stat-value { font-size:2rem; font-family:'Syne'; font-weight:800; }
-        .stat-label { color:#94a3b8; font-weight:600; font-size:0.9rem; }
-        .toolbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px; }
-        .btn-physics { padding:12px 24px; font-weight:700; border-radius:40px; border:none; cursor:pointer; background:linear-gradient(105deg,#3b82f6,#4f46e5); color:white; display:inline-flex; align-items:center; gap:8px; transition:transform 0.1s; }
-        .btn-physics:active { transform:scale(0.95); }
-        .btn-danger { background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.3); }
-        .btn-danger:hover { background:rgba(239,68,68,0.3); }
-        .gallery-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px,1fr)); gap:20px; }
-        .photo-card { position:relative; border-radius:16px; overflow:hidden; aspect-ratio:1; border:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.3); display:flex; align-items:center; justify-content:center; }
-        .photo-card img { width:100%; height:100%; object-fit:cover; transition:0.3s; }
-        .photo-overlay { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; opacity:0; transition:0.2s; backdrop-filter:blur(4px); }
-        .photo-card:hover .photo-overlay { opacity:1; }
-        .photo-card:hover img { transform:scale(1.05); }
-        .remove-btn { background:rgba(239,68,68,0.85); color:white; border:1px solid rgba(239,68,68,0.4); padding:8px 16px; border-radius:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:8px; transition:0.2s; font-family:'Urbanist',sans-serif; }
-        .remove-btn:hover { background:#ef4444; transform:scale(1.05); }
-        .empty-gallery { text-align:center; padding:60px 20px; color:#94a3b8; font-weight:600; }
-        .empty-gallery i { width:48px; height:48px; margin-bottom:16px; color:#60a5fa; }
-        .timer-banner { background:linear-gradient(105deg,#fbbf24,#f59e0b); color:#020617; padding:12px 20px; border-radius:16px; margin:20px 0; display:flex; justify-content:space-between; align-items:center; font-weight:800; }
-        .event-list { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px,1fr)); gap:20px; margin-top:20px; }
-        .event-card { background:rgba(255,255,255,0.05); border-radius:16px; padding:16px; cursor:pointer; transition:0.2s; border:1px solid rgba(255,255,255,0.1); }
-        .event-card:hover { background:rgba(255,255,255,0.1); transform:translateY(-2px); }
-        .event-status { display:inline-block; padding:4px 12px; border-radius:20px; font-size:0.75rem; margin-top:8px; }
-        .status-active { background:rgba(16,185,129,0.2); color:#34d399; }
-        .status-ended { background:rgba(239,68,68,0.2); color:#f87171; }
-        .loading-state { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; z-index:999; flex-direction:column; gap:16px; font-family:'Syne'; }
-        .spinner { display:inline-block; width:20px; height:20px; border:2px solid rgba(255,255,255,0.3); border-radius:50%; border-top-color:white; animation:spin 0.8s linear infinite; margin-right:8px; }
-        @keyframes spin { to { transform:rotate(360deg); } }
-        .vip-section { margin-top:30px; border:1px solid #fbbf24; border-radius:20px; padding:20px; background:rgba(251,191,36,0.05); }
-        .vip-section h3 { color:#fbbf24; margin-bottom:16px; }
-        .file-input-label { display:inline-block; background:#3b82f6; padding:8px 16px; border-radius:40px; cursor:pointer; margin-top:10px; }
-        .zip-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; z-index:2000; flex-direction:column; gap:16px; }
+        /* Exact Original Styles */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Urbanist', sans-serif; background: #020617; color: #ffffff; padding: 20px; }
+        .container { max-width: 900px; margin: 40px auto; background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 40px; }
+        h1 { font-family: 'Syne', sans-serif; font-size: 2.5rem; margin-bottom: 10px; }
+        .meta-tags { display: flex; gap: 12px; margin-bottom: 30px; flex-wrap: wrap; }
+        .badge { background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 0.9rem; }
+        .badge.vip { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+        .grid-buttons { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 40px; }
+        .btn { padding: 16px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; border: none; font-family: inherit; font-size: 1rem; }
+        .btn-blue { background: #3b82f6; color: white; }
+        .btn-blue:hover { background: #2563eb; }
+        .btn-dark { background: rgba(15, 23, 42, 0.8); color: white; border: 1px solid rgba(255, 255, 255, 0.1); }
+        .btn-dark:hover { background: rgba(30, 41, 59, 1); }
+        .btn-red { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .btn-gold { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; }
+        .vip-settings { background: rgba(0, 0, 0, 0.3); border: 1px dashed #fbbf24; padding: 20px; border-radius: 16px; margin-top: 20px; display: none; }
     </style>
 </head>
 <body>
-    <div class="liquid-mesh"></div>
-    <div class="noise-overlay"></div>
-    <div class="topbar">
-        <div class="topbar-logo"><img src="/SNAPN.png" alt="Logo" style="width:36px; height:36px; border-radius:8px; margin-right:8px;" fetchpriority="high"><div style="width:36px;height:36px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);border-radius:8px;display:flex;align-items:center;justify-content:center;"><i data-lucide="layout-dashboard" style="color:#60a5fa;width:20px;"></i></div>Host Dashboard</div>
-        <div style="display:flex; gap:16px; align-items:center;">
-            <button id="createNewEventBtn" class="btn-physics" style="background:linear-gradient(105deg,#fbbf24,#f59e0b); color:#020617;"><i data-lucide="plus"></i> Create New Event</button>
-            <button id="logoutBtn" style="background:none;border:none;color:#94a3b8;cursor:pointer;"><i data-lucide="log-out"></i></button>
+    <div class="container">
+        <a href="login.html" style="color: #94a3b8; text-decoration: none; margin-bottom: 20px; display: inline-block;">&larr; Back to Events</a>
+        <h1 id="dashEventName">Loading...</h1>
+        <div class="meta-tags">
+            <span class="badge" id="dashEventId">ID: Loading</span>
+            <span class="badge" id="dashEventTier">Tier: Loading</span>
+            <span class="badge" id="dashEventStatus">Status: Loading</span>
+        </div>
+        <div class="grid-buttons">
+            <button class="btn btn-blue" id="openTvBtn"><i data-lucide="monitor"></i> Open TV Display</button>
+            <button class="btn btn-dark" id="openQrBtn"><i data-lucide="smartphone"></i> Copy Guest Link</button>
+            <button class="btn btn-gold" id="upgradeBtn" style="display: none;"><i data-lucide="zap"></i> Upgrade VIP (₹2999)</button>
+            <button class="btn btn-red" id="endEventBtn"><i data-lucide="power"></i> End Event</button>
+        </div>
+        <div class="vip-settings" id="vipSettings">
+            <h3 style="color: #fbbf24; margin-bottom: 10px;"><i data-lucide="crown"></i> VIP Custom Watermark</h3>
+            <input type="file" id="watermarkInput" accept="image/svg+xml, image/png" style="color: white; margin-bottom: 10px;">
+            <button class="btn btn-blue" id="uploadWatermarkBtn" style="padding: 10px 20px;">Upload Logo</button>
         </div>
     </div>
-    <div class="dashboard-container">
-        <div id="mainContent"></div>
-    </div>
 
-    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script>
-        lucide.createIcons();
-        AOS.init();
-        
         const cfg = window.SnapNexus;
-        if (!cfg) { console.error('Config not loaded'); return; }
-        
-        const client = new Appwrite.Client()
-            .setEndpoint(cfg.ENDPOINT)
-            .setProject(cfg.PROJECT_ID);
-        const storage = new Appwrite.Storage(client);
-        const databases = new Appwrite.Databases(client);
+        const client = new Appwrite.Client().setEndpoint(cfg.ENDPOINT).setProject(cfg.PROJECT_ID);
         const account = new Appwrite.Account(client);
-        
+        const databases = new Appwrite.Databases(client);
+        const storage = new Appwrite.Storage(client);
+
         const urlParams = new URLSearchParams(window.location.search);
         const eventId = urlParams.get('event');
+        
+        // FIXED BLANK SCREEN CRASH (Replaced return; with throw new Error;)
+        if (!eventId) {
+            window.location.href = 'login.html';
+            throw new Error("Redirecting to login");
+        }
+
         let currentEvent = null;
-        let downloadWindowEnd = null;
-        let timerInterval = null;
-        
-        function showLoading(message) {
-            let loader = document.getElementById('dashboardLoader');
-            if (!loader) {
-                loader = document.createElement('div');
-                loader.id = 'dashboardLoader';
-                loader.className = 'loading-state';
-                loader.innerHTML = `<div class="spinner"></div><div>${message}</div>`;
-                document.body.appendChild(loader);
-            } else {
-                loader.querySelector('div:last-child').innerText = message;
-                loader.style.display = 'flex';
-            }
-        }
-        function hideLoading() {
-            const loader = document.getElementById('dashboardLoader');
-            if (loader) loader.style.display = 'none';
-        }
-        
-        async function checkAuth() {
-            try {
-                await account.get();
-                return true;
-            } catch(err) {
-                window.location.href = cfg.resolveUrl('login.html');
-                return false;
-            }
-        }
-        
-        // [MEGA PATCH] Event status check: default active unless DB says 'ended'
-        async function checkEventStatus() {
-            try {
-                const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [
-                    Appwrite.Query.equal('eventId', eventId)
-                ]);
-                if (res.documents.length === 0) {
-                    console.error('Event not found');
-                    document.getElementById('mainContent').innerHTML = `<div class="glass-card" style="text-align:center; color:#f87171;"><i data-lucide="alert-triangle"></i><h2>Event not found</h2><button id="backToEvents" class="btn-physics">Back to My Events</button></div>`;
-                    lucide.createIcons();
-                    document.getElementById('backToEvents')?.addEventListener('click', () => window.location.href = cfg.resolveUrl('login.html'));
-                    return false;
-                }
-                currentEvent = res.documents[0];
-                console.log('DB Status:', currentEvent.status);
-                return currentEvent.status !== 'ended';
-            } catch(err) { console.error(err); return true; }
-        }
-        
-        // [MEGA PATCH] Timer only if event ended and localStorage timer exists
-        function initTimerIfNeeded() {
-            if (!currentEvent || currentEvent.status !== 'ended') return false;
-            const storedEnd = localStorage.getItem(`timer_${eventId}`);
-            if (!storedEnd) return false;
-            const endTime = parseInt(storedEnd);
-            if (isNaN(endTime) || Date.now() >= endTime) {
-                localStorage.removeItem(`timer_${eventId}`);
-                return false;
-            }
-            downloadWindowEnd = endTime;
-            startTimerDisplay();
-            return true;
-        }
-        
-        function startTimerDisplay() {
-            if (timerInterval) clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                if (!downloadWindowEnd || Date.now() >= downloadWindowEnd) {
-                    clearInterval(timerInterval);
-                    const banner = document.querySelector('.timer-banner');
-                    if (banner) {
-                        banner.innerHTML = `<span>⏰ Free download window expired. Photos archived.</span><button id="unlockArchiveBtn" class="btn-physics" style="background:linear-gradient(105deg,#fbbf24,#f59e0b); color:#020617; margin-left:12px;">Unlock Archive (₹499)</button>`;
-                        const unlockBtn = document.getElementById('unlockArchiveBtn');
-                        if (unlockBtn) {
-                            unlockBtn.removeEventListener('click', openRazorpayForArchive);
-                            unlockBtn.addEventListener('click', openRazorpayForArchive);
-                        }
-                        const zipBtn = document.getElementById('downloadZipBtn');
-                        if (zipBtn) zipBtn.disabled = true;
-                    }
-                    localStorage.removeItem(`timer_${eventId}`);
-                } else {
-                    const minutesLeft = Math.ceil((downloadWindowEnd - Date.now()) / 60000);
-                    const banner = document.querySelector('.timer-banner');
-                    if (banner) banner.innerHTML = `<span>⏰ Free download window: ${minutesLeft} minute${minutesLeft !== 1 ? 's' : ''} remaining. Download all photos now!</span>`;
-                }
-            }, 60000);
-        }
-        
-        // [MEGA PATCH] Razorpay integration with correct key, ondismiss, updating both event and user prefs
-        async function openRazorpayForArchive() {
-            const user = await account.get().catch(() => null);
-            const options = {
-                key: 'rzp_test_Sf5GBrljv03Pmk',
-                amount: 49900,
-                currency: 'INR',
-                name: 'SnapNexus',
-                description: 'Unlock Event Archive – Download all photos',
-                image: '/SNAPN.png',
-                handler: async function(response) {
-                    console.log('Razorpay success:', response);
-                    try {
-                        await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, {
-                            tier: 'vip',
-                            status: 'active'
-                        });
-                        // [MEGA PATCH] Also update user preferences for future events
-                        await account.updatePrefs({ tier: 'vip' });
-                        localStorage.removeItem(`timer_${eventId}`);
-                        alert('Payment successful! Your archive is now unlocked. You are now a VIP user.');
-                        location.reload();
-                    } catch(err) {
-                        alert('Payment recorded but failed to update event. Please contact support.');
-                        console.error(err);
-                    }
-                },
-                modal: { ondismiss: function() { console.log('Payment popup closed'); } },
-                prefill: { email: user ? user.email : 'guest@snapnexus.in' },
-                theme: { color: '#fbbf24' }
-            };
-            const rzp = new Razorpay(options);
-            rzp.open();
-        }
-        
-        // [MEGA PATCH] VIP watermark upload
-        async function uploadWatermarkSVG(file) {
-            const fileId = Appwrite.ID.unique();
-            await storage.createFile(cfg.BUCKET_ID, fileId, file);
-            const fileUrl = storage.getFileView(cfg.BUCKET_ID, fileId);
-            await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, {
-                customWatermark: fileUrl
-            });
-            return fileUrl;
-        }
-        
-        // Stats and gallery (with Appwrite v14 queries)
-        async function updateStats() {
-            try {
-                const files = await storage.listFiles(cfg.BUCKET_ID, [
-                    Appwrite.Query.startsWith('name', eventId + '_'),
-                    Appwrite.Query.limit(100),
-                    Appwrite.Query.orderDesc('$createdAt')
-                ]);
-                const count = files.total;
-                document.getElementById('photoCount').innerText = count;
-                let totalSize = 0;
-                if (files.files) totalSize = files.files.reduce((s,f)=> s + (f.sizeOriginal||0),0);
-                document.getElementById('storageUsed').innerText = (totalSize/(1024*1024)).toFixed(1)+' MB';
-            } catch(err) { console.error(err); }
-        }
-        async function loadGallery() {
-            try {
-                const result = await storage.listFiles(cfg.BUCKET_ID, [
-                    Appwrite.Query.startsWith('name', eventId + '_'),
-                    Appwrite.Query.limit(100),
-                    Appwrite.Query.orderDesc('$createdAt')
-                ]);
-                const files = result.files || [];
-                const container = document.getElementById('galleryContainer');
-                if (!container) return;
-                if (files.length === 0) {
-                    container.innerHTML = `<div class="empty-gallery"><i data-lucide="camera-off"></i><p>No photos uploaded yet.</p></div>`;
-                    lucide.createIcons();
-                    return;
-                }
-                let html = '';
-                for (const file of files) {
-                    const fileUrl = storage.getFileView(cfg.BUCKET_ID, file.$id);
-                    html += `
-                        <div class="photo-card" data-file-id="${file.$id}">
-                            <img src="${fileUrl}" alt="Guest photo">
-                            <div class="photo-overlay">
-                                <button class="remove-btn" data-file-id="${file.$id}"><i data-lucide="trash-2" style="width:16px;"></i> Remove</button>
-                            </div>
-                        </div>`;
-                }
-                container.innerHTML = html;
-                lucide.createIcons();
-                document.querySelectorAll('.remove-btn').forEach(btn => {
-                    btn.addEventListener('click', async (e) => {
-                        e.stopPropagation();
-                        const fileId = btn.getAttribute('data-file-id');
-                        if (confirm('Delete this photo permanently?')) {
-                            await storage.deleteFile(cfg.BUCKET_ID, fileId);
-                            await loadGallery();
-                            await updateStats();
-                        }
-                    });
-                });
-            } catch(err) { console.error(err); }
-        }
-        
-        // Memory-safe ZIP download
-        async function downloadAllPhotos() {
-            const btn = document.getElementById('downloadZipBtn');
-            if (!btn || btn.disabled) return;
-            const overlay = document.createElement('div');
-            overlay.id = 'zipOverlay';
-            overlay.className = 'zip-overlay';
-            overlay.innerHTML = `<div class="spinner"></div><div id="zipProgress">Compiling Archive (0 photos)...</div><div>Please wait...</div>`;
-            document.body.appendChild(overlay);
-            const progressDiv = document.getElementById('zipProgress');
-            try {
-                const result = await storage.listFiles(cfg.BUCKET_ID, [
-                    Appwrite.Query.startsWith('name', eventId + '_'),
-                    Appwrite.Query.limit(1000)
-                ]);
-                const files = result.files || [];
-                if (files.length === 0) { alert("No photos to download"); overlay.remove(); return; }
-                const zip = new JSZip();
-                const folder = zip.folder(`SnapNexus_${eventId}`);
-                const batchSize = 10;
-                let processed = 0;
-                for (let i = 0; i < files.length; i += batchSize) {
-                    const batch = files.slice(i, i + batchSize);
-                    await Promise.all(batch.map(async (file) => {
-                        const blob = await fetch(storage.getFileView(cfg.BUCKET_ID, file.$id)).then(r => r.blob());
-                        folder.file(file.name, blob);
-                    }));
-                    processed += batch.length;
-                    progressDiv.innerText = `Compiling Archive (${processed}/${files.length} photos)...`;
-                }
-                const content = await zip.generateAsync({ type: "blob" });
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(content);
-                link.download = `SnapNexus_${eventId}_Memories.zip`;
-                link.click();
-                URL.revokeObjectURL(link.href);
-                overlay.remove();
-                alert('Download started!');
-            } catch(err) { overlay.remove(); alert("Download failed: "+err.message); }
-        }
-        
-        // Render the main dashboard UI
-        async function renderEventDashboard() {
-            const isEnded = currentEvent.status === 'ended';
-            const tier = currentEvent.tier;
-            // [MEGA PATCH] TV routing based on tier
-            const tvPage = (tier === 'starter') ? 'tv.html' : 'tv_2.html';
-            const liveWallLink = cfg.resolveUrl(`${tvPage}?event=${eventId}`);
-            
-            let timerHtml = '';
-            let downloadEnabled = false;
-            if (isEnded) {
-                const timerExists = initTimerIfNeeded();
-                if (timerExists) {
-                    downloadEnabled = true;
-                    timerHtml = `<div class="timer-banner">⏰ Free download window active. Download all photos now!</div>`;
-                } else {
-                    downloadEnabled = false;
-                    timerHtml = `<div class="timer-banner"><span>⏰ Free download window expired. Photos archived.</span><button id="unlockArchiveBtn" class="btn-physics" style="background:linear-gradient(105deg,#fbbf24,#f59e0b); color:#020617; margin-left:12px;">Unlock Archive (₹499)</button></div>`;
-                }
-            }
-            
-            let vipHtml = '';
-            if (tier === 'vip' && !isEnded) {
-                vipHtml = `
-                    <div class="vip-section">
-                        <h3>👑 VIP Logo Forge</h3>
-                        <p>Upload your custom SVG watermark. It will be applied to all new guest uploads.</p>
-                        <label class="file-input-label"><i data-lucide="upload"></i> Upload SVG <input type="file" id="vipSvgInput" accept=".svg" style="display:none;"></label>
-                        <div id="vipWatermarkStatus" style="margin-top:12px;"></div>
-                        ${currentEvent.customWatermark ? `<div><strong>Current watermark:</strong><br><img src="${currentEvent.customWatermark}" style="max-width:150px; margin-top:8px;"></div>` : ''}
-                    </div>
-                `;
-            }
-            
-            document.getElementById('mainContent').innerHTML = `
-                <div style="margin-bottom:20px;">
-                    <button id="backToEventsBtn" class="btn-physics btn-outline"><i data-lucide="arrow-left"></i> Back to My Events</button>
-                    <a href="${liveWallLink}" target="_blank" id="viewWallBtn" class="btn-physics" style="margin-left:12px; background:linear-gradient(105deg,#10b981,#059669);"><i data-lucide="tv"></i> Open TV Display</a>
-                </div>
-                <h2 style="margin-bottom:32px;">${currentEvent.eventName} <span style="color:#60a5fa;">#LiveWall</span></h2>
-                <div class="stats-grid">
-                    <div class="glass-card stat-card"><div class="stat-icon"><i data-lucide="image"></i></div><div><div class="stat-value" id="photoCount">0</div><div class="stat-label">Photos Uploaded</div></div></div>
-                    <div class="glass-card stat-card"><div class="stat-icon"><i data-lucide="users"></i></div><div><div class="stat-value" id="guestCount">0</div><div class="stat-label">Active Guests</div></div></div>
-                    <div class="glass-card stat-card"><div class="stat-icon"><i data-lucide="database"></i></div><div><div class="stat-value" id="storageUsed">0 MB</div><div class="stat-label">Storage Used</div></div></div>
-                </div>
-                ${timerHtml}
-                ${vipHtml}
-                <div class="glass-card">
-                    <div class="toolbar"><h3>Event Controls</h3><div style="display:flex; gap:12px;"><button class="btn-physics" id="printQrBtn"><i data-lucide="qr-code"></i> Print QR</button><button class="btn-physics" id="viewGuestAppBtn"><i data-lucide="smartphone"></i> View Guest App</button><button class="btn-physics" id="downloadZipBtn" ${!downloadEnabled && isEnded ? 'disabled' : ''}><i data-lucide="download"></i> ${downloadEnabled ? 'Download ZIP' : (isEnded ? 'Download ZIP (Unavailable)' : 'Download ZIP')}</button>${!isEnded ? '<button class="btn-physics btn-danger" id="endEventBtn"><i data-lucide="power"></i> End Event</button>' : ''}</div></div>
-                    <div id="galleryContainer" class="gallery-grid"><div class="empty-gallery"><i data-lucide="camera-off"></i><p>No photos yet.</p></div></div>
-                </div>
-            `;
+
+        document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
-            
-            document.getElementById('backToEventsBtn')?.addEventListener('click', () => window.location.href = cfg.resolveUrl('login.html'));
-            // VIP SVG upload
-            if (tier === 'vip' && !isEnded) {
-                const svgInput = document.getElementById('vipSvgInput');
-                document.querySelector('.file-input-label')?.addEventListener('click', () => svgInput.click());
-                svgInput.addEventListener('change', async (e) => {
-                    const file = e.target.files[0];
-                    if (!file || file.type !== 'image/svg+xml') { alert('Only SVG files allowed'); return; }
-                    const statusDiv = document.getElementById('vipWatermarkStatus');
-                    statusDiv.innerHTML = '<span class="spinner"></span> Uploading...';
-                    try {
-                        await uploadWatermarkSVG(file);
-                        statusDiv.innerHTML = '✅ Watermark uploaded! Reloading...';
-                        setTimeout(() => location.reload(), 1500);
-                    } catch(err) { statusDiv.innerHTML = '❌ Failed: ' + err.message; }
+            try { await account.get(); } catch(e) { window.location.href = 'login.html'; throw new Error("Redirecting"); }
+
+            try {
+                const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [ Appwrite.Query.equal('eventId', eventId) ]);
+                if (res.documents.length === 0) { alert('Event not found.'); window.location.href = 'login.html'; throw new Error("Redirecting"); }
+                
+                currentEvent = res.documents[0];
+                document.getElementById('dashEventName').innerText = currentEvent.eventName;
+                document.getElementById('dashEventId').innerText = "ID: " + currentEvent.eventId;
+                
+                const tierBadge = document.getElementById('dashEventTier');
+                tierBadge.innerText = "Tier: " + currentEvent.tier.toUpperCase();
+                if(currentEvent.tier === 'vip') tierBadge.classList.add('vip');
+                document.getElementById('dashEventStatus').innerText = "Status: " + currentEvent.status.toUpperCase();
+
+                document.getElementById('openTvBtn').addEventListener('click', () => {
+                    const tvFile = currentEvent.tier === 'vip' ? 'tv_2.html' : 'tv.html';
+                    window.open(`${tvFile}?event=${currentEvent.eventId}`, '_blank');
                 });
-            }
-            const unlockBtn = document.getElementById('unlockArchiveBtn');
-            if (unlockBtn) unlockBtn.addEventListener('click', openRazorpayForArchive);
-            const downloadBtn = document.getElementById('downloadZipBtn');
-            if (downloadBtn && !downloadBtn.disabled) downloadBtn.addEventListener('click', downloadAllPhotos);
-            
-            if (!isEnded || (isEnded && downloadEnabled)) {
-                await updateStats();
-                await loadGallery();
-                setInterval(updateStats, 10000);
-                setInterval(loadGallery, 10000);
-                attachEventListeners();
-            }
-        }
-        
-        function attachEventListeners() {
-            document.getElementById('printQrBtn')?.addEventListener('click', () => {
-                const guestUrl = cfg.resolveUrl(`app.html?event=${encodeURIComponent(eventId)}`);
-                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(guestUrl)}`;
-                const win = window.open('', '_blank');
-                win.document.write(`<body style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;"><h1>Scan to Join: ${currentEvent?.eventName || eventId}</h1><img src="${qrUrl}" style="width:300px;height:300px;"><p>Point your camera here to upload photos!</p><button onclick="window.print()">Print Poster</button></body>`);
-            });
-            document.getElementById('viewGuestAppBtn')?.addEventListener('click', () => window.open(cfg.resolveUrl(`app.html?event=${eventId}`), '_blank'));
-            document.getElementById('endEventBtn')?.addEventListener('click', async () => {
-                if (!currentEvent || currentEvent.status === 'ended') return;
-                if (!confirm('End event? Guests cannot upload more. You will have 10 minutes to download all photos for free.')) return;
-                try {
-                    await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { status: 'ended' });
-                    const endTime = Date.now() + 10 * 60 * 1000;
-                    localStorage.setItem(`timer_${eventId}`, endTime.toString());
-                    alert('Event ended. Free download window starts now.');
-                    location.reload();
-                } catch(err) { alert('Failed: '+err.message); }
-            });
-        }
-        
-        async function loadEventDashboard() {
-            if (!eventId) {
-                // No event ID, show user's event list (redirect to login which handles it)
-                window.location.href = cfg.resolveUrl('login.html');
-                throw new Error("Redirecting");
-            }
-            showLoading('Loading event...');
-            try {
-                const active = await checkEventStatus();
-                if (!active) return;
-                await renderEventDashboard();
-            } catch(err) { console.error(err); }
-            finally { hideLoading(); }
-        }
-        
-        document.getElementById('createNewEventBtn')?.addEventListener('click', async () => {
-            const eventName = prompt('Enter event name:');
-            if (!eventName) return;
-            const user = await account.get();
-            // [MEGA PATCH] Use real event ID generation
-            const realEventId = 'evt_' + Math.random().toString(36).substr(2, 9);
-            let userTier = 'starter';
-            try {
-                const prefs = await account.getPrefs();
-                if (prefs.tier) userTier = prefs.tier;
-            } catch(e) {}
-            try {
-                await databases.createDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, realEventId, {
-                    eventName: eventName,
-                    eventId: realEventId,
-                    tier: userTier,
-                    hostEmail: user.email,
-                    status: 'active',
-                    createdAtUnix: Date.now()
+
+                document.getElementById('openQrBtn').addEventListener('click', () => {
+                    navigator.clipboard.writeText(cfg.resolveUrl(`app.html?event=${currentEvent.eventId}`)).then(() => alert("Guest Link Copied!"));
                 });
-                alert('Event created!');
-                window.location.href = cfg.resolveUrl(`dashboard.html?event=${realEventId}`);
-            } catch(err) { alert('Error: ' + err.message); }
+
+                const upgradeBtn = document.getElementById('upgradeBtn');
+                if (currentEvent.tier !== 'vip') {
+                    upgradeBtn.style.display = 'flex';
+                    upgradeBtn.addEventListener('click', () => {
+                        const options = {
+                            key: 'rzp_test_Sf5GBrljv03Pmk',
+                            amount: 299900, currency: 'INR', name: 'SnapNexus VIP', description: 'Upgrade to VIP',
+                            handler: async function (response) {
+                                await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { tier: 'vip' });
+                                await account.updatePrefs({ tier: 'vip' });
+                                alert('Payment Successful! You are now VIP.');
+                                window.location.reload();
+                            }
+                        };
+                        new window.Razorpay(options).open();
+                    });
+                } else {
+                    document.getElementById('vipSettings').style.display = 'block';
+                    document.getElementById('uploadWatermarkBtn').addEventListener('click', async () => {
+                        const file = document.getElementById('watermarkInput').files[0];
+                        if(!file) return alert('Select an image.');
+                        document.getElementById('uploadWatermarkBtn').innerText = 'Uploading...';
+                        const uploaded = await storage.createFile(cfg.BUCKET_ID, Appwrite.ID.unique(), file);
+                        const viewUrl = storage.getFileView(cfg.BUCKET_ID, uploaded.$id).href;
+                        await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { customWatermark: viewUrl });
+                        alert('Logo saved for TV Wall!');
+                        document.getElementById('uploadWatermarkBtn').innerText = 'Upload Logo';
+                    });
+                }
+
+                document.getElementById('endEventBtn').addEventListener('click', async () => {
+                    if(confirm("End event? Guests can no longer upload.")) {
+                        await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { status: 'ended' });
+                        window.location.reload();
+                    }
+                });
+            } catch (err) { console.error(err); }
         });
-        
-        document.getElementById('logoutBtn')?.addEventListener('click', async () => {
-            await account.deleteSession('current');
-            window.location.href = cfg.resolveUrl('login.html');
-        });
-        
-        (async function init() {
-            const authed = await checkAuth();
-            if (!authed) return;
-            await loadEventDashboard();
-        })();
     </script>
 </body>
 </html>
