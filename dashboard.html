@@ -78,6 +78,13 @@
     </div>
 
     <script>
+        // STRICT INIT: Fixed config reference
+        const cfg = window.SnapNexus;
+        const client = new Appwrite.Client().setEndpoint(cfg.ENDPOINT).setProject(cfg.PROJECT_ID);
+        const account = new Appwrite.Account(client);
+        const databases = new Appwrite.Databases(client);
+        const storage = new Appwrite.Storage(client);
+
         const urlParams = new URLSearchParams(window.location.search);
         const eventId = urlParams.get('event');
         
@@ -92,15 +99,14 @@
             lucide.createIcons();
             
             try { 
-                await window.account.get(); 
+                await account.get(); 
             } catch(e) { 
                 window.location.href = 'login.html'; 
                 throw new Error("User Not Logged In"); 
             }
 
             try {
-                // FIXED DB FETCH LOOP: Grab Document directly by ID instead of crashing via Query Index
-                currentEvent = await window.databases.getDocument(window.cfg.DATABASE_ID, window.cfg.COLLECTION_ID, eventId);
+                currentEvent = await databases.getDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, eventId);
                 
                 document.getElementById('dashEventName').innerText = currentEvent.eventName;
                 document.getElementById('dashEventId').innerText = "ID: " + currentEvent.eventId;
@@ -124,7 +130,7 @@
                 });
 
                 document.getElementById('openQrBtn').addEventListener('click', () => {
-                    navigator.clipboard.writeText(window.cfg.resolveUrl(`app.html?event=${currentEvent.eventId}`)).then(() => alert("Guest Link Copied!"));
+                    navigator.clipboard.writeText(cfg.resolveUrl(`app.html?event=${currentEvent.eventId}`)).then(() => alert("Guest Link Copied!"));
                 });
 
                 const upgradeBtn = document.getElementById('upgradeBtn');
@@ -146,8 +152,8 @@
                             name: 'SnapNexus', 
                             description: `Upgrade to ${planName}`,
                             handler: async function (response) {
-                                await window.databases.updateDocument(window.cfg.DATABASE_ID, window.cfg.COLLECTION_ID, currentEvent.$id, { tier: tierId });
-                                await window.account.updatePrefs({ tier: tierId });
+                                await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { tier: tierId });
+                                await account.updatePrefs({ tier: tierId });
                                 alert(`Payment Successful! You are now on the ${planName}.`);
                                 window.location.reload();
                             }
@@ -159,7 +165,7 @@
                     if (currentEvent.tier === 'pro') {
                         selectProBtn.style.display = 'none';
                     } else {
-                        selectProBtn.addEventListener('click', () => handleCheckout(499, 'Pro Plan', 'pro')); // Using 499 amount here
+                        selectProBtn.addEventListener('click', () => handleCheckout(499, 'Pro Plan', 'pro'));
                     }
                     selectVipBtn.addEventListener('click', () => handleCheckout(2999, 'VIP Plan', 'vip'));
                 } else {
@@ -168,9 +174,9 @@
                         const file = document.getElementById('watermarkInput').files[0];
                         if(!file) return alert('Select an image.');
                         document.getElementById('uploadWatermarkBtn').innerText = 'Uploading...';
-                        const uploaded = await window.storage.createFile(window.cfg.BUCKET_ID, Appwrite.ID.unique(), file);
-                        const viewUrl = window.storage.getFileView(window.cfg.BUCKET_ID, uploaded.$id).href;
-                        await window.databases.updateDocument(window.cfg.DATABASE_ID, window.cfg.COLLECTION_ID, currentEvent.$id, { customWatermark: viewUrl });
+                        const uploaded = await storage.createFile(cfg.BUCKET_ID, Appwrite.ID.unique(), file);
+                        const viewUrl = storage.getFileView(cfg.BUCKET_ID, uploaded.$id).href;
+                        await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { customWatermark: viewUrl });
                         alert('Logo saved for TV Wall!');
                         document.getElementById('uploadWatermarkBtn').innerText = 'Upload Logo';
                     });
@@ -178,7 +184,7 @@
 
                 document.getElementById('endEventBtn').addEventListener('click', async () => {
                     if(confirm("End event? Guests can no longer upload.")) {
-                        await window.databases.updateDocument(window.cfg.DATABASE_ID, window.cfg.COLLECTION_ID, currentEvent.$id, { status: 'ended' });
+                        await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { status: 'ended' });
                         window.location.reload();
                     }
                 });
@@ -190,13 +196,13 @@
 
                 const fetchAndRenderGallery = async () => {
                     try {
-                        const res = await window.storage.listFiles(window.cfg.BUCKET_ID, [
+                        const res = await storage.listFiles(cfg.BUCKET_ID, [
                             Appwrite.Query.startsWith('name', currentEvent.eventId + '_'),
                             Appwrite.Query.orderDesc('$createdAt'),
                             Appwrite.Query.limit(50)
                         ]);
                         hostGallery.innerHTML = res.files.map(f => {
-                            const url = window.storage.getFileView(window.cfg.BUCKET_ID, f.$id).href;
+                            const url = storage.getFileView(cfg.BUCKET_ID, f.$id).href;
                             return `<div style="border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); aspect-ratio: 1; background: #000;">
                                         <img src="${url}" style="width: 100%; height: 100%; object-fit: cover;">
                                     </div>`;
