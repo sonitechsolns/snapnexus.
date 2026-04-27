@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script src="/config.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
+    <script src="/config.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SnapNexus | Host Login</title>
@@ -71,11 +71,6 @@
     </div>
 
     <script>
-        const cfg = window.SnapNexus;
-        const client = new Appwrite.Client().setEndpoint(cfg.ENDPOINT).setProject(cfg.PROJECT_ID);
-        const account = new Appwrite.Account(client);
-        const databases = new Appwrite.Databases(client);
-        
         let isSignup = false;
         let currentUser = null;
         let globalEventHistory = [];
@@ -216,8 +211,7 @@
                         eventId: realEventId, 
                         tier: userTier, 
                         hostEmail: currentUser.email, 
-                        status: 'active', 
-                        createdAtUnix: Date.now()
+                        status: 'active'
                     });
                     // Redirect according to tier
                     if (userTier === 'vip') {
