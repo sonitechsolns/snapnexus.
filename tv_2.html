@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script src="/config.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
+    <script src="/config.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SnapNexus | VIP Live TV</title>
@@ -52,11 +52,6 @@
     <img id="vipLogo" class="custom-watermark" src="" style="display: none;">
 
     <script>
-        const cfg = window.SnapNexus;
-        const client = new Appwrite.Client().setEndpoint(cfg.ENDPOINT).setProject(cfg.PROJECT_ID);
-        const databases = new Appwrite.Databases(client);
-        const storage = new Appwrite.Storage(client);
-
         const urlParams = new URLSearchParams(window.location.search);
         const eventId = urlParams.get('event');
         if (!eventId) { document.body.innerHTML = '<h1 style="color:white; text-align:center; padding-top:20vh;">Invalid TV Link</h1>'; throw new Error("Halt"); }

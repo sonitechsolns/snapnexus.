@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script src="/config.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
+    <script src="/config.js"></script>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,7 +10,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Urbanist:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        /* Exact Original Styles */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Urbanist', sans-serif; background: #020617; color: #ffffff; padding: 20px; }
         .container { max-width: 900px; margin: 40px auto; background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 40px; }
@@ -52,16 +51,10 @@
     </div>
 
     <script>
-        const cfg = window.SnapNexus;
-        const client = new Appwrite.Client().setEndpoint(cfg.ENDPOINT).setProject(cfg.PROJECT_ID);
-        const account = new Appwrite.Account(client);
-        const databases = new Appwrite.Databases(client);
-        const storage = new Appwrite.Storage(client);
-
         const urlParams = new URLSearchParams(window.location.search);
         const eventId = urlParams.get('event');
         
-        // FIXED BLANK SCREEN CRASH (Replaced return; with throw new Error;)
+        // FIXED BLANK SCREEN CRASH
         if (!eventId) {
             window.location.href = 'login.html';
             throw new Error("Redirecting to login");
