@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <script src="/config.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -125,11 +126,48 @@
                 try {
                     currentUser = await account.get();
                     
-                    // 5. VIP Subscription Engine - Timer
+                    // 5. VIP Subscription Engine - Timer & Tier handling
                     let prefs = await account.getPrefs();
-                    if (prefs.subExpiry && Date.now() > prefs.subExpiry) {
-                        await account.updatePrefs({ tier: 'starter', subExpiry: null });
-                        prefs.tier = 'starter';
+                    if (prefs.subExpiry) {
+                        const now = Date.now();
+                        const bufferMs = 3 * 3600000; // 3 hours
+                        
+                        try {
+                            if (prefs.tier === 'pro' || prefs.tier === 'premium') {
+                                if (now > prefs.subExpiry) {
+                                    const activeReq = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [
+                                        Appwrite.Query.equal('hostEmail', currentUser.email),
+                                        Appwrite.Query.equal('status', 'active')
+                                    ]);
+                                    for (let doc of activeReq.documents) {
+                                        await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, doc.$id, { status: 'ended' });
+                                    }
+                                }
+                                if (now > prefs.subExpiry + bufferMs) {
+                                    const proReq = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [
+                                        Appwrite.Query.equal('hostEmail', currentUser.email),
+                                        Appwrite.Query.notEqual('tier', 'starter')
+                                    ]);
+                                    for (let doc of proReq.documents) {
+                                        await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, doc.$id, { tier: 'starter' });
+                                    }
+                                    await account.updatePrefs({ tier: 'starter', subExpiry: null });
+                                    prefs.tier = 'starter';
+                                }
+                            } else if (prefs.tier === 'vip') {
+                                if (now > prefs.subExpiry) {
+                                    const vipReq = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [
+                                        Appwrite.Query.equal('hostEmail', currentUser.email),
+                                        Appwrite.Query.equal('tier', 'vip')
+                                    ]);
+                                    for (let doc of vipReq.documents) {
+                                        await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, doc.$id, { tier: 'starter' });
+                                    }
+                                    await account.updatePrefs({ tier: 'starter', subExpiry: null });
+                                    prefs.tier = 'starter';
+                                }
+                            }
+                        } catch(e) { console.error('Subscription expiry update failed', e); }
                     }
 
                     authForm.style.display = 'none';
@@ -137,6 +175,72 @@
                     document.getElementById('authTitle').innerText = `Welcome, ${currentUser.name || 'Host'}`;
                     document.getElementById('authSubtitle').innerText = 'Your event dashboard';
                     loadHistory();
+
+                    const planMap = {
+                        'pro': { amount: 499, name: 'Pro Plan' },
+                        'premium': { amount: 999, name: 'Premium Plan' },
+                        'vip': { amount: 2999, name: 'VIP Plan' }
+                    };
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const p = urlParams.get('plan');
+                    if (p && planMap[p]) {
+                        if (!confirm("By proceeding with this payment, you agree to our Privacy Policy and Terms of Service.")) {
+                            window.history.replaceState({}, document.title, 'login.html');
+                            return;
+                        }
+                        const planDetails = planMap[p];
+
+                        // OTP Verification Simulation
+                        const mockOtp = Math.floor(100000 + Math.random() * 900000).toString();
+                        alert(`[OTP SYSTEM] An OTP has been sent to ${currentUser.email} for verification.\\n\\nFor this demo, your OTP is: ${mockOtp}`);
+                        const userOtp = prompt(`Enter the 6-digit OTP sent to ${currentUser.email} to proceed to payment:`);
+                        if (userOtp !== mockOtp) {
+                            alert('Invalid OTP. Verification failed.');
+                            window.history.replaceState({}, document.title, 'login.html');
+                            return;
+                        }
+
+                        // Mock Email Logic
+                        const sendReceiptEmail = (email, planName, amount) => {
+                            console.log(`Sending receipt email to ${email} via sooperfast.net@yahoo.com...`);
+                            alert(`Verification complete! Receipt for ${planName} (₹${amount}) was mailed to ${email} securely from sooperfast.net@yahoo.com.`);
+                        };
+
+                        const options = {
+                            key: 'rzp_test_Sf5GBrljv03Pmk',
+                            amount: planDetails.amount * 100,
+                            currency: 'INR', 
+                            name: 'SnapNexus', 
+                            description: `Upgrade to ${planDetails.name}`,
+                            handler: async function (response) {
+                                const subExpiry = Date.now() + 30 * 24 * 60 * 60 * 1000;
+                                await account.updatePrefs({ tier: p, subExpiry: subExpiry });
+                                
+                                try {
+                                    const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [
+                                        Appwrite.Query.equal('hostEmail', currentUser.email),
+                                        Appwrite.Query.equal('status', 'active')
+                                    ]);
+                                    for (let doc of res.documents) {
+                                        await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, doc.$id, { tier: p });
+                                    }
+                                } catch(e) { console.error('Failed to sync events', e); }
+                                
+                                sendReceiptEmail(currentUser.email, planDetails.name, planDetails.amount);
+
+                                alert(`Payment Successful! You are now on the ${planDetails.name}.`);
+                                window.location.href = 'login.html'; // Refresh without params
+                            },
+                            modal: {
+                                ondismiss: function() {
+                                    window.history.replaceState({}, document.title, 'login.html');
+                                }
+                            }
+                        };
+                        new window.Razorpay(options).open();
+                    } else if (p) {
+                        window.history.replaceState({}, document.title, 'login.html');
+                    }
                 } catch(err) {
                     authForm.style.display = 'block';
                     historySection.style.display = 'none';
@@ -189,8 +293,12 @@
                 } catch(e) {}
 
                 const activeCount = globalEventHistory.filter(e => e.status === 'active').length;
-                if (userTier !== 'vip' && activeCount >= 1) {
-                    alert('Limit Reached: Your current plan allows only 1 active event at a time.\\n\\nPlease click your active event below and press "End Event", or upgrade to VIP for unlimited concurrent events.');
+                let limit = 1;
+                if (userTier === 'premium') limit = 5;
+                if (userTier === 'vip') limit = Infinity;
+
+                if (activeCount >= limit) {
+                    alert(`Limit Reached: Your current plan allows only ${limit} active event(s) at a time.\\n\\nPlease click your active event below and press "End Event", or upgrade for more capacity.`);
                     btn.disabled = false;
                     btn.innerHTML = oldHtml;
                     return;

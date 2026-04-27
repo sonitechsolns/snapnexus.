@@ -57,11 +57,6 @@
     <img id="vipLogo" class="custom-watermark" src="" style="display: none;">
 
     <script>
-        const cfg = window.SnapNexus;
-        const client = new Appwrite.Client().setEndpoint(cfg.ENDPOINT).setProject(cfg.PROJECT_ID);
-        const databases = new Appwrite.Databases(client);
-        const storage = new Appwrite.Storage(client);
-
         const urlParams = new URLSearchParams(window.location.search);
         const eventId = urlParams.get('event');
         if (!eventId) { document.body.innerHTML = '<h1 style="color:white; text-align:center; padding-top:20vh;">Invalid TV Link</h1>'; throw new Error("Halt"); }
@@ -118,12 +113,30 @@
             
             const fullscreenBtn = document.getElementById('fullscreenBtn');
             fullscreenBtn.addEventListener('click', () => {
-                if (!document.fullscreenElement) { document.documentElement.requestFullscreen(); fullscreenBtn.innerHTML='<i data-lucide="minimize"></i> Exit'; } 
-                else { document.exitFullscreen(); fullscreenBtn.innerHTML='<i data-lucide="maximize"></i> Fullscreen'; }
+                if (!document.fullscreenElement) { 
+                    document.documentElement.requestFullscreen(); 
+                    fullscreenBtn.innerHTML='<i data-lucide="minimize"></i> Exit Fullscreen'; 
+                    sidebar.classList.add('collapsed');
+                } 
+                else { 
+                    document.exitFullscreen(); 
+                    fullscreenBtn.innerHTML='<i data-lucide="maximize"></i> Fullscreen'; 
+                    sidebar.classList.remove('collapsed');
+                }
                 lucide.createIcons();
             });
 
-            fetchPhotos(); setInterval(fetchPhotos, 5000); setInterval(nextSlide, 5000);
+            fetchPhotos(); setInterval(fetchPhotos, 1500); setInterval(nextSlide, 4000);
+            
+            async function checkEventStatus() {
+                try {
+                    const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [ Appwrite.Query.equal('eventId', eventId) ]);
+                    if (res.documents.length > 0 && res.documents[0].status === 'ended') {
+                        document.body.innerHTML = '<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; width:100vw; background:#000; z-index:9999; position:absolute; top:0; left:0;"><h1 style="font-size: 4rem; color: #fbbf24; font-family:\'Syne\';">Event Ended</h1></div>';
+                    }
+                } catch(e) {}
+            }
+            setInterval(checkEventStatus, 5000);
         });
     </script>
 </body>

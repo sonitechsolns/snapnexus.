@@ -112,7 +112,7 @@
                 else { layer1.src = nextUrl; layer1.classList.add('active'); layer2.classList.remove('active'); activeLayer = 1; }
             }
 
-            fetchPhotos(); setInterval(fetchPhotos, 5000); setInterval(nextSlide, 6000);
+            fetchPhotos(); setInterval(fetchPhotos, 1500); setInterval(nextSlide, 4500);
             
             async function checkEventStatus() {
                 if (isDemo) return;
@@ -123,7 +123,7 @@
                     }
                 } catch(e) {}
             }
-            setInterval(checkEventStatus, 15000);
+            setInterval(checkEventStatus, 5000);
             
             // Ad Rotation Logic
             const ads = [document.getElementById('ad1'), document.getElementById('ad2'), document.getElementById('ad3')];

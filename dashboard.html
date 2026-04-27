@@ -99,6 +99,10 @@
                     <h3 style="color: #60a5fa; margin-bottom: 8px;">Pro Plan — ₹499</h3>
                     <p style="color: #94a3b8; font-size: 0.95rem;">Removes Ads, Unlocks 30-day retention.</p>
                 </div>
+                <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: 0.2s;" id="selectPremiumBtn" onmouseover="this.style.background='rgba(16, 185, 129, 0.1)';this.style.borderColor='#10b981'" onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.borderColor='rgba(255,255,255,0.1)'">
+                    <h3 style="color: #10b981; margin-bottom: 8px;">Premium Plan — ₹999</h3>
+                    <p style="color: #94a3b8; font-size: 0.95rem;">High-res downloads, Priority Queue.</p>
+                </div>
                 <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: 0.2s;" id="selectVipBtn" onmouseover="this.style.background='rgba(245, 158, 11, 0.1)';this.style.borderColor='#fbbf24'" onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.borderColor='rgba(255,255,255,0.1)'">
                     <h3 style="color: #fbbf24; margin-bottom: 8px;"><i data-lucide="crown" style="width: 18px; display: inline-block; vertical-align: middle;"></i> VIP Plan — ₹2999</h3>
                     <p style="color: #94a3b8; font-size: 0.95rem;">Ad-free, Unlimited Concurrent Events, Custom Logo</p>
@@ -125,12 +129,6 @@
     </div>
 
     <script>
-        const cfg = window.SnapNexus;
-        const client = new Appwrite.Client().setEndpoint(cfg.ENDPOINT).setProject(cfg.PROJECT_ID);
-        const account = new Appwrite.Account(client);
-        const databases = new Appwrite.Databases(client);
-        const storage = new Appwrite.Storage(client);
-
         const urlParams = new URLSearchParams(window.location.search);
         const eventId = urlParams.get('event');
         
@@ -164,11 +162,31 @@
                 if (res.documents.length === 0) throw new Error("Not Found");
                 currentEvent = res.documents[0];
                 
-                // If event is VIP but user somehow got here (and user isn't VIP due to expiration?), we should redirect them or downgrade the event
-                if (currentEvent.tier === 'vip' && userPrefs.tier !== 'vip') {
-                    // Force event downgrade since their subscription expired
-                    await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { tier: 'starter' });
-                    currentEvent.tier = 'starter';
+                // Enforce Subscriptions and Buffer rules locally
+                if (userPrefs && userPrefs.subExpiry) {
+                    const now = Date.now();
+                    const bufferMs = 3 * 3600000;
+                    if (userPrefs.tier === 'pro' || userPrefs.tier === 'premium') {
+                        if (now > userPrefs.subExpiry && currentEvent.status !== 'ended') {
+                            await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { status: 'ended' });
+                            currentEvent.status = 'ended';
+                            alert("Subscription ended. Your event has ended, but you have a 3-hour buffer to download files.");
+                        }
+                        if (now > userPrefs.subExpiry + bufferMs && currentEvent.tier !== 'starter') {
+                            await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { tier: 'starter' });
+                            await account.updatePrefs({ tier: 'starter', subExpiry: null });
+                            currentEvent.tier = 'starter';
+                            userPrefs.tier = 'starter';
+                            window.location.reload();
+                        }
+                    } else if (userPrefs.tier === 'vip') {
+                        if (now > userPrefs.subExpiry && currentEvent.tier === 'vip') {
+                            await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { tier: 'starter' });
+                            await account.updatePrefs({ tier: 'starter', subExpiry: null });
+                            currentEvent.tier = 'starter';
+                            userPrefs.tier = 'starter';
+                        }
+                    }
                 }
 
                 document.getElementById('dashEventName').innerText = currentEvent.eventName;
@@ -177,7 +195,7 @@
                 const tierBadge = document.getElementById('dashEventTier');
                 tierBadge.innerText = "Tier: " + currentEvent.tier.toUpperCase();
                 if(currentEvent.tier === 'vip') tierBadge.classList.add('vip');
-                if(currentEvent.tier === 'pro') tierBadge.classList.add('pro');
+                if(currentEvent.tier === 'pro' || currentEvent.tier === 'premium') tierBadge.classList.add('pro');
                 
                 const statusBadge = document.getElementById('dashEventStatus');
                 statusBadge.innerText = "Status: " + currentEvent.status.toUpperCase();
@@ -191,6 +209,7 @@
                 // 4. Data Retention Timers
                 const downloadBtn = document.getElementById('downloadZipBtn');
                 const upsellText = document.getElementById('upsellText');
+                
                 if (currentEvent.tier === 'starter') {
                     const eventAgeMs = Date.now() - new Date(currentEvent.$createdAt).getTime();
                     const hours24 = 24 * 60 * 60 * 1000;
@@ -198,8 +217,22 @@
                         downloadBtn.disabled = true;
                         downloadBtn.innerHTML = '<i data-lucide="lock"></i> Gallery Expired';
                         upsellText.style.display = 'block';
+                        upsellText.style.color = '#ef4444';
                         upsellText.innerText = "Downloads expire in 24 hours on the Free plan. Upgrade to Pro (₹499) to unlock 30-day gallery retention!";
                         lucide.createIcons();
+                    }
+                } else if ((currentEvent.tier === 'pro' || currentEvent.tier === 'premium') && userPrefs.subExpiry) {
+                    const now = Date.now();
+                    if (now > userPrefs.subExpiry) {
+                        const timeLeftMs = (userPrefs.subExpiry + 3 * 3600000) - now;
+                        if (timeLeftMs > 0) {
+                            const minsLeft = Math.floor(timeLeftMs / 60000);
+                            const hoursLeft = Math.floor(minsLeft / 60);
+                            const disp = hoursLeft > 0 ? `${hoursLeft}h ${minsLeft%60}m` : `${minsLeft} minutes`;
+                            upsellText.style.display = 'block';
+                            upsellText.style.color = '#f59e0b';
+                            upsellText.innerText = `Subscription Expired. Event ended automatically. You have ${disp} left to download your gallery before files are locked.`;
+                        }
                     }
                 }
                 
@@ -223,6 +256,7 @@
                 const upgradeModal = document.getElementById('upgradeModal');
                 const closeModalBtn = document.getElementById('closeModalBtn');
                 const selectProBtn = document.getElementById('selectProBtn');
+                const selectPremiumBtn = document.getElementById('selectPremiumBtn');
                 const selectVipBtn = document.getElementById('selectVipBtn');
 
                 if (currentEvent.tier !== 'vip') {
@@ -231,6 +265,27 @@
                     closeModalBtn.addEventListener('click', () => { upgradeModal.style.display = 'none'; });
 
                     const handleCheckout = (amount, planName, tierId) => {
+                        if (!confirm("By proceeding with this payment, you agree to our Privacy Policy and Terms of Service.")) {
+                            return;
+                        }
+
+                        // OTP Verification Simulation
+                        const mockOtp = Math.floor(100000 + Math.random() * 900000).toString();
+                        alert(`[OTP SYSTEM] An OTP has been sent to your email for verification.\\n\\nFor this demo, your OTP is: ${mockOtp}`);
+                        const userOtp = prompt(`Enter the 6-digit OTP sent to your email to proceed to payment:`);
+                        if (userOtp !== mockOtp) {
+                            alert('Invalid OTP. Verification failed.');
+                            return;
+                        }
+
+                        // Mock Email Logic
+                        const sendReceiptEmail = (planName, amount) => {
+                            console.log(`Sending receipt email via sooperfast.net@yahoo.com...`);
+                            setTimeout(() => {
+                                alert(`Receipt for ${planName} (₹${amount}) was mailed securely from sooperfast.net@yahoo.com.`);
+                            }, 500);
+                        };
+
                         const options = {
                             key: 'rzp_test_Sf5GBrljv03Pmk',
                             amount: amount * 100,
@@ -251,6 +306,8 @@
                                 document.getElementById('rAmount').innerText = "₹" + amount;
                                 document.getElementById('rTxn').innerText = response.razorpay_payment_id || "TXN_" + Math.random().toString(36).substr(2,9).toUpperCase();
                                 
+                                sendReceiptEmail(planName, amount);
+
                                 const popup = document.getElementById('receiptPopup');
                                 popup.style.display = 'flex';
                             }
@@ -259,10 +316,15 @@
                         new window.Razorpay(options).open();
                     };
 
-                    if (currentEvent.tier === 'pro') {
+                    if (currentEvent.tier === 'premium') {
                         selectProBtn.style.display = 'none';
+                        selectPremiumBtn.style.display = 'none';
+                    } else if (currentEvent.tier === 'pro') {
+                        selectProBtn.style.display = 'none';
+                        selectPremiumBtn.addEventListener('click', () => handleCheckout(999, 'Premium Plan', 'premium'));
                     } else {
                         selectProBtn.addEventListener('click', () => handleCheckout(499, 'Pro Plan', 'pro'));
+                        selectPremiumBtn.addEventListener('click', () => handleCheckout(999, 'Premium Plan', 'premium'));
                     }
                     selectVipBtn.addEventListener('click', () => handleCheckout(2999, 'VIP Plan', 'vip'));
                 }
