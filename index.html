@@ -15,6 +15,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
+    <script src="/config.js"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Urbanist', system-ui, sans-serif; background: #020617; color: #ffffff; overflow-x: hidden; line-height: 1.5; }
@@ -89,6 +92,8 @@
         .footer-links { display: flex; justify-content: center; gap: 32px; margin-bottom: 32px; flex-wrap: wrap; }
         .footer-links a { color: #94a3b8; text-decoration: none; font-weight: 600; transition: color 0.2s; cursor: pointer; }
 
+        .tier-indicator { margin-top: auto; display: none; padding-top: 15px; text-align: center; font-size: 0.9rem; color: #10b981; font-weight: bold; }
+        
         @media (max-width: 1024px) { .pricing-grid { grid-template-columns: repeat(2, 1fr); gap: 24px; } .price-card.vip { transform: scale(1); } }
         @media (max-width: 768px) { .sticky-header { padding: 16px 20px; } .nav-links { display: none; } .pricing-grid { grid-template-columns: 1fr; } .mobile-sticky-cta { display: block; } .hero { padding-top: 150px; } .container { padding: 0 20px; } .dashboard-preview { padding: 40px 24px; } }
     </style>
@@ -100,7 +105,7 @@
     <header class="sticky-header" id="stickyHeader">
         <div class="header-container">
             <div class="logo"><img src="SNAPN.png" alt="SnapNexus Logo" class="logo-img" onerror="this.style.display='none'"><span class="logo-text">SnapNexus</span></div>
-            <nav class="nav-links"><a href="#features">Features</a><a href="#pricing">Pricing</a><a href="login.html">Host Login</a><a href="dashboard.html" class="btn-physics btn-outline" style="padding: 8px 20px;">Dashboard</a></nav>
+            <nav class="nav-links"><a href="#features">Features</a><a href="#pricing">Pricing</a><a href="login.html" id="navLoginBtn">Host Login</a><a href="dashboard.html" class="btn-physics btn-outline" style="padding: 8px 20px;">Dashboard</a></nav>
         </div>
     </header>
 
@@ -110,8 +115,7 @@
             <h1>Live photo wall.<br>Zero app required.</h1>
             <p class="hero-sub">Guests scan, snap, and appear instantly on the big screen. The ultimate interactive gallery for weddings, parties, and corporate events.</p>
             <div class="hero-cta">
-                <!-- [MEGA PATCH] Added demo button -->
-                <a href="app.html?event=demo_live_room" class="btn-physics btn-gold">✨ Try Live Demo Now</a>
+                <button onclick="launchDemo()" class="btn-physics btn-gold">✨ Try Live Demo Now</button>
                 <a href="login.html" class="btn-physics">Start Free Trial <i data-lucide="arrow-right" style="width:18px;"></i></a>
                 <a href="#pricing" class="btn-physics btn-outline">View Premium Plans</a>
             </div>
@@ -124,14 +128,35 @@
 
         <section id="pricing" data-aos="fade-up"><h2 class="section-title">Flexible <span style="color:#facc15;">Pricing</span> for Every Event</h2></section>
         <div class="pricing-grid" data-aos="fade-up" data-aos-delay="50">
-            <div class="glass-card price-card" data-aos="flip-left" data-aos-delay="100"><h3>Starter</h3><div class="price">₹0 <small>/event</small></div><ul><li><i data-lucide="check"></i> Basic TV loop</li><li><i data-lucide="check"></i> SnapNexus watermark</li><li><i data-lucide="check"></i> Partner Ads displayed</li><li><i data-lucide="check"></i> Max 50 photos</li></ul><a href="login.html?plan=starter" class="btn-physics btn-outline">Deploy Free Wall</a></div>
-            <div class="glass-card price-card" data-aos="flip-left" data-aos-delay="200"><h3>Pro</h3><div class="price">₹499 <small>/event</small></div><ul><li><i data-lucide="check"></i> No watermark</li><li><i data-lucide="check"></i> Basic moderation</li><li><i data-lucide="check"></i> Unlimited photos</li><li><i data-lucide="check"></i> Email support</li></ul><a href="login.html?plan=pro" class="btn-physics">Choose Pro</a></div>
-            <div class="glass-card price-card" data-aos="flip-left" data-aos-delay="300"><h3>Premium</h3><div class="price">₹999 <small>/event</small></div><ul><li><i data-lucide="check"></i> High-res downloads</li><li><i data-lucide="check"></i> Custom QR codes</li><li><i data-lucide="check"></i> Analytics dashboard</li><li><i data-lucide="check"></i> Priority queue</li></ul><a href="login.html?plan=premium" class="btn-physics">Go Premium</a></div>
-            <div class="glass-card price-card vip" data-aos="flip-left" data-aos-delay="400"><div class="most-popular">⭐ MAXIMUM POWER</div><h3>VIP / Whale</h3><div class="price">₹2,999 <small>/mo</small></div><ul><li><i data-lucide="check"></i> Full dashboard</li><li><i data-lucide="check"></i> Live kill-switch</li><li><i data-lucide="check"></i> Custom ad injection</li><li><i data-lucide="check"></i> White‑labeled</li><li><i data-lucide="check"></i> Priority 24/7 support</li></ul><a href="login.html?plan=vip" class="btn-physics btn-gold">Secure VIP Pass</a></div>
+            <div class="glass-card price-card" data-aos="flip-left" data-aos-delay="100">
+                <h3>Starter</h3><div class="price">₹0 <small>/event</small></div>
+                <ul><li><i data-lucide="check"></i> Basic TV loop</li><li><i data-lucide="check"></i> SnapNexus watermark</li><li><i data-lucide="check"></i> Partner Ads displayed</li><li><i data-lucide="check"></i> Max 50 photos</li></ul>
+                <button onclick="handlePlan('starter')" class="btn-physics btn-outline">Deploy Free Wall</button>
+                <div class="tier-indicator" id="ind-starter">Current Plan</div>
+            </div>
+            <div class="glass-card price-card" data-aos="flip-left" data-aos-delay="200">
+                <h3>Pro</h3><div class="price">₹499 <small>/event</small></div>
+                <ul><li><i data-lucide="check"></i> No watermark</li><li><i data-lucide="check"></i> Basic moderation</li><li><i data-lucide="check"></i> Unlimited photos</li><li><i data-lucide="check"></i> Email support</li></ul>
+                <button onclick="handlePlan('pro')" class="btn-physics">Choose Pro</button>
+                <div class="tier-indicator" id="ind-pro">Current Plan</div>
+            </div>
+            <div class="glass-card price-card" data-aos="flip-left" data-aos-delay="300">
+                <h3>Premium</h3><div class="price">₹999 <small>/event</small></div>
+                <ul><li><i data-lucide="check"></i> High-res downloads</li><li><i data-lucide="check"></i> Custom QR codes</li><li><i data-lucide="check"></i> Analytics dashboard</li><li><i data-lucide="check"></i> Priority queue</li></ul>
+                <button onclick="handlePlan('premium')" class="btn-physics" style="background: #10b981;">Go Premium</button>
+                <div class="tier-indicator" id="ind-premium">Current Plan</div>
+            </div>
+            <div class="glass-card price-card vip" data-aos="flip-left" data-aos-delay="400">
+                <div class="most-popular">⭐ MAXIMUM POWER</div>
+                <h3>VIP / Whale</h3><div class="price">₹2,999 <small>/mo</small></div>
+                <ul><li><i data-lucide="check"></i> Full dashboard</li><li><i data-lucide="check"></i> Live kill-switch</li><li><i data-lucide="check"></i> Custom ad injection</li><li><i data-lucide="check"></i> White‑labeled</li><li><i data-lucide="check"></i> Priority 24/7 support</li></ul>
+                <button onclick="handlePlan('vip')" class="btn-physics btn-gold">Secure VIP Pass</button>
+                <div class="tier-indicator" id="ind-vip">Current Plan</div>
+            </div>
         </div>
     </main>
 
-    <div class="mobile-sticky-cta"><a href="#pricing" class="btn-physics btn-gold"><i data-lucide="zap"></i> Upgrade to VIP ₹2999</a></div>
+    <div class="mobile-sticky-cta"><button onclick="handlePlan('vip')" class="btn-physics btn-gold"><i data-lucide="zap"></i> Upgrade to VIP ₹2999</button></div>
 
     <footer class="glass-deep">
         <div class="footer-links"><a href="#">Privacy Policy</a><a href="#">Terms of Service</a><a href="#">Security</a><a href="mailto:support@snapnexus.app">Contact Support</a></div>
@@ -149,6 +174,88 @@
             btn.addEventListener('mousedown', () => btn.style.transition = 'transform 0.05s ease');
             btn.addEventListener('mouseup', () => btn.style.transition = 'transform 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1)');
         });
+
+        // Appwrite & Razorpay Integration
+        const cfg = window.SnapNexus;
+        const client = new Appwrite.Client().setEndpoint(cfg.ENDPOINT).setProject(cfg.PROJECT_ID);
+        const account = new Appwrite.Account(client);
+        const databases = new Appwrite.Databases(client);
+
+        let currentUser = null;
+        let currentTier = 'starter';
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                currentUser = await account.get();
+                document.getElementById('navLoginBtn').innerText = 'Dashboard';
+                const prefs = await account.getPrefs();
+                currentTier = (prefs && prefs.tier) ? prefs.tier : 'starter';
+                
+                // Show current tier
+                const ind = document.getElementById(`ind-${currentTier}`);
+                if (ind) ind.style.display = 'block';
+            } catch(e) {
+                // Not logged in
+            }
+        });
+
+        function launchDemo() {
+            const demoId = "demo_" + Math.random().toString(36).substring(2, 8);
+            window.location.href = `tv.html?event=${demoId}&isDemo=true`;
+        }
+
+        async function handlePlan(planId) {
+            if (!currentUser) {
+                window.location.href = `login.html?plan=${planId}`;
+                return;
+            }
+
+            if (planId === 'starter') {
+                window.location.href = `login.html`;
+                return;
+            }
+            
+            if (currentTier === planId) {
+                alert('You are already on this plan!');
+                window.location.href = `login.html`;
+                return;
+            }
+
+            const planMap = {
+                'pro': { amount: 499, name: 'Pro Plan' },
+                'premium': { amount: 999, name: 'Premium Plan' },
+                'vip': { amount: 2999, name: 'VIP Plan' }
+            };
+
+            const planDetails = planMap[planId];
+            if (!planDetails) return;
+
+            const options = {
+                key: 'rzp_test_Sf5GBrljv03Pmk',
+                amount: planDetails.amount * 100,
+                currency: 'INR',
+                name: 'SnapNexus',
+                description: `Upgrade to ${planDetails.name}`,
+                handler: async function (response) {
+                    const subExpiry = Date.now() + 30 * 24 * 60 * 60 * 1000;
+                    await account.updatePrefs({ tier: planId, subExpiry: subExpiry });
+                    
+                    try {
+                        const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [
+                            Appwrite.Query.equal('hostEmail', currentUser.email),
+                            Appwrite.Query.equal('status', 'active')
+                        ]);
+                        for (let doc of res.documents) {
+                            await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, doc.$id, { tier: planId });
+                        }
+                    } catch(e) { console.error('Failed to sync events', e); }
+                    
+                    alert(`Payment Successful! You are now on the ${planDetails.name}.`);
+                    window.location.href = 'login.html';
+                }
+            };
+            new window.Razorpay(options).open();
+        }
     </script>
 </body>
 </html>

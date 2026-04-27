@@ -59,12 +59,15 @@
 
     <script>
         const cfg = window.SnapNexus;
-        const client = new Appwrite.Client().setEndpoint(cfg.ENDPOINT).setProject(cfg.PROJECT_ID);
+        const client = new Appwrite.Client()
+            .setEndpoint(cfg.ENDPOINT)
+            .setProject(cfg.PROJECT_ID);
         const databases = new Appwrite.Databases(client);
         const storage = new Appwrite.Storage(client);
 
         const urlParams = new URLSearchParams(window.location.search);
         const eventId = urlParams.get('event');
+        const isDemo = urlParams.get('isDemo') === 'true';
         if (!eventId) { document.body.innerHTML = '<h1 style="color:white; text-align:center; padding-top:20vh;">Invalid Link</h1>'; throw new Error("Halt"); }
 
         document.getElementById('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(cfg.resolveUrl(`app.html?event=${eventId}`))}`;
@@ -77,10 +80,14 @@
             const layer1 = document.getElementById('layer1');
             const layer2 = document.getElementById('layer2');
 
-            try {
-                const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [ Appwrite.Query.equal('eventId', eventId) ]);
-                if (res.documents.length > 0) document.getElementById('tvEventName').innerText = res.documents[0].eventName;
-            } catch(e) { console.error(e); }
+            if (isDemo) {
+                document.getElementById('tvEventName').innerText = 'Live Demo Room';
+            } else {
+                try {
+                    const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [ Appwrite.Query.equal('eventId', eventId) ]);
+                    if (res.documents.length > 0) document.getElementById('tvEventName').innerText = res.documents[0].eventName;
+                } catch(e) { console.error(e); }
+            }
 
             async function fetchPhotos() {
                 try {
@@ -106,6 +113,17 @@
             }
 
             fetchPhotos(); setInterval(fetchPhotos, 5000); setInterval(nextSlide, 6000);
+            
+            async function checkEventStatus() {
+                if (isDemo) return;
+                try {
+                    const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [ Appwrite.Query.equal('eventId', eventId) ]);
+                    if (res.documents.length > 0 && res.documents[0].status === 'ended') {
+                        document.body.innerHTML = '<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; width:100vw; background:#020617; z-index:9999; position:absolute; top:0; left:0;"><h1 style="font-size: 4rem; color: #ef4444; font-family:\'Syne\';">Event Ended</h1><p style="color: #94a3b8; font-size: 1.5rem; margin-top: 10px;">Thanks for participating! - SnapNexus</p></div>';
+                    }
+                } catch(e) {}
+            }
+            setInterval(checkEventStatus, 15000);
             
             // Ad Rotation Logic
             const ads = [document.getElementById('ad1'), document.getElementById('ad2'), document.getElementById('ad3')];

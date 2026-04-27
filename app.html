@@ -38,19 +38,21 @@
 
     <script>
         const cfg = window.SnapNexus;
-        const client = new Appwrite.Client().setEndpoint(cfg.ENDPOINT).setProject(cfg.PROJECT_ID);
+        const client = new Appwrite.Client()
+            .setEndpoint(cfg.ENDPOINT)
+            .setProject(cfg.PROJECT_ID);
         const databases = new Appwrite.Databases(client);
         const storage = new Appwrite.Storage(client);
 
         const urlParams = new URLSearchParams(window.location.search);
         const eventId = urlParams.get('event');
         
-        if (!eventId && eventId !== 'demo_live_room') {
+        if (!eventId) {
             document.body.innerHTML = '<h2 style="color:white; text-align:center; margin-top:50px;">Invalid Link</h2>';
             throw new Error("Halt");
         }
 
-        const isDemo = (eventId === 'demo_live_room');
+        const isDemo = eventId.startsWith('demo_');
 
         document.addEventListener('DOMContentLoaded', async () => {
             const statusMsg = document.getElementById('statusMsg');
@@ -89,6 +91,20 @@
                 }
                 fileInput.value = '';
             });
+            
+            async function checkEventStatus() {
+                if (isDemo) return;
+                try {
+                    const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [ Appwrite.Query.equal('eventId', eventId) ]);
+                    if (res.documents.length === 0 || res.documents[0].status === 'ended') {
+                        statusMsg.innerText = 'Event has ended.'; 
+                        uploadBtn.disabled = true;
+                        uploadBtn.style.borderColor = '#ef4444';
+                        document.getElementById('shutterInner').style.background = '#ef4444';
+                    }
+                } catch(e) {}
+            }
+            setInterval(checkEventStatus, 15000);
         });
     </script>
 </body>
