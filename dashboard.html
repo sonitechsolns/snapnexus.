@@ -2,14 +2,15 @@
 <html lang="en">
 <head>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
-    <script src="/config.js"></script>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="/config.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SnapNexus | Host Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Urbanist:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
+        /* Exact Original Styles */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Urbanist', sans-serif; background: #020617; color: #ffffff; padding: 20px; }
         .container { max-width: 900px; margin: 40px auto; background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 40px; }
@@ -26,10 +27,12 @@
         .btn-red { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
         .btn-gold { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; }
         .vip-settings { background: rgba(0, 0, 0, 0.3); border: 1px dashed #fbbf24; padding: 20px; border-radius: 16px; margin-top: 20px; display: none; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .lucide-spin { animation: spin 1s linear infinite; }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="container" id="mainContainer">
         <a href="login.html" style="color: #94a3b8; text-decoration: none; margin-bottom: 20px; display: inline-block;">&larr; Back to Events</a>
         <h1 id="dashEventName">Loading...</h1>
         <div class="meta-tags">
@@ -37,16 +40,45 @@
             <span class="badge" id="dashEventTier">Tier: Loading</span>
             <span class="badge" id="dashEventStatus">Status: Loading</span>
         </div>
-        <div class="grid-buttons">
+        <div class="grid-buttons" id="mainActionButtons">
             <button class="btn btn-blue" id="openTvBtn"><i data-lucide="monitor"></i> Open TV Display</button>
             <button class="btn btn-dark" id="openQrBtn"><i data-lucide="smartphone"></i> Copy Guest Link</button>
-            <button class="btn btn-gold" id="upgradeBtn" style="display: none;"><i data-lucide="zap"></i> Upgrade VIP (₹2999)</button>
+            <button class="btn btn-gold" id="upgradeBtn" style="display: none;"><i data-lucide="zap"></i> Upgrade Plan</button>
             <button class="btn btn-red" id="endEventBtn"><i data-lucide="power"></i> End Event</button>
         </div>
         <div class="vip-settings" id="vipSettings">
             <h3 style="color: #fbbf24; margin-bottom: 10px;"><i data-lucide="crown"></i> VIP Custom Watermark</h3>
-            <input type="file" id="watermarkInput" accept="image/svg+xml, image/png" style="color: white; margin-bottom: 10px;">
+            <input type="file" id="watermarkInput" accept="image/svg+xml, image/png, image/jpeg" style="color: white; margin-bottom: 10px;">
             <button class="btn btn-blue" id="uploadWatermarkBtn" style="padding: 10px 20px;">Upload Logo</button>
+        </div>
+
+        <!-- Task 2 Fix: Live Image Gallery -->
+        <div id="hostGalleryContainer" style="margin-top: 40px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 40px; display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="font-family: 'Syne'; margin: 0; font-size: 1.8rem;">Live Gallery</h2>
+                <button class="btn btn-dark" id="refreshGalleryBtn" style="padding: 10px 15px; font-size: 0.9rem;"><i data-lucide="refresh-cw"></i> Refresh</button>
+            </div>
+            <div id="hostGallery" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px;">
+                <!-- Gallery items will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Task 4 Fix: The Upgrade Modal -->
+    <div id="upgradeModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(8px);">
+        <div style="background: rgba(30, 41, 59, 1); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 40px; width: 90%; max-width: 500px; position: relative;">
+            <button id="closeModalBtn" style="position: absolute; top: 20px; right: 20px; background: transparent; border: none; color: #fff; cursor: pointer;"><i data-lucide="x"></i></button>
+            <h2 style="font-family: 'Syne'; font-size: 2rem; margin-bottom: 20px; text-align: center;">Upgrade Plan</h2>
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: 0.2s;" id="selectProBtn" onmouseover="this.style.background='rgba(59, 130, 246, 0.1)';this.style.borderColor='#3b82f6'" onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.borderColor='rgba(255,255,255,0.1)'">
+                    <h3 style="color: #60a5fa; margin-bottom: 8px;">Pro Plan — ₹999</h3>
+                    <p style="color: #94a3b8; font-size: 0.95rem;">Removes Ads, Keeps QR Code</p>
+                </div>
+                <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: 0.2s;" id="selectVipBtn" onmouseover="this.style.background='rgba(245, 158, 11, 0.1)';this.style.borderColor='#fbbf24'" onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.borderColor='rgba(255,255,255,0.1)'">
+                    <h3 style="color: #fbbf24; margin-bottom: 8px;"><i data-lucide="crown" style="width: 18px; display: inline-block; vertical-align: middle;"></i> VIP Plan — ₹2999</h3>
+                    <p style="color: #94a3b8; font-size: 0.95rem;">Ad-free, Custom Logo, Fullscreen Mode</p>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -54,7 +86,7 @@
         const urlParams = new URLSearchParams(window.location.search);
         const eventId = urlParams.get('event');
         
-        // FIXED BLANK SCREEN CRASH
+        // Eradicating Syntax Crash (replaces return with throw Error)
         if (!eventId) {
             window.location.href = 'login.html';
             throw new Error("Redirecting to login");
@@ -64,11 +96,20 @@
 
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
-            try { await account.get(); } catch(e) { window.location.href = 'login.html'; throw new Error("Redirecting"); }
+            try { 
+                await window.account.get(); 
+            } catch(e) { 
+                window.location.href = 'login.html'; 
+                throw new Error("Redirecting"); 
+            }
 
             try {
-                const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [ Appwrite.Query.equal('eventId', eventId) ]);
-                if (res.documents.length === 0) { alert('Event not found.'); window.location.href = 'login.html'; throw new Error("Redirecting"); }
+                const res = await window.databases.listDocuments(window.cfg.DATABASE_ID, window.cfg.COLLECTION_ID, [ Appwrite.Query.equal('eventId', eventId) ]);
+                if (res.documents.length === 0) { 
+                    alert('Event not found.'); 
+                    window.location.href = 'login.html'; 
+                    throw new Error("Redirecting"); 
+                }
                 
                 currentEvent = res.documents[0];
                 document.getElementById('dashEventName').innerText = currentEvent.eventName;
@@ -77,7 +118,16 @@
                 const tierBadge = document.getElementById('dashEventTier');
                 tierBadge.innerText = "Tier: " + currentEvent.tier.toUpperCase();
                 if(currentEvent.tier === 'vip') tierBadge.classList.add('vip');
-                document.getElementById('dashEventStatus').innerText = "Status: " + currentEvent.status.toUpperCase();
+                
+                // Task 1 Fix: Fix the "End Event" State visually
+                const statusBadge = document.getElementById('dashEventStatus');
+                statusBadge.innerText = "Status: " + currentEvent.status.toUpperCase();
+                if (currentEvent.status === 'ended') {
+                    statusBadge.style.color = '#ef4444';
+                    statusBadge.style.backgroundColor = 'rgba(239, 68, 68, 0.2)';
+                    document.getElementById('endEventBtn').style.display = 'none';
+                    document.getElementById('openQrBtn').style.display = 'none';
+                }
 
                 document.getElementById('openTvBtn').addEventListener('click', () => {
                     const tvFile = currentEvent.tier === 'vip' ? 'tv_2.html' : 'tv.html';
@@ -85,34 +135,61 @@
                 });
 
                 document.getElementById('openQrBtn').addEventListener('click', () => {
-                    navigator.clipboard.writeText(cfg.resolveUrl(`app.html?event=${currentEvent.eventId}`)).then(() => alert("Guest Link Copied!"));
+                    navigator.clipboard.writeText(window.cfg.resolveUrl(`app.html?event=${currentEvent.eventId}`)).then(() => alert("Guest Link Copied!"));
                 });
 
+                // Task 4 Fix: The Upgrade Modal Logic
                 const upgradeBtn = document.getElementById('upgradeBtn');
+                const upgradeModal = document.getElementById('upgradeModal');
+                const closeModalBtn = document.getElementById('closeModalBtn');
+                const selectProBtn = document.getElementById('selectProBtn');
+                const selectVipBtn = document.getElementById('selectVipBtn');
+
                 if (currentEvent.tier !== 'vip') {
                     upgradeBtn.style.display = 'flex';
+                    
                     upgradeBtn.addEventListener('click', () => {
+                        upgradeModal.style.display = 'flex';
+                        lucide.createIcons();
+                    });
+
+                    closeModalBtn.addEventListener('click', () => {
+                        upgradeModal.style.display = 'none';
+                    });
+
+                    const handleCheckout = (amount, planName, tierId) => {
                         const options = {
                             key: 'rzp_test_Sf5GBrljv03Pmk',
-                            amount: 299900, currency: 'INR', name: 'SnapNexus VIP', description: 'Upgrade to VIP',
+                            amount: amount * 100, // Amount is in currency subunits
+                            currency: 'INR', 
+                            name: 'SnapNexus', 
+                            description: `Upgrade to ${planName}`,
                             handler: async function (response) {
-                                await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { tier: 'vip' });
-                                await account.updatePrefs({ tier: 'vip' });
-                                alert('Payment Successful! You are now VIP.');
+                                await window.databases.updateDocument(window.cfg.DATABASE_ID, window.cfg.COLLECTION_ID, currentEvent.$id, { tier: tierId });
+                                await window.account.updatePrefs({ tier: tierId });
+                                alert(`Payment Successful! You are now on the ${planName}.`);
                                 window.location.reload();
                             }
                         };
+                        upgradeModal.style.display = 'none';
                         new window.Razorpay(options).open();
-                    });
+                    };
+
+                    if (currentEvent.tier === 'pro') {
+                        selectProBtn.style.display = 'none';
+                    } else {
+                        selectProBtn.addEventListener('click', () => handleCheckout(999, 'Pro Plan', 'pro'));
+                    }
+                    selectVipBtn.addEventListener('click', () => handleCheckout(2999, 'VIP Plan', 'vip'));
                 } else {
                     document.getElementById('vipSettings').style.display = 'block';
                     document.getElementById('uploadWatermarkBtn').addEventListener('click', async () => {
                         const file = document.getElementById('watermarkInput').files[0];
                         if(!file) return alert('Select an image.');
                         document.getElementById('uploadWatermarkBtn').innerText = 'Uploading...';
-                        const uploaded = await storage.createFile(cfg.BUCKET_ID, Appwrite.ID.unique(), file);
-                        const viewUrl = storage.getFileView(cfg.BUCKET_ID, uploaded.$id).href;
-                        await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { customWatermark: viewUrl });
+                        const uploaded = await window.storage.createFile(window.cfg.BUCKET_ID, Appwrite.ID.unique(), file);
+                        const viewUrl = window.storage.getFileView(window.cfg.BUCKET_ID, uploaded.$id).href;
+                        await window.databases.updateDocument(window.cfg.DATABASE_ID, window.cfg.COLLECTION_ID, currentEvent.$id, { customWatermark: viewUrl });
                         alert('Logo saved for TV Wall!');
                         document.getElementById('uploadWatermarkBtn').innerText = 'Upload Logo';
                     });
@@ -120,11 +197,52 @@
 
                 document.getElementById('endEventBtn').addEventListener('click', async () => {
                     if(confirm("End event? Guests can no longer upload.")) {
-                        await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { status: 'ended' });
+                        await window.databases.updateDocument(window.cfg.DATABASE_ID, window.cfg.COLLECTION_ID, currentEvent.$id, { status: 'ended' });
                         window.location.reload();
                     }
                 });
-            } catch (err) { console.error(err); }
+
+                // Task 2 Fix: Add a Live Image Gallery
+                const hostGalleryContainer = document.getElementById('hostGalleryContainer');
+                const hostGallery = document.getElementById('hostGallery');
+                
+                hostGalleryContainer.style.display = 'block';
+
+                const fetchAndRenderGallery = async () => {
+                    try {
+                        const res = await window.storage.listFiles(window.cfg.BUCKET_ID, [
+                            Appwrite.Query.startsWith('name', currentEvent.eventId + '_'),
+                            Appwrite.Query.orderDesc('$createdAt'),
+                            Appwrite.Query.limit(50) // display last 50 photos
+                        ]);
+                        hostGallery.innerHTML = res.files.map(f => {
+                            const url = window.storage.getFileView(window.cfg.BUCKET_ID, f.$id).href;
+                            return `<div style="border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); aspect-ratio: 1; background: #000; position: relative;">
+                                        <img src="${url}" style="width: 100%; height: 100%; object-fit: cover;">
+                                    </div>`;
+                        }).join('');
+                        if (res.files.length === 0) {
+                            hostGallery.innerHTML = '<p style="color: #94a3b8; grid-column: 1 / -1;">No photos have been uploaded yet.</p>';
+                        }
+                    } catch (err) {
+                        console.error('Gallery fetch error', err);
+                    }
+                };
+
+                document.getElementById('refreshGalleryBtn').addEventListener('click', () => {
+                    const icon = document.querySelector('#refreshGalleryBtn i');
+                    icon.classList.add('lucide-spin');
+                    fetchAndRenderGallery().finally(() => {
+                        setTimeout(() => icon.classList.remove('lucide-spin'), 500);
+                    });
+                });
+
+                fetchAndRenderGallery();
+                setInterval(fetchAndRenderGallery, 15000); // Polling every 15 secs
+
+            } catch (err) { 
+                console.error(err); 
+            }
         });
     </script>
 </body>

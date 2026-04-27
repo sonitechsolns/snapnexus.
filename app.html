@@ -27,14 +27,15 @@
             <div class="shutter-inner"></div>
         </button>
         <p class="status-msg" id="statusMsg">Tap to send a photo</p>
-        <input type="file" id="fileInput" accept="image/*" capture="environment">
+        <!-- Task 3 Fix: Removed capture="environment" to allow selection of camera or gallery on mobile -->
+        <input type="file" id="fileInput" accept="image/*">
     </div>
 
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const eventId = urlParams.get('event');
         
-        // FIXED CRASH
+        // FIXED CRASH: Replacing invalid `return;` outside functions
         if (!eventId && eventId !== 'demo_live_room') {
             document.body.innerHTML = '<h2 style="color:white; text-align:center; margin-top:50px;">Invalid Link</h2>';
             throw new Error("Halt");
@@ -49,7 +50,7 @@
 
             if (!isDemo) {
                 try {
-                    const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [ Appwrite.Query.equal('eventId', eventId) ]);
+                    const res = await window.databases.listDocuments(window.cfg.DATABASE_ID, window.cfg.COLLECTION_ID, [ Appwrite.Query.equal('eventId', eventId) ]);
                     if (res.documents.length === 0 || res.documents[0].status === 'ended') {
                         statusMsg.innerText = 'Event has ended or not found.'; uploadBtn.disabled = true; throw new Error("Halt");
                     }
@@ -70,7 +71,7 @@
                 const safeFile = new File([file], safeName, { type: file.type });
 
                 try {
-                    await storage.createFile(cfg.BUCKET_ID, Appwrite.ID.unique(), safeFile);
+                    await window.storage.createFile(window.cfg.BUCKET_ID, Appwrite.ID.unique(), safeFile);
                     statusMsg.innerText = 'Sent to TV! 🚀';
                     setTimeout(() => { statusMsg.innerText = 'Tap to send a photo'; uploadBtn.disabled = false; }, 2000);
                 } catch(err) {
