@@ -11,26 +11,46 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Urbanist', sans-serif; background: #020617; color: #ffffff; padding: 20px; }
-        .container { max-width: 900px; margin: 40px auto; background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 40px; }
+        body { font-family: 'Urbanist', sans-serif; background: #020617; color: #ffffff; padding: 20px; overflow-x: hidden; }
+        
+        .liquid-mesh { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -3; background: radial-gradient(circle at 20% 30%, #020617, #1e3a8a 30%, #3b82f6 65%, #4f46e5); background-size: 200% 200%; animation: liquidShift 16s ease infinite alternate; }
+        @keyframes liquidShift { 0% { background-position: 0% 0%; } 50% { background-position: 100% 100%; } 100% { background-position: 0% 50%; } }
+
+        .container { max-width: 900px; margin: 40px auto; background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 40px; position: relative; z-index: 10; }
         h1 { font-family: 'Syne', sans-serif; font-size: 2.5rem; margin-bottom: 10px; }
         .meta-tags { display: flex; gap: 12px; margin-bottom: 30px; flex-wrap: wrap; }
         .badge { background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 0.9rem; }
         .badge.vip { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+        .badge.pro { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+        
         .grid-buttons { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 40px; }
         .btn { padding: 16px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; border: none; font-family: inherit; font-size: 1rem; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
         .btn-blue { background: #3b82f6; color: white; }
-        .btn-blue:hover { background: #2563eb; }
+        .btn-blue:hover:not(:disabled) { background: #2563eb; }
         .btn-dark { background: rgba(15, 23, 42, 0.8); color: white; border: 1px solid rgba(255, 255, 255, 0.1); }
-        .btn-dark:hover { background: rgba(30, 41, 59, 1); }
+        .btn-dark:hover:not(:disabled) { background: rgba(30, 41, 59, 1); }
         .btn-red { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
         .btn-gold { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; }
-        .vip-settings { background: rgba(0, 0, 0, 0.3); border: 1px dashed #fbbf24; padding: 20px; border-radius: 16px; margin-top: 20px; display: none; }
+
         @keyframes spin { 100% { transform: rotate(360deg); } }
         .lucide-spin { animation: spin 1s linear infinite; }
+        
+        /* Receipt Popup */
+        #receiptPopup { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(8px); }
+        .receipt-card { background: white; color: black; border-radius: 12px; padding: 40px; width: 90%; max-width: 400px; text-align: center; }
+        .receipt-card h2 { font-family: 'Syne'; margin-bottom: 20px; font-size: 1.8rem; }
+        
+        @media print {
+            body * { visibility: hidden; }
+            #receiptPopup, #receiptPopup * { visibility: visible; }
+            #receiptPopup { position: absolute; left: 0; top: 0; background: white; color: black; }
+            .no-print { display: none !important; }
+        }
     </style>
 </head>
 <body>
+    <div class="liquid-mesh"></div>
     <div class="container" id="mainContainer">
         <a href="login.html" style="color: #94a3b8; text-decoration: none; margin-bottom: 20px; display: inline-block;">&larr; Back to Events</a>
         <h1 id="dashEventName">Loading...</h1>
@@ -39,18 +59,27 @@
             <span class="badge" id="dashEventTier">Tier: Loading</span>
             <span class="badge" id="dashEventStatus">Status: Loading</span>
         </div>
+        
         <div class="grid-buttons" id="mainActionButtons">
             <button class="btn btn-blue" id="openTvBtn"><i data-lucide="monitor"></i> Open TV Display</button>
             <button class="btn btn-dark" id="openQrBtn"><i data-lucide="smartphone"></i> Copy Guest Link</button>
             <button class="btn btn-gold" id="upgradeBtn" style="display: none;"><i data-lucide="zap"></i> Upgrade Plan</button>
             <button class="btn btn-red" id="endEventBtn"><i data-lucide="power"></i> End Event</button>
         </div>
-        <div class="vip-settings" id="vipSettings">
-            <h3 style="color: #fbbf24; margin-bottom: 10px;"><i data-lucide="crown"></i> VIP Custom Watermark</h3>
-            <input type="file" id="watermarkInput" accept="image/svg+xml, image/png, image/jpeg" style="color: white; margin-bottom: 10px;">
-            <button class="btn btn-blue" id="uploadWatermarkBtn" style="padding: 10px 20px;">Upload Logo</button>
-        </div>
 
+        <div style="background: rgba(0,0,0,0.3); border-radius: 16px; padding: 20px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 40px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+                <div>
+                    <h3 style="font-family: 'Syne'; font-size: 1.4rem;">Data Retention & Export</h3>
+                    <p id="downloadStatusText" style="color: #94a3b8; font-size: 0.95rem; margin-top: 5px;">Download all photos as a ZIP file.</p>
+                </div>
+                <button class="btn btn-blue" id="downloadZipBtn"><i data-lucide="download"></i> Download Gallery (ZIP)</button>
+            </div>
+            <div id="upsellText" style="display: none; margin-top: 15px; color: #ef4444; font-weight: 600; font-size: 0.9rem;">
+                <!-- Dynamically populated if expired on free tier -->
+            </div>
+        </div>
+        
         <div id="hostGalleryContainer" style="margin-top: 40px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 40px; display: none;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2 style="font-family: 'Syne'; margin: 0; font-size: 1.8rem;">Live Gallery</h2>
@@ -60,6 +89,7 @@
         </div>
     </div>
 
+    <!-- Upgrade Modal -->
     <div id="upgradeModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(8px);">
         <div style="background: rgba(30, 41, 59, 1); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 40px; width: 90%; max-width: 500px; position: relative;">
             <button id="closeModalBtn" style="position: absolute; top: 20px; right: 20px; background: transparent; border: none; color: #fff; cursor: pointer;"><i data-lucide="x"></i></button>
@@ -67,7 +97,7 @@
             <div style="display: flex; flex-direction: column; gap: 20px;">
                 <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: 0.2s;" id="selectProBtn" onmouseover="this.style.background='rgba(59, 130, 246, 0.1)';this.style.borderColor='#3b82f6'" onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.borderColor='rgba(255,255,255,0.1)'">
                     <h3 style="color: #60a5fa; margin-bottom: 8px;">Pro Plan — ₹499</h3>
-                    <p style="color: #94a3b8; font-size: 0.95rem;">Removes Ads, Keeps QR Code</p>
+                    <p style="color: #94a3b8; font-size: 0.95rem;">Removes Ads, Unlocks 30-day retention.</p>
                 </div>
                 <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: 0.2s;" id="selectVipBtn" onmouseover="this.style.background='rgba(245, 158, 11, 0.1)';this.style.borderColor='#fbbf24'" onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.borderColor='rgba(255,255,255,0.1)'">
                     <h3 style="color: #fbbf24; margin-bottom: 8px;"><i data-lucide="crown" style="width: 18px; display: inline-block; vertical-align: middle;"></i> VIP Plan — ₹2999</h3>
@@ -77,8 +107,24 @@
         </div>
     </div>
 
+    <!-- Receipt Popup -->
+    <div id="receiptPopup">
+        <div class="receipt-card">
+            <h2>SnapNexus Receipt</h2>
+            <div style="text-align: left; margin-bottom: 20px; font-size: 1.1rem; line-height: 1.8;">
+                <p><strong>Date:</strong> <span id="rDate"></span></p>
+                <p><strong>Plan Name:</strong> <span id="rPlan"></span></p>
+                <p><strong>Amount Paid:</strong> <span id="rAmount"></span></p>
+                <p><strong>Transaction ID:</strong> <span id="rTxn"></span></p>
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: center;" class="no-print">
+                <button class="btn btn-blue" onclick="window.print()" style="padding: 10px 20px;"><i data-lucide="printer"></i> Print</button>
+                <button class="btn btn-dark" id="closeReceiptBtn" style="padding: 10px 20px;">Continue</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // STRICT INIT: Fixed config reference
         const cfg = window.SnapNexus;
         const client = new Appwrite.Client().setEndpoint(cfg.ENDPOINT).setProject(cfg.PROJECT_ID);
         const account = new Appwrite.Account(client);
@@ -98,22 +144,40 @@
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
             
+            let userPrefs = null;
             try { 
                 await account.get(); 
+                userPrefs = await account.getPrefs();
             } catch(e) { 
                 window.location.href = 'login.html'; 
                 throw new Error("User Not Logged In"); 
             }
 
+            // 1. Strict Tier Checks & VIP Bouncer
+            if (userPrefs && userPrefs.tier === 'vip') {
+                window.location.href = `vip_dashboard.html?event=${eventId}`;
+                throw new Error("Redirecting VIP user");
+            }
+
             try {
-                currentEvent = await databases.getDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, eventId);
+                const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [ Appwrite.Query.equal('eventId', eventId) ]);
+                if (res.documents.length === 0) throw new Error("Not Found");
+                currentEvent = res.documents[0];
                 
+                // If event is VIP but user somehow got here (and user isn't VIP due to expiration?), we should redirect them or downgrade the event
+                if (currentEvent.tier === 'vip' && userPrefs.tier !== 'vip') {
+                    // Force event downgrade since their subscription expired
+                    await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { tier: 'starter' });
+                    currentEvent.tier = 'starter';
+                }
+
                 document.getElementById('dashEventName').innerText = currentEvent.eventName;
                 document.getElementById('dashEventId').innerText = "ID: " + currentEvent.eventId;
                 
                 const tierBadge = document.getElementById('dashEventTier');
                 tierBadge.innerText = "Tier: " + currentEvent.tier.toUpperCase();
                 if(currentEvent.tier === 'vip') tierBadge.classList.add('vip');
+                if(currentEvent.tier === 'pro') tierBadge.classList.add('pro');
                 
                 const statusBadge = document.getElementById('dashEventStatus');
                 statusBadge.innerText = "Status: " + currentEvent.status.toUpperCase();
@@ -124,9 +188,31 @@
                     document.getElementById('openQrBtn').style.display = 'none';
                 }
 
+                // 4. Data Retention Timers
+                const downloadBtn = document.getElementById('downloadZipBtn');
+                const upsellText = document.getElementById('upsellText');
+                if (currentEvent.tier === 'starter') {
+                    const eventAgeMs = Date.now() - new Date(currentEvent.$createdAt).getTime();
+                    const hours24 = 24 * 60 * 60 * 1000;
+                    if (eventAgeMs > hours24) {
+                        downloadBtn.disabled = true;
+                        downloadBtn.innerHTML = '<i data-lucide="lock"></i> Gallery Expired';
+                        upsellText.style.display = 'block';
+                        upsellText.innerText = "Downloads expire in 24 hours on the Free plan. Upgrade to Pro (₹499) to unlock 30-day gallery retention!";
+                        lucide.createIcons();
+                    }
+                }
+                
+                downloadBtn.addEventListener('click', () => {
+                    if (currentEvent.tier === 'starter' && (Date.now() - new Date(currentEvent.$createdAt).getTime() > 24*60*60*1000)) {
+                        alert("Gallery expired on Free plan.");
+                        return;
+                    }
+                    alert("Preparing ZIP! (simulated download logic)");
+                });
+
                 document.getElementById('openTvBtn').addEventListener('click', () => {
-                    const tvFile = currentEvent.tier === 'vip' ? 'tv_2.html' : 'tv.html';
-                    window.open(`${tvFile}?event=${currentEvent.eventId}`, '_blank');
+                    window.open(`tv.html?event=${currentEvent.eventId}`, '_blank');
                 });
 
                 document.getElementById('openQrBtn').addEventListener('click', () => {
@@ -152,10 +238,21 @@
                             name: 'SnapNexus', 
                             description: `Upgrade to ${planName}`,
                             handler: async function (response) {
+                                // 5. VIP Subscription Engine updates
+                                const subExpiry = Date.now() + 30 * 24 * 60 * 60 * 1000; // 30 days
                                 await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { tier: tierId });
-                                await account.updatePrefs({ tier: tierId });
-                                alert(`Payment Successful! You are now on the ${planName}.`);
-                                window.location.reload();
+                                await account.updatePrefs({ tier: tierId, subExpiry: subExpiry });
+                                
+                                upgradeModal.style.display = 'none';
+                                
+                                // Show Receipt
+                                document.getElementById('rDate').innerText = new Date().toLocaleString();
+                                document.getElementById('rPlan').innerText = planName;
+                                document.getElementById('rAmount').innerText = "₹" + amount;
+                                document.getElementById('rTxn').innerText = response.razorpay_payment_id || "TXN_" + Math.random().toString(36).substr(2,9).toUpperCase();
+                                
+                                const popup = document.getElementById('receiptPopup');
+                                popup.style.display = 'flex';
                             }
                         };
                         upgradeModal.style.display = 'none';
@@ -168,19 +265,11 @@
                         selectProBtn.addEventListener('click', () => handleCheckout(499, 'Pro Plan', 'pro'));
                     }
                     selectVipBtn.addEventListener('click', () => handleCheckout(2999, 'VIP Plan', 'vip'));
-                } else {
-                    document.getElementById('vipSettings').style.display = 'block';
-                    document.getElementById('uploadWatermarkBtn').addEventListener('click', async () => {
-                        const file = document.getElementById('watermarkInput').files[0];
-                        if(!file) return alert('Select an image.');
-                        document.getElementById('uploadWatermarkBtn').innerText = 'Uploading...';
-                        const uploaded = await storage.createFile(cfg.BUCKET_ID, Appwrite.ID.unique(), file);
-                        const viewUrl = storage.getFileView(cfg.BUCKET_ID, uploaded.$id).href;
-                        await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { customWatermark: viewUrl });
-                        alert('Logo saved for TV Wall!');
-                        document.getElementById('uploadWatermarkBtn').innerText = 'Upload Logo';
-                    });
                 }
+                
+                document.getElementById('closeReceiptBtn').addEventListener('click', () => {
+                    window.location.reload();
+                });
 
                 document.getElementById('endEventBtn').addEventListener('click', async () => {
                     if(confirm("End event? Guests can no longer upload.")) {

@@ -10,8 +10,13 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Urbanist', sans-serif; background: #020617; color: #ffffff; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 40px; width: 100%; max-width: 480px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
+        body { font-family: 'Urbanist', sans-serif; background: #020617; color: #ffffff; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; position: relative; overflow-x: hidden; }
+        
+        /* Continuous Background Animation */
+        .liquid-mesh { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -3; background: radial-gradient(circle at 20% 30%, #020617, #1e3a8a 30%, #3b82f6 65%, #4f46e5); background-size: 200% 200%; animation: liquidShift 16s ease infinite alternate; }
+        @keyframes liquidShift { 0% { background-position: 0% 0%; } 50% { background-position: 100% 100%; } 100% { background-position: 0% 50%; } }
+        
+        .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 40px; width: 100%; max-width: 480px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); z-index: 10; }
         h1 { font-family: 'Syne', sans-serif; font-size: 2rem; margin-bottom: 8px; text-align: center; }
         p.subtitle { color: #94a3b8; text-align: center; margin-bottom: 32px; }
         .input-group { margin-bottom: 20px; }
@@ -19,7 +24,8 @@
         input { width: 100%; padding: 14px 16px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; color: white; font-family: inherit; font-size: 1rem; transition: all 0.3s ease; }
         input:focus { outline: none; border-color: #3b82f6; background: rgba(15, 23, 42, 0.8); }
         .btn-primary { width: 100%; padding: 16px; background: #3b82f6; color: white; border: none; border-radius: 12px; font-weight: 700; font-size: 1.1rem; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; }
-        .btn-primary:hover { background: #2563eb; transform: translateY(-2px); }
+        .btn-primary:hover:not(:disabled) { background: #2563eb; transform: translateY(-2px); }
+        .btn-primary:disabled { opacity: 0.7; cursor: not-allowed; }
         .toggle-text { text-align: center; margin-top: 24px; color: #94a3b8; cursor: pointer; font-weight: 600; transition: color 0.3s ease; }
         .toggle-text:hover { color: #ffffff; }
         .history-item { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.05); padding: 16px; border-radius: 12px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s ease; display: flex; justify-content: space-between; align-items: center; }
@@ -28,9 +34,13 @@
         .history-item span { font-size: 0.85rem; color: #94a3b8; }
         .badge { background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
         #historySection { display: none; }
+        
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .lucide-spin { animation: spin 1s linear infinite; }
     </style>
 </head>
 <body>
+    <div class="liquid-mesh"></div>
     <div class="glass-panel">
         <h1 id="authTitle">SnapNexus Host</h1>
         <p class="subtitle" id="authSubtitle">Sign in to manage your events</p>
@@ -61,7 +71,6 @@
     </div>
 
     <script>
-        // STRICT INIT: Fixed config reference
         const cfg = window.SnapNexus;
         const client = new Appwrite.Client().setEndpoint(cfg.ENDPOINT).setProject(cfg.PROJECT_ID);
         const account = new Appwrite.Account(client);
@@ -79,7 +88,8 @@
 
             async function loadHistory() {
                 try {
-                    historyList.innerHTML = '<p style="color: #94a3b8; text-align: center;">Loading events...</p>';
+                    historyList.innerHTML = '<p style="color: #94a3b8; text-align: center;"><i data-lucide="loader-2" class="lucide-spin"></i> Loading events...</p>';
+                    lucide.createIcons();
                     const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [
                         Appwrite.Query.equal('hostEmail', currentUser.email),
                         Appwrite.Query.orderDesc('$createdAt')
@@ -119,6 +129,14 @@
             async function checkSession() {
                 try {
                     currentUser = await account.get();
+                    
+                    // 5. VIP Subscription Engine - Timer
+                    let prefs = await account.getPrefs();
+                    if (prefs.subExpiry && Date.now() > prefs.subExpiry) {
+                        await account.updatePrefs({ tier: 'starter', subExpiry: null });
+                        prefs.tier = 'starter';
+                    }
+
                     authForm.style.display = 'none';
                     historySection.style.display = 'block';
                     document.getElementById('authTitle').innerText = `Welcome, ${currentUser.name || 'Host'}`;
@@ -144,7 +162,9 @@
                 const name = document.getElementById('nameInput').value;
                 if(!email || !password) return alert('Email and password required.');
                 const btn = document.getElementById('loginBtn');
-                btn.innerHTML = 'Processing...';
+                btn.disabled = true;
+                btn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin"></i> Authenticating...';
+                lucide.createIcons();
                 try {
                     if (isSignup) {
                         await account.create(Appwrite.ID.unique(), email, password, name);
@@ -152,10 +172,21 @@
                         await account.updatePrefs({ tier: 'starter' });
                     } else { await account.createEmailPasswordSession(email, password); }
                     window.location.reload();
-                } catch(e) { alert('Error: ' + e.message); btn.innerHTML = 'Try Again'; }
+                } catch(e) { 
+                    alert('Error: ' + e.message); 
+                    btn.disabled = false;
+                    btn.innerHTML = isSignup ? 'Create Account <i data-lucide="user-plus"></i>' : 'Sign In <i data-lucide="arrow-right"></i>';
+                    lucide.createIcons();
+                }
             });
 
             document.getElementById('createNewEventBtn').addEventListener('click', async () => {
+                const btn = document.getElementById('createNewEventBtn');
+                btn.disabled = true;
+                const oldHtml = btn.innerHTML;
+                btn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin"></i> Creating...';
+                lucide.createIcons();
+                
                 let userTier = 'starter';
                 try {
                     const prefs = await account.getPrefs();
@@ -165,11 +196,17 @@
                 const activeCount = globalEventHistory.filter(e => e.status === 'active').length;
                 if (userTier !== 'vip' && activeCount >= 1) {
                     alert('Limit Reached: Your current plan allows only 1 active event at a time.\\n\\nPlease click your active event below and press "End Event", or upgrade to VIP for unlimited concurrent events.');
+                    btn.disabled = false;
+                    btn.innerHTML = oldHtml;
                     return;
                 }
 
                 const eventName = prompt('Enter Event Name for TV Wall:');
-                if (!eventName) return;
+                if (!eventName) {
+                    btn.disabled = false;
+                    btn.innerHTML = oldHtml;
+                    return;
+                }
                 
                 const realEventId = 'evt_' + Math.random().toString(36).substr(2, 9);
                 
@@ -182,8 +219,17 @@
                         status: 'active', 
                         createdAtUnix: Date.now()
                     });
-                    window.location.href = `dashboard.html?event=${realEventId}`;
-                } catch(err) { alert('Failed to create event: ' + err.message); }
+                    // Redirect according to tier
+                    if (userTier === 'vip') {
+                         window.location.href = `vip_dashboard.html?event=${realEventId}`;
+                    } else {
+                         window.location.href = `dashboard.html?event=${realEventId}`;
+                    }
+                } catch(err) { 
+                    alert('Failed to create event: ' + err.message); 
+                    btn.disabled = false;
+                    btn.innerHTML = oldHtml;
+                }
             });
 
             document.getElementById('logoutBtn').addEventListener('click', async () => {

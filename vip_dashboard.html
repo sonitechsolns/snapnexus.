@@ -10,8 +10,13 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Urbanist', sans-serif; background: #020617; color: #ffffff; padding: 20px; }
-        .container { max-width: 900px; margin: 40px auto; background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 24px; padding: 40px; box-shadow: 0 0 40px rgba(245, 158, 11, 0.1); }
+        body { font-family: 'Urbanist', sans-serif; background: #020617; color: #ffffff; padding: 20px; overflow-x: hidden; }
+        
+        /* Continuous Background Animation */
+        .liquid-mesh { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -3; background: radial-gradient(circle at 20% 30%, #020617, #1e3a8a 30%, #3b82f6 65%, #4f46e5); background-size: 200% 200%; animation: liquidShift 16s ease infinite alternate; }
+        @keyframes liquidShift { 0% { background-position: 0% 0%; } 50% { background-position: 100% 100%; } 100% { background-position: 0% 50%; } }
+
+        .container { max-width: 900px; margin: 40px auto; background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 24px; padding: 40px; box-shadow: 0 0 40px rgba(245, 158, 11, 0.1); position: relative; z-index: 10; }
         h1 { font-family: 'Syne', sans-serif; font-size: 2.5rem; margin-bottom: 10px; color: #fbbf24; }
         .meta-tags { display: flex; gap: 12px; margin-bottom: 30px; flex-wrap: wrap; }
         .badge { background: rgba(245, 158, 11, 0.2); color: #fbbf24; padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 0.9rem; }
@@ -19,12 +24,13 @@
         .badge.ended { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
         .grid-buttons { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 40px; }
         .btn { padding: 16px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; border: none; font-family: inherit; font-size: 1rem; }
+        .btn:disabled { opacity: 0.7; cursor: not-allowed; }
         .btn-gold { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; }
-        .btn-gold:hover { background: linear-gradient(135deg, #f59e0b, #b45309); box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4); transform: translateY(-2px); }
+        .btn-gold:hover:not(:disabled) { background: linear-gradient(135deg, #f59e0b, #b45309); box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4); transform: translateY(-2px); }
         .btn-dark { background: rgba(15, 23, 42, 0.8); color: white; border: 1px solid rgba(251, 191, 36, 0.3); }
-        .btn-dark:hover { background: rgba(30, 41, 59, 1); border-color: #fbbf24; }
+        .btn-dark:hover:not(:disabled) { background: rgba(30, 41, 59, 1); border-color: #fbbf24; }
         .btn-red { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
-        .btn-red:hover { background: rgba(239, 68, 68, 0.2); }
+        .btn-red:hover:not(:disabled) { background: rgba(239, 68, 68, 0.2); }
         
         .vip-settings { background: rgba(0, 0, 0, 0.3); border: 1px dashed #fbbf24; padding: 20px; border-radius: 16px; margin-top: 20px; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
@@ -34,6 +40,7 @@
     </style>
 </head>
 <body>
+    <div class="liquid-mesh"></div>
     <div class="container">
         <a href="login.html" style="color: #94a3b8; text-decoration: none; margin-bottom: 20px; display: inline-block;">&larr; Back to Events</a>
         <div style="display: flex; align-items: center; gap: 10px;">
@@ -85,6 +92,12 @@
     <style>@keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }</style>
 
     <script>
+        const cfg = window.SnapNexus;
+        const client = new Appwrite.Client().setEndpoint(cfg.ENDPOINT).setProject(cfg.PROJECT_ID);
+        const account = new Appwrite.Account(client);
+        const databases = new Appwrite.Databases(client);
+        const storage = new Appwrite.Storage(client);
+
         const urlParams = new URLSearchParams(window.location.search);
         const eventId = urlParams.get('event');
         
@@ -98,10 +111,14 @@
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
             
-            try { await window.account.get(); } catch(e) { window.location.href = 'login.html'; throw new Error("Halt"); }
+            let userPrefs = null;
+            try { 
+                await account.get(); 
+                userPrefs = await account.getPrefs();
+            } catch(e) { window.location.href = 'login.html'; throw new Error("Halt"); }
 
             try {
-                const res = await window.databases.listDocuments(window.cfg.DATABASE_ID, window.cfg.COLLECTION_ID, [ Appwrite.Query.equal('eventId', eventId) ]);
+                const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [ Appwrite.Query.equal('eventId', eventId) ]);
                 if (res.documents.length === 0) { 
                     window.location.href = `dashboard.html?event=${eventId}`;
                     throw new Error("Unauthorized: Not VIP"); 
@@ -109,7 +126,8 @@
                 
                 currentEvent = res.documents[0];
                 
-                if (currentEvent.tier !== 'vip') {
+                // 1. Strict Tier Checks & VIP Bouncer
+                if (currentEvent.tier !== 'vip' || !userPrefs || userPrefs.tier !== 'vip') {
                     window.location.href = `dashboard.html?event=${eventId}`;
                     throw new Error("Unauthorized: Not VIP");
                 }
@@ -141,7 +159,7 @@
                 });
 
                 document.getElementById('openQrBtn').addEventListener('click', () => {
-                    navigator.clipboard.writeText(window.cfg.resolveUrl(`app.html?event=${currentEvent.eventId}`)).then(() => alert("VIP Guest Link Copied!"));
+                    navigator.clipboard.writeText(cfg.resolveUrl(`app.html?event=${currentEvent.eventId}`)).then(() => alert("VIP Guest Link Copied!"));
                 });
 
                 document.getElementById('uploadWatermarkBtn').addEventListener('click', async () => {
@@ -149,13 +167,14 @@
                     if(!file) return alert('Select an image (.png or .svg).');
                     
                     const btn = document.getElementById('uploadWatermarkBtn');
+                    btn.disabled = true;
                     btn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin"></i> Uploading...';
                     lucide.createIcons();
                     
                     try {
-                        const uploaded = await window.storage.createFile(window.cfg.BUCKET_ID, Appwrite.ID.unique(), file);
-                        const viewUrl = window.storage.getFileView(window.cfg.BUCKET_ID, uploaded.$id).href;
-                        await window.databases.updateDocument(window.cfg.DATABASE_ID, window.cfg.COLLECTION_ID, currentEvent.$id, { customWatermark: viewUrl });
+                        const uploaded = await storage.createFile(cfg.BUCKET_ID, Appwrite.ID.unique(), file);
+                        const viewUrl = storage.getFileView(cfg.BUCKET_ID, uploaded.$id).href;
+                        await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { customWatermark: viewUrl });
                         alert('Logo saved for VIP TV Wall!');
                         
                         document.getElementById('logoPreview').src = viewUrl;
@@ -164,13 +183,14 @@
                     } catch(err) {
                         alert("Upload failed: " + err.message);
                     }
+                    btn.disabled = false;
                     btn.innerHTML = '<i data-lucide="upload"></i> Upload Logo';
                     lucide.createIcons();
                 });
 
                 document.getElementById('endEventBtn').addEventListener('click', async () => {
                     if(confirm("Lock event? Guests can no longer upload photos.")) {
-                        await window.databases.updateDocument(window.cfg.DATABASE_ID, window.cfg.COLLECTION_ID, currentEvent.$id, { status: 'ended' });
+                        await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { status: 'ended' });
                         window.location.reload();
                     }
                 });
@@ -179,13 +199,13 @@
                 
                 const fetchAndRenderGallery = async () => {
                     try {
-                        const res = await window.storage.listFiles(window.cfg.BUCKET_ID, [
+                        const res = await storage.listFiles(cfg.BUCKET_ID, [
                             Appwrite.Query.startsWith('name', currentEvent.eventId + '_'),
                             Appwrite.Query.orderDesc('$createdAt'),
                             Appwrite.Query.limit(50)
                         ]);
                         hostGallery.innerHTML = res.files.map(f => {
-                            const url = window.storage.getFileView(window.cfg.BUCKET_ID, f.$id).href;
+                            const url = storage.getFileView(cfg.BUCKET_ID, f.$id).href;
                             return `<div style="border-radius: 12px; overflow: hidden; border: 1px solid rgba(251,191,36,0.3); outline: 2px solid rgba(0,0,0,0); transition: 0.2s; aspect-ratio: 1; background: #000; position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.3);" onmouseover="this.style.transform='scale(1.05)';this.style.zIndex='10'" onmouseout="this.style.transform='scale(1)';this.style.zIndex='1'">
                                         <img src="${url}" style="width: 100%; height: 100%; object-fit: cover;">
                                     </div>`;
