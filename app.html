@@ -75,36 +75,69 @@
                 if (!file) return;
 
                 uploadBtn.disabled = true;
-                statusMsg.innerText = 'Uploading...';
-
-                // Secure Appwrite v14 filename isolation
-                const safeName = `${eventId}_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '')}`;
-                const safeFile = new File([file], safeName, { type: file.type });
+                statusMsg.innerText = 'Compressing...';
 
                 try {
+                    // Compress Image
+                    const compressedBlob = await compressImage(file, 1920); // max 1080p
+                    statusMsg.innerText = 'Uploading...';
+
+                    // Secure Appwrite v14 filename isolation
+                    const safeName = `${eventId}_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '')}`;
+                    const safeFile = new File([compressedBlob], safeName, { type: 'image/jpeg' });
+
                     await storage.createFile(cfg.BUCKET_ID, Appwrite.ID.unique(), safeFile);
                     statusMsg.innerText = 'Sent to TV! 🚀';
                     setTimeout(() => { statusMsg.innerText = 'Tap to send a photo'; uploadBtn.disabled = false; }, 2000);
                 } catch(err) {
+                    // Fallback to original file or show error
+                    console.error("Compression/Upload Error:", err);
                     alert('Upload failed: ' + err.message);
                     statusMsg.innerText = 'Upload failed.'; uploadBtn.disabled = false;
                 }
                 fileInput.value = '';
             });
+
+            // Image Compression Helper
+            function compressImage(file, maxWidth) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(file);
+                    reader.onload = event => {
+                        const img = new Image();
+                        img.src = event.target.result;
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            let width = img.width;
+                            let height = img.height;
+
+                            if (width > maxWidth) {
+                                height = Math.round((height * maxWidth) / width);
+                                width = maxWidth;
+                            }
+
+                            canvas.width = width;
+                            canvas.height = height;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, width, height);
+                            canvas.toBlob(blob => { resolve(blob); }, 'image/jpeg', 0.8);
+                        };
+                        img.onerror = e => reject(e);
+                    };
+                    reader.onerror = e => reject(e);
+                });
+            }
             
             async function checkEventStatus() {
                 if (isDemo) return;
                 try {
                     const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [ Appwrite.Query.equal('eventId', eventId) ]);
                     if (res.documents.length === 0 || res.documents[0].status === 'ended') {
-                        statusMsg.innerText = 'Event has ended.'; 
-                        uploadBtn.disabled = true;
-                        uploadBtn.style.borderColor = '#ef4444';
-                        document.getElementById('shutterInner').style.background = '#ef4444';
+                        document.body.innerHTML = '<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; width:100%; background:#020617; z-index:9999; position:absolute; top:0; left:0; text-align:center;"><h1 style="font-size: 3rem; color: #ef4444; font-family:\'Syne\'; margin-bottom:10px;">Event Ended</h1><p style="color: #94a3b8; font-size: 1.2rem; padding: 0 20px;">Thanks for taking part! You can safely close this page.</p></div>';
                     }
                 } catch(e) {}
             }
-            setInterval(checkEventStatus, 15000);
+            setInterval(checkEventStatus, 5000);
         });
     </script>
 </body>
