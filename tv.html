@@ -24,10 +24,9 @@
         .photo-layer.active { opacity: 1; transform: scale(1); }
         
         /* The "Ad" Ribbon Header/Footer */
-        .ad-banner { position: absolute; bottom: 0; left: 300px; width: calc(100vw - 300px); height: 60px; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); border-top: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; overflow: hidden; z-index: 15; }
-        .ad-text { position: absolute; font-size: 1.2rem; color: #fbbf24; font-weight: 700; font-family: 'Syne'; transition: opacity 0.8s ease, transform 0.8s ease; opacity: 0; transform: translateY(20px); text-transform: uppercase; letter-spacing: 1px; }
-        .ad-text.active { opacity: 1; transform: translateY(0); }
-        .ad-text.exit { opacity: 0; transform: translateY(-20px); }
+        .ad-banner { position: absolute; bottom: 0; left: 300px; width: calc(100vw - 300px); height: 120px; background: rgba(0,0,0,0.8); border-top: 1px solid rgba(255,255,255,0.1); overflow: hidden; z-index: 15; }
+        .ad-pic { position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover; opacity: 0; transition: opacity 1s ease; }
+        .ad-pic.active { opacity: 1; }
         
         .watermark { position: absolute; top: 30px; right: 40px; font-size: 1.2rem; color: rgba(255,255,255,0.6); font-weight: 800; font-family: 'Syne'; z-index: 10; text-shadow: 0 2px 10px black; }
     </style>
@@ -51,10 +50,10 @@
 
     <div class="watermark">Powered by SnapNexus</div>
     
-    <div class="ad-banner">
-        <div class="ad-text active" id="ad1">Host your own interactive photo wall at SnapNexus.in</div>
-        <div class="ad-text" id="ad2">Upgrade to VIP to remove this banner - SnapNexus.in</div>
-        <div class="ad-text" id="ad3">Soni Tech Solutions - Web Development</div>
+    <div class="ad-banner" id="adBanner">
+        <img class="ad-pic active" id="adPic1" src="https://images.unsplash.com/photo-1549451371-64aa98a6fcf0?w=1920&q=80" />
+        <img class="ad-pic" id="adPic2" src="https://images.unsplash.com/photo-1549451371-64aa98a6fcf0?w=1920&q=80" />
+        <img class="ad-pic" id="adPic3" src="https://images.unsplash.com/photo-1549451371-64aa98a6fcf0?w=1920&q=80" />
     </div>
 
     <script>
@@ -125,24 +124,29 @@
             }
             setInterval(checkEventStatus, 5000);
             
-            // Ad Rotation Logic
-            const ads = [document.getElementById('ad1'), document.getElementById('ad2'), document.getElementById('ad3')];
+            // Ad Loading & Rotation Logic
+            const ads = [document.getElementById('adPic1'), document.getElementById('adPic2'), document.getElementById('adPic3')];
             let currentAdIndex = 0;
             
+            // Initial load
+            const fallback = "https://images.unsplash.com/photo-1549451371-64aa98a6fcf0?w=1920&q=80";
+            for (let i=1; i<=3; i++) {
+                const url = `${cfg.ENDPOINT}/storage/buckets/${cfg.BUCKET_ID}/files/global_ad_${i}/view?project=${cfg.PROJECT_ID}`;
+                const imgCheck = new Image();
+                imgCheck.onload = () => { if (ads[i-1]) ads[i-1].src = url; };
+                imgCheck.onerror = () => { if (ads[i-1]) ads[i-1].src = fallback; };
+                imgCheck.src = url;
+            }
+
             setInterval(() => {
                 const currentAd = ads[currentAdIndex];
-                currentAd.classList.remove('active');
-                currentAd.classList.add('exit');
+                if(currentAd) currentAd.classList.remove('active');
                 
                 currentAdIndex = (currentAdIndex + 1) % ads.length;
                 const nextAd = ads[currentAdIndex];
                 
-                setTimeout(() => {
-                    currentAd.classList.remove('exit');
-                    nextAd.classList.add('active');
-                }, 800);
-                
-            }, 15000);
+                if(nextAd) nextAd.classList.add('active');
+            }, 10000);
         });
     </script>
 </body>
