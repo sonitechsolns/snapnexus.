@@ -75,6 +75,16 @@
             </div>
         </div>
 
+        <div style="background: rgba(0, 0, 0, 0.3); border: 1px dashed #fbbf24; padding: 20px; border-radius: 16px; margin-top: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+                <div>
+                    <h3 style="font-family: 'Syne'; font-size: 1.4rem; color: #fbbf24;">Data Export</h3>
+                    <p style="color: #94a3b8; font-size: 0.95rem; margin-top: 5px;">Download all photos as a ZIP file (VIP Unrestricted).</p>
+                </div>
+                <button class="btn btn-gold" id="downloadZipBtn" style="padding: 10px 20px;"><i data-lucide="download"></i> Download Gallery (ZIP)</button>
+            </div>
+        </div>
+
         <div id="hostGalleryContainer" style="margin-top: 40px; border-top: 1px solid rgba(251, 191, 36, 0.2); padding-top: 40px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2 style="font-family: 'Syne'; margin: 0; font-size: 1.8rem; color: #fbbf24;"><i data-lucide="zap" style="width: 20px; display: inline-block; vertical-align: middle;"></i> Live VIP Gallery</h2>
@@ -92,12 +102,6 @@
     <style>@keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }</style>
 
     <script>
-        const cfg = window.SnapNexus;
-        const client = new Appwrite.Client().setEndpoint(cfg.ENDPOINT).setProject(cfg.PROJECT_ID);
-        const account = new Appwrite.Account(client);
-        const databases = new Appwrite.Databases(client);
-        const storage = new Appwrite.Storage(client);
-
         const urlParams = new URLSearchParams(window.location.search);
         const eventId = urlParams.get('event');
         
@@ -127,7 +131,15 @@
                 currentEvent = res.documents[0];
                 
                 // 1. Strict Tier Checks & VIP Bouncer
-                if (currentEvent.tier !== 'vip' || !userPrefs || userPrefs.tier !== 'vip') {
+                let currentTier = currentEvent.tier;
+                if (userPrefs && userPrefs.subExpiry && userPrefs.tier === 'vip' && Date.now() > userPrefs.subExpiry) {
+                    await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { tier: 'starter' });
+                    await account.updatePrefs({ tier: 'starter', subExpiry: null });
+                    currentTier = 'starter';
+                    userPrefs.tier = 'starter';
+                }
+
+                if (currentTier !== 'vip' || !userPrefs || userPrefs.tier !== 'vip') {
                     window.location.href = `dashboard.html?event=${eventId}`;
                     throw new Error("Unauthorized: Not VIP");
                 }
@@ -143,19 +155,28 @@
                     statusBadge.classList.add('ended');
                     document.getElementById('endEventBtn').style.display = 'none';
                     document.getElementById('openQrBtn').style.display = 'none';
+                    document.getElementById('openTvBtn').style.display = 'none';
                 } else {
                     statusBadge.classList.add('active');
                 }
                 
-                if (currentEvent.customWatermark) {
+                // Try to load any existing watermark from storage
+                const existingLogoUrl = `${cfg.ENDPOINT}/storage/buckets/${cfg.BUCKET_ID}/files/${currentEvent.eventId}_logo/view?project=${cfg.PROJECT_ID}`;
+                const imgCheck = new Image();
+                imgCheck.onload = () => {
                     const preview = document.getElementById('logoPreview');
-                    preview.src = currentEvent.customWatermark;
+                    preview.src = existingLogoUrl;
                     preview.style.display = 'block';
                     document.getElementById('noLogoText').style.display = 'none';
-                }
+                };
+                imgCheck.src = existingLogoUrl;
 
                 document.getElementById('openTvBtn').addEventListener('click', () => {
                     window.open(`tv_2.html?event=${currentEvent.eventId}`, '_blank');
+                });
+
+                document.getElementById('downloadZipBtn').addEventListener('click', () => {
+                    alert("Preparing VIP High-Res ZIP! (simulated download logic)");
                 });
 
                 document.getElementById('openQrBtn').addEventListener('click', () => {
@@ -172,9 +193,11 @@
                     lucide.createIcons();
                     
                     try {
-                        const uploaded = await storage.createFile(cfg.BUCKET_ID, Appwrite.ID.unique(), file);
+                        const adId = currentEvent.eventId + '_logo';
+                        try { await storage.deleteFile(cfg.BUCKET_ID, adId); } catch(e){} 
+                        const uploaded = await storage.createFile(cfg.BUCKET_ID, adId, file);
                         const viewUrl = storage.getFileView(cfg.BUCKET_ID, uploaded.$id).href;
-                        await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { customWatermark: viewUrl });
+                        
                         alert('Logo saved for VIP TV Wall!');
                         
                         document.getElementById('logoPreview').src = viewUrl;

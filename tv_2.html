@@ -77,12 +77,19 @@
                 if (res.documents.length > 0) {
                     const doc = res.documents[0];
                     document.getElementById('tvEventName').innerText = doc.eventName;
-                    if (doc.customWatermark) {
-                        const logoEl = document.getElementById('vipLogo');
-                        logoEl.src = doc.customWatermark;
-                        logoEl.style.display = 'block';
-                    }
                 }
+                
+                // Fetch VIP logo from storage
+                const logoEl = document.getElementById('vipLogo');
+                const adId = eventId + '_logo';
+                const logoUrl = `${cfg.ENDPOINT}/storage/buckets/${cfg.BUCKET_ID}/files/${adId}/view?project=${cfg.PROJECT_ID}`;
+                const imgCheck = new Image();
+                imgCheck.onload = () => { 
+                    logoEl.src = logoUrl; 
+                    logoEl.style.display = 'block';
+                };
+                imgCheck.src = logoUrl;
+                
             } catch(e) { console.error(e); }
 
             async function fetchPhotos() {

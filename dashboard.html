@@ -245,7 +245,11 @@
                 });
 
                 document.getElementById('openTvBtn').addEventListener('click', () => {
-                    window.open(`tv.html?event=${currentEvent.eventId}`, '_blank');
+                    if (currentEvent.tier === 'pro' || currentEvent.tier === 'premium' || currentEvent.tier === 'vip') {
+                        window.open(`tv_2.html?event=${currentEvent.eventId}`, '_blank');
+                    } else {
+                        window.open(`tv.html?event=${currentEvent.eventId}`, '_blank');
+                    }
                 });
 
                 document.getElementById('openQrBtn').addEventListener('click', () => {
@@ -259,7 +263,7 @@
                 const selectPremiumBtn = document.getElementById('selectPremiumBtn');
                 const selectVipBtn = document.getElementById('selectVipBtn');
 
-                if (currentEvent.tier !== 'vip') {
+                if (currentEvent.tier !== 'vip' && currentEvent.status !== 'ended') {
                     upgradeBtn.style.display = 'flex';
                     upgradeBtn.addEventListener('click', () => { upgradeModal.style.display = 'flex'; lucide.createIcons(); });
                     closeModalBtn.addEventListener('click', () => { upgradeModal.style.display = 'none'; });
@@ -319,14 +323,19 @@
                     if (currentEvent.tier === 'premium') {
                         selectProBtn.style.display = 'none';
                         selectPremiumBtn.style.display = 'none';
+                        selectVipBtn.style.display = 'none';
                     } else if (currentEvent.tier === 'pro') {
                         selectProBtn.style.display = 'none';
-                        selectPremiumBtn.addEventListener('click', () => handleCheckout(999, 'Premium Plan', 'premium'));
+                        selectPremiumBtn.querySelector('h3').innerText = 'Premium Plan Upgrade — ₹500';
+                        selectPremiumBtn.addEventListener('click', () => handleCheckout(500, 'Premium Plan (Upgrade)', 'premium'));
+                        selectVipBtn.style.display = 'none';
                     } else {
                         selectProBtn.addEventListener('click', () => handleCheckout(499, 'Pro Plan', 'pro'));
                         selectPremiumBtn.addEventListener('click', () => handleCheckout(999, 'Premium Plan', 'premium'));
+                        selectVipBtn.addEventListener('click', () => handleCheckout(2999, 'VIP Plan', 'vip'));
                     }
-                    selectVipBtn.addEventListener('click', () => handleCheckout(2999, 'VIP Plan', 'vip'));
+                } else {
+                    upgradeBtn.style.display = 'none';
                 }
                 
                 document.getElementById('closeReceiptBtn').addEventListener('click', () => {

@@ -74,6 +74,7 @@
     <script>
         let isSignup = false;
         let currentUser = null;
+        let currentUserPrefs = null;
         let globalEventHistory = [];
 
         document.addEventListener('DOMContentLoaded', async () => {
@@ -103,20 +104,28 @@
                         const div = document.createElement('div');
                         div.className = 'history-item';
                         const statusColor = doc.status === 'active' ? '#10b981' : '#ef4444'; 
-                        
+                        const isVipUser = currentUserPrefs && currentUserPrefs.tier === 'vip';
+                        const tierHtml = (!isVipUser) ? `<span class="badge" style="margin-bottom: 6px; display: inline-block;">${doc.tier}</span><br>` : '';
+
                         div.innerHTML = `
                             <div>
                                 <strong>${doc.eventName}</strong>
                                 <span>${new Date(doc.$createdAt).toLocaleDateString()}</span>
                             </div>
                             <div style="text-align: right;">
-                                <span class="badge" style="margin-bottom: 6px; display: inline-block;">${doc.tier}</span><br>
+                                ${tierHtml}
                                 <span style="font-size: 0.7rem; font-weight: 800; color: ${statusColor}; background: ${statusColor}20; padding: 3px 8px; border-radius: 6px; text-transform: uppercase;">
                                     ${doc.status}
                                 </span>
                             </div>
                         `;
-                        div.addEventListener('click', () => { window.location.href = cfg.resolveUrl(`dashboard.html?event=${doc.eventId}`); });
+                        div.addEventListener('click', () => { 
+                            if (isVipUser) {
+                                window.location.href = cfg.resolveUrl(`vip_dashboard.html?event=${doc.eventId}`);
+                            } else {
+                                window.location.href = cfg.resolveUrl(`dashboard.html?event=${doc.eventId}`); 
+                            }
+                        });
                         historyList.appendChild(div);
                     });
                 } catch(e) { historyList.innerHTML = '<p style="color: #ef4444; text-align: center;">Failed to load history.</p>'; }
@@ -128,6 +137,7 @@
                     
                     // 5. VIP Subscription Engine - Timer & Tier handling
                     let prefs = await account.getPrefs();
+                    currentUserPrefs = prefs;
                     if (prefs.subExpiry) {
                         const now = Date.now();
                         const bufferMs = 3 * 3600000; // 3 hours
@@ -172,8 +182,14 @@
 
                     authForm.style.display = 'none';
                     historySection.style.display = 'block';
-                    document.getElementById('authTitle').innerText = `Welcome, ${currentUser.name || 'Host'}`;
-                    document.getElementById('authSubtitle').innerText = 'Your event dashboard';
+                    if (currentUserPrefs && currentUserPrefs.tier === 'vip') {
+                        document.getElementById('authTitle').innerHTML = `<i data-lucide="crown" style="color: #fbbf24; vertical-align: middle;"></i> Welcome, ${currentUser.name || 'VIP Host'}`;
+                        document.getElementById('authTitle').style.color = '#fbbf24';
+                        document.getElementById('authSubtitle').innerText = 'VIP Command Center';
+                    } else {
+                        document.getElementById('authTitle').innerText = `Welcome, ${currentUser.name || 'Host'}`;
+                        document.getElementById('authSubtitle').innerText = 'Your event dashboard';
+                    }
                     loadHistory();
 
                     const planMap = {
