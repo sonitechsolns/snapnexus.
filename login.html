@@ -6,6 +6,7 @@
     <script src="/config.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="/favicon.png">
     <title>SnapNexus | Host Login</title>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Urbanist:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,600&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -46,20 +47,15 @@
         <h1 id="authTitle">SnapNexus Host</h1>
         <p class="subtitle" id="authSubtitle">Sign in to manage your events</p>
         <div id="authForm">
-            <div class="input-group" id="nameGroup" style="display: none;">
-                <label>Full Name</label>
-                <input type="text" id="nameInput" placeholder="John Doe">
-            </div>
             <div class="input-group">
                 <label>Email Address</label>
                 <input type="email" id="emailInput" placeholder="host@example.com">
             </div>
-            <div class="input-group">
-                <label>Password</label>
-                <input type="password" id="passwordInput" placeholder="••••••••">
-            </div>
             <button class="btn-primary" id="loginBtn">Sign In <i data-lucide="arrow-right"></i></button>
-            <p class="toggle-text" id="toggleAuth">Don't have an account? Create one.</p>
+        </div>
+        <div id="verifyingSection" style="display: none; text-align: center;">
+            <i data-lucide="loader-2" class="lucide-spin" style="width: 48px; height: 48px; color: #3b82f6; margin-bottom: 16px;"></i>
+            <h3 style="font-family: 'Syne'; margin-bottom: 16px; font-size: 1.2rem;">Verifying your secure link...</h3>
         </div>
         <div id="historySection">
             <button class="btn-primary" id="createNewEventBtn" style="margin-bottom: 24px; background: #10b981;">
@@ -72,7 +68,6 @@
     </div>
 
     <script>
-        let isSignup = false;
         let currentUser = null;
         let currentUserPrefs = null;
         let globalEventHistory = [];
@@ -80,8 +75,27 @@
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
             const authForm = document.getElementById('authForm');
+            const verifyingSection = document.getElementById('verifyingSection');
             const historySection = document.getElementById('historySection');
             const historyList = document.getElementById('historyList');
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const userId = urlParams.get('userId');
+            const secret = urlParams.get('secret');
+
+            if (userId && secret) {
+                authForm.style.display = 'none';
+                if (verifyingSection) verifyingSection.style.display = 'block';
+                try {
+                    await account.updateMagicURLSession(userId, secret);
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                } catch (err) {
+                    alert("Failed to verify secure link. It may have expired.");
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    window.location.reload();
+                    return;
+                }
+            }
 
             async function loadHistory() {
                 try {
@@ -181,6 +195,7 @@
                     }
 
                     authForm.style.display = 'none';
+                    if (verifyingSection) verifyingSection.style.display = 'none';
                     historySection.style.display = 'block';
                     if (currentUserPrefs && currentUserPrefs.tier === 'vip') {
                         document.getElementById('authTitle').innerHTML = `<i data-lucide="crown" style="color: #fbbf24; vertical-align: middle;"></i> Welcome, ${currentUser.name || 'VIP Host'}`;
@@ -192,12 +207,14 @@
                     }
                     loadHistory();
 
+                    const urlParams = new URLSearchParams(window.location.search);
+
                     const planMap = {
                         'pro': { amount: 499, name: 'Pro Plan' },
                         'premium': { amount: 999, name: 'Premium Plan' },
                         'vip': { amount: 2999, name: 'VIP Plan' }
                     };
-                    const urlParams = new URLSearchParams(window.location.search);
+                    
                     const p = urlParams.get('plan');
                     if (p && planMap[p]) {
                         if (!confirm("By proceeding with this payment, you agree to our Privacy Policy and Terms of Service.")) {
@@ -206,24 +223,54 @@
                         }
                         const planDetails = planMap[p];
 
-                        // OTP Verification Simulation
-                        const mockOtp = Math.floor(100000 + Math.random() * 900000).toString();
-                        alert(`[OTP SYSTEM] An OTP has been sent to ${currentUser.email} for verification.\\n\\nFor this demo, your OTP is: ${mockOtp}`);
-                        const userOtp = prompt(`Enter the 6-digit OTP sent to ${currentUser.email} to proceed to payment:`);
-                        if (userOtp !== mockOtp) {
-                            alert('Invalid OTP. Verification failed.');
+                        // OTP Verification via Backend
+                        alert('Sending OTP to your email...');
+                        try {
+                            const otpResponse = await fetch('/api/send-otp', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ email: currentUser.email })
+                            });
+                            
+                            const otpData = await otpResponse.json();
+                            
+                            if (!otpResponse.ok || !otpData.success) {
+                                alert(`Failed to send OTP: ${otpData.error || 'Unknown error'}`);
+                                window.history.replaceState({}, document.title, 'login.html');
+                                return;
+                            }
+
+                            if (otpData.mock) {
+                                alert(`[DEV MODE] Using mock OTP locally because Resend isn't configured yet.\n\nYour OTP is: ${otpData.mockOtp}`);
+                            }
+
+                            const userOtp = prompt(`Enter the 6-digit OTP sent to your email to proceed to payment:`);
+                            if (!userOtp) {
+                                window.history.replaceState({}, document.title, 'login.html');
+                                return;
+                            }
+
+                            const verifyResponse = await fetch('/api/verify-otp', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ email: currentUser.email, otp: userOtp })
+                            });
+                            const verifyData = await verifyResponse.json();
+
+                            if (!verifyData.success) {
+                                alert('Invalid OTP. Verification failed: ' + verifyData.error);
+                                window.history.replaceState({}, document.title, 'login.html');
+                                return;
+                            }
+                        } catch (err) {
+                            console.error(err);
+                            alert("Failed to send or verify OTP.");
                             window.history.replaceState({}, document.title, 'login.html');
                             return;
                         }
 
-                        // Mock Email Logic
-                        const sendReceiptEmail = (email, planName, amount) => {
-                            console.log(`Sending receipt email to ${email} via sooperfast.net@yahoo.com...`);
-                            alert(`Verification complete! Receipt for ${planName} (₹${amount}) was mailed to ${email} securely from sooperfast.net@yahoo.com.`);
-                        };
-
                         const options = {
-                            key: 'rzp_test_Sf5GBrljv03Pmk',
+                            key: window.cfg.RAZORPAY_KEY,
                             amount: planDetails.amount * 100,
                             currency: 'INR', 
                             name: 'SnapNexus', 
@@ -242,7 +289,18 @@
                                     }
                                 } catch(e) { console.error('Failed to sync events', e); }
                                 
-                                sendReceiptEmail(currentUser.email, planDetails.name, planDetails.amount);
+                                const txnId = response.razorpay_payment_id || "TXN_" + Math.random().toString(36).substr(2,9).toUpperCase();
+                                
+                                // Send Receipt via Backend
+                                try {
+                                    await fetch('/api/send-receipt', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ email: currentUser.email, planName: planDetails.name, amount: planDetails.amount, txnId })
+                                    });
+                                } catch(e) {
+                                    console.error("Receipt email failed");
+                                }
 
                                 alert(`Payment Successful! You are now on the ${planDetails.name}.`);
                                 window.location.href = 'login.html'; // Refresh without params
@@ -258,39 +316,27 @@
                         window.history.replaceState({}, document.title, 'login.html');
                     }
                 } catch(err) {
+                    if (verifyingSection) verifyingSection.style.display = 'none';
                     authForm.style.display = 'block';
                     historySection.style.display = 'none';
                 }
             }
 
-            document.getElementById('toggleAuth').addEventListener('click', () => {
-                isSignup = !isSignup;
-                document.getElementById('nameGroup').style.display = isSignup ? 'block' : 'none';
-                document.getElementById('loginBtn').innerHTML = isSignup ? 'Create Account <i data-lucide="user-plus"></i>' : 'Sign In <i data-lucide="arrow-right"></i>';
-                document.getElementById('toggleAuth').innerText = isSignup ? 'Back to Sign In' : "Don't have an account? Create one.";
-                lucide.createIcons();
-            });
-
             document.getElementById('loginBtn').addEventListener('click', async () => {
                 const email = document.getElementById('emailInput').value;
-                const password = document.getElementById('passwordInput').value;
-                const name = document.getElementById('nameInput').value;
-                if(!email || !password) return alert('Email and password required.');
+                if(!email) return alert('Email required.');
                 const btn = document.getElementById('loginBtn');
                 btn.disabled = true;
-                btn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin"></i> Authenticating...';
+                btn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin"></i> Sending Link...';
                 lucide.createIcons();
                 try {
-                    if (isSignup) {
-                        await account.create(Appwrite.ID.unique(), email, password, name);
-                        await account.createEmailPasswordSession(email, password);
-                        await account.updatePrefs({ tier: 'starter' });
-                    } else { await account.createEmailPasswordSession(email, password); }
-                    window.location.reload();
+                    await account.createMagicURLSession(Appwrite.ID.unique(), email, window.location.origin + window.location.pathname);
+                    btn.innerHTML = 'Check your email!';
+                    alert('A secure login link has been sent to your email.');
                 } catch(e) { 
                     alert('Error: ' + e.message); 
                     btn.disabled = false;
-                    btn.innerHTML = isSignup ? 'Create Account <i data-lucide="user-plus"></i>' : 'Sign In <i data-lucide="arrow-right"></i>';
+                    btn.innerHTML = 'Sign In <i data-lucide="arrow-right"></i>';
                     lucide.createIcons();
                 }
             });
