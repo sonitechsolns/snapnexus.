@@ -11,127 +11,14 @@
     <link rel="icon" type="image/png" href="/favicon.png">
     <title>SnapNexus | Host Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Urbanist:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Urbanist', sans-serif; background: #020617; color: #ffffff; padding: 20px; overflow-x: hidden; }
-        
-        .liquid-mesh { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -3; background: radial-gradient(circle at 20% 30%, #020617, #1e3a8a 30%, #3b82f6 65%, #4f46e5); background-size: 200% 200%; animation: liquidShift 16s ease infinite alternate; }
-        @keyframes liquidShift { 0% { background-position: 0% 0%; } 50% { background-position: 100% 100%; } 100% { background-position: 0% 50%; } }
-
-        .container { max-width: 900px; margin: 40px auto; background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 40px; position: relative; z-index: 10; }
-        h1 { font-family: 'Syne', sans-serif; font-size: 2.5rem; margin-bottom: 10px; }
-        .meta-tags { display: flex; gap: 12px; margin-bottom: 30px; flex-wrap: wrap; }
-        .badge { background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 0.9rem; }
-        .badge.vip { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
-        .badge.pro { background: rgba(16, 185, 129, 0.2); color: #10b981; }
-        
-        .grid-buttons { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 40px; }
-        .btn { padding: 16px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; border: none; font-family: inherit; font-size: 1rem; }
-        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        .btn-blue { background: #3b82f6; color: white; }
-        .btn-blue:hover:not(:disabled) { background: #2563eb; }
-        .btn-dark { background: rgba(15, 23, 42, 0.8); color: white; border: 1px solid rgba(255, 255, 255, 0.1); }
-        .btn-dark:hover:not(:disabled) { background: rgba(30, 41, 59, 1); }
-        .btn-red { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
-        .btn-gold { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; }
-
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-        .lucide-spin { animation: spin 1s linear infinite; }
-        
-        /* Receipt Popup */
-        #receiptPopup { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(8px); }
-        .receipt-card { background: white; color: black; border-radius: 12px; padding: 40px; width: 90%; max-width: 400px; text-align: center; }
-        .receipt-card h2 { font-family: 'Syne'; margin-bottom: 20px; font-size: 1.8rem; }
-        
-        @media print {
-            body * { visibility: hidden; }
-            #receiptPopup, #receiptPopup * { visibility: visible; }
-            #receiptPopup { position: absolute; left: 0; top: 0; background: white; color: black; }
-            .no-print { display: none !important; }
-        }
-    </style>
-</head>
-<body>
-    <div class="liquid-mesh"></div>
-    <div class="container" id="mainContainer">
-        <a href="login.html" style="color: #94a3b8; text-decoration: none; margin-bottom: 20px; display: inline-block;">&larr; Back to Events</a>
-        <h1 id="dashEventName">Loading...</h1>
-        <div class="meta-tags">
-            <span class="badge" id="dashEventId">ID: Loading</span>
-            <span class="badge" id="dashEventTier">Tier: Loading</span>
-            <span class="badge" id="dashEventStatus">Status: Loading</span>
-        </div>
-        
-        <div class="grid-buttons" id="mainActionButtons">
-            <button class="btn btn-blue" id="openTvBtn"><i data-lucide="monitor"></i> Open TV Display</button>
-            <button class="btn btn-dark" id="openQrBtn"><i data-lucide="smartphone"></i> Copy Guest Link</button>
-            <button class="btn btn-gold" id="upgradeBtn" style="display: none;"><i data-lucide="zap"></i> Upgrade Plan</button>
-            <button class="btn btn-red" id="endEventBtn"><i data-lucide="power"></i> End Event</button>
-        </div>
-
-        <div style="background: rgba(0,0,0,0.3); border-radius: 16px; padding: 20px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 40px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
-                <div>
-                    <h3 style="font-family: 'Syne'; font-size: 1.4rem;">Data Retention & Export</h3>
-                    <p id="downloadStatusText" style="color: #94a3b8; font-size: 0.95rem; margin-top: 5px;">Download all photos as a ZIP file.</p>
-                </div>
-                <button class="btn btn-blue" id="downloadZipBtn"><i data-lucide="download"></i> Download Gallery (ZIP)</button>
-            </div>
-            <div id="upsellText" style="display: none; margin-top: 15px; color: #ef4444; font-weight: 600; font-size: 0.9rem;">
-                <!-- Dynamically populated if expired on free tier -->
-            </div>
-        </div>
-        
-        <div id="hostGalleryContainer" style="margin-top: 40px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 40px; display: none;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2 style="font-family: 'Syne'; margin: 0; font-size: 1.8rem;">Live Gallery</h2>
-                <button class="btn btn-dark" id="refreshGalleryBtn" style="padding: 10px 15px; font-size: 0.9rem;"><i data-lucide="refresh-cw"></i> Refresh</button>
-            </div>
-            <div id="hostGallery" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px;"></div>
-        </div>
-    </div>
-
-    <!-- Upgrade Modal -->
-    <div id="upgradeModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(8px);">
-        <div style="background: rgba(30, 41, 59, 1); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 40px; width: 90%; max-width: 500px; position: relative;">
-            <button id="closeModalBtn" style="position: absolute; top: 20px; right: 20px; background: transparent; border: none; color: #fff; cursor: pointer;"><i data-lucide="x"></i></button>
-            <h2 style="font-family: 'Syne'; font-size: 2rem; margin-bottom: 20px; text-align: center;">Upgrade Plan</h2>
-            <div style="display: flex; flex-direction: column; gap: 20px;">
-                <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: 0.2s;" id="selectProBtn" onmouseover="this.style.background='rgba(59, 130, 246, 0.1)';this.style.borderColor='#3b82f6'" onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.borderColor='rgba(255,255,255,0.1)'">
-                    <h3 style="color: #60a5fa; margin-bottom: 8px;">Pro Plan — ₹499</h3>
-                    <p style="color: #94a3b8; font-size: 0.95rem;">Removes Ads, Unlocks 30-day retention.</p>
-                </div>
-                <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: 0.2s;" id="selectPremiumBtn" onmouseover="this.style.background='rgba(16, 185, 129, 0.1)';this.style.borderColor='#10b981'" onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.borderColor='rgba(255,255,255,0.1)'">
-                    <h3 style="color: #10b981; margin-bottom: 8px;">Premium Plan — ₹999</h3>
-                    <p style="color: #94a3b8; font-size: 0.95rem;">High-res downloads, Priority Queue.</p>
-                </div>
-                <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: 0.2s;" id="selectVipBtn" onmouseover="this.style.background='rgba(245, 158, 11, 0.1)';this.style.borderColor='#fbbf24'" onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.borderColor='rgba(255,255,255,0.1)'">
-                    <h3 style="color: #fbbf24; margin-bottom: 8px;"><i data-lucide="crown" style="width: 18px; display: inline-block; vertical-align: middle;"></i> VIP Plan — ₹2999</h3>
-                    <p style="color: #94a3b8; font-size: 0.95rem;">Ad-free, Unlimited Concurrent Events, Custom Logo</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Receipt Popup -->
-    <div id="receiptPopup">
-        <div class="receipt-card">
-            <h2>SnapNexus Receipt</h2>
-            <div style="text-align: left; margin-bottom: 20px; font-size: 1.1rem; line-height: 1.8;">
-                <p><strong>Date:</strong> <span id="rDate"></span></p>
-                <p><strong>Plan Name:</strong> <span id="rPlan"></span></p>
-                <p><strong>Amount Paid:</strong> <span id="rAmount"></span></p>
-                <p><strong>Transaction ID:</strong> <span id="rTxn"></span></p>
-            </div>
-            <div style="display: flex; gap: 10px; justify-content: center;" class="no-print">
-                <button class="btn btn-blue" onclick="window.print()" style="padding: 10px 20px;"><i data-lucide="printer"></i> Print</button>
-                <button class="btn btn-dark" id="closeReceiptBtn" style="padding: 10px 20px;">Continue</button>
-            </div>
-        </div>
-    </div>
-
     <script>
+        // 1. CRITICAL FIX: The Engine. Without this, the dashboard crashes on load.
+        const cfg = window.SnapNexus;
+        const client = new Appwrite.Client().setEndpoint(cfg.ENDPOINT).setProject(cfg.PROJECT_ID);
+        const account = new Appwrite.Account(client);
+        const databases = new Appwrite.Databases(client);
+        const storage = new Appwrite.Storage(client);
+
         const urlParams = new URLSearchParams(window.location.search);
         const eventId = urlParams.get('event');
         
@@ -146,15 +33,17 @@
             lucide.createIcons();
             
             let userPrefs = null;
+            let currentUser = null;
+            
             try { 
-                await account.get(); 
+                currentUser = await account.get(); 
                 userPrefs = await account.getPrefs();
             } catch(e) { 
                 window.location.href = 'login.html'; 
                 throw new Error("User Not Logged In"); 
             }
 
-            // 1. Strict Tier Checks & VIP Bouncer
+            // Strict Tier Checks & VIP Bouncer
             if (userPrefs && userPrefs.tier === 'vip') {
                 window.location.href = `vip_dashboard.html?event=${eventId}`;
                 throw new Error("Redirecting VIP user");
@@ -182,13 +71,6 @@
                             userPrefs.tier = 'starter';
                             window.location.reload();
                         }
-                    } else if (userPrefs.tier === 'vip') {
-                        if (now > userPrefs.subExpiry && currentEvent.tier === 'vip') {
-                            await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { tier: 'starter' });
-                            await account.updatePrefs({ tier: 'starter', subExpiry: null });
-                            currentEvent.tier = 'starter';
-                            userPrefs.tier = 'starter';
-                        }
                     }
                 }
 
@@ -209,7 +91,7 @@
                     document.getElementById('openQrBtn').style.display = 'none';
                 }
 
-                // 4. Data Retention Timers
+                // Data Retention Timers
                 const downloadBtn = document.getElementById('downloadZipBtn');
                 const upsellText = document.getElementById('upsellText');
                 
@@ -224,28 +106,7 @@
                         upsellText.innerText = "Downloads expire in 24 hours on the Free plan. Upgrade to Pro (₹499) to unlock 30-day gallery retention!";
                         lucide.createIcons();
                     }
-                } else if ((currentEvent.tier === 'pro' || currentEvent.tier === 'premium') && userPrefs.subExpiry) {
-                    const now = Date.now();
-                    if (now > userPrefs.subExpiry) {
-                        const timeLeftMs = (userPrefs.subExpiry + 3 * 3600000) - now;
-                        if (timeLeftMs > 0) {
-                            const minsLeft = Math.floor(timeLeftMs / 60000);
-                            const hoursLeft = Math.floor(minsLeft / 60);
-                            const disp = hoursLeft > 0 ? `${hoursLeft}h ${minsLeft%60}m` : `${minsLeft} minutes`;
-                            upsellText.style.display = 'block';
-                            upsellText.style.color = '#f59e0b';
-                            upsellText.innerText = `Subscription Expired. Event ended automatically. You have ${disp} left to download your gallery before files are locked.`;
-                        }
-                    }
                 }
-                
-                downloadBtn.addEventListener('click', () => {
-                    if (currentEvent.tier === 'starter' && (Date.now() - new Date(currentEvent.$createdAt).getTime() > 24*60*60*1000)) {
-                        alert("Gallery expired on Free plan.");
-                        return;
-                    }
-                    alert("Preparing ZIP! (simulated download logic)");
-                });
 
                 document.getElementById('openTvBtn').addEventListener('click', () => {
                     if (currentEvent.tier === 'pro' || currentEvent.tier === 'premium' || currentEvent.tier === 'vip') {
@@ -259,6 +120,7 @@
                     navigator.clipboard.writeText(cfg.resolveUrl(`app.html?event=${currentEvent.eventId}`)).then(() => alert("Guest Link Copied!"));
                 });
 
+                // Upgrade Plan Logic (Stripped of Fake APIs)
                 const upgradeBtn = document.getElementById('upgradeBtn');
                 const upgradeModal = document.getElementById('upgradeModal');
                 const closeModalBtn = document.getElementById('closeModalBtn');
@@ -272,84 +134,40 @@
                     closeModalBtn.addEventListener('click', () => { upgradeModal.style.display = 'none'; });
 
                     const handleCheckout = (amount, planName, tierId) => {
-                        if (!confirm("By proceeding with this payment, you agree to our Privacy Policy and Terms of Service.")) {
-                            return;
-                        }
-
-                        // OTP Verification via Backend
-                        alert('Sending OTP to your email...');
-                        try {
-                            const otpResponse = await fetch('/api/send-otp', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ email: currentUser.email })
-                            });
-                            
-                            const otpData = await otpResponse.json();
-                            
-                            if (!otpResponse.ok || !otpData.success) {
-                                alert(`Failed to send OTP: ${otpData.error || 'Unknown error'}`);
-                                return;
-                            }
-
-                            if (otpData.mock) {
-                                alert(`[DEV MODE] Using mock OTP locally because Resend isn't configured yet.\n\nYour OTP is: ${otpData.mockOtp}`);
-                            }
-
-                            const userOtp = prompt(`Enter the 6-digit OTP sent to your email to proceed to payment:`);
-                            if (!userOtp) return;
-
-                            const verifyResponse = await fetch('/api/verify-otp', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ email: currentUser.email, otp: userOtp })
-                            });
-                            const verifyData = await verifyResponse.json();
-
-                            if (!verifyData.success) {
-                                alert('Invalid OTP. Verification failed: ' + verifyData.error);
-                                return;
-                            }
-                        } catch (err) {
-                            console.error(err);
-                            alert("Failed to send or verify OTP.");
-                            return;
-                        }
+                        if (!confirm("By proceeding with this payment, you agree to our Privacy Policy and Terms of Service.")) return;
 
                         const options = {
-                            key: window.cfg.RAZORPAY_KEY, // Dynamic key from config
+                            key: 'rzp_test_Sf5GBrljv03Pmk', 
                             amount: amount * 100,
                             currency: 'INR', 
                             name: 'SnapNexus', 
                             description: `Upgrade to ${planName}`,
                             handler: async function (response) {
-                                // 5. VIP Subscription Engine updates
-                                const subExpiry = Date.now() + 30 * 24 * 60 * 60 * 1000; // 30 days
+                                // Update User & Event Tier instantly
+                                const subExpiry = Date.now() + 30 * 24 * 60 * 60 * 1000;
                                 await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { tier: tierId });
                                 await account.updatePrefs({ tier: tierId, subExpiry: subExpiry });
                                 
+                                try {
+                                    const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [
+                                        Appwrite.Query.equal('hostEmail', currentUser.email),
+                                        Appwrite.Query.equal('status', 'active')
+                                    ]);
+                                    for (let doc of res.documents) {
+                                        await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, doc.$id, { tier: tierId });
+                                    }
+                                } catch(e) { console.error('Failed to sync events', e); }
+                                
                                 upgradeModal.style.display = 'none';
                                 
-                                // Show Receipt
+                                // Show Official Receipt Popup
+                                const txnId = response.razorpay_payment_id || "TXN_" + Math.random().toString(36).substr(2,9).toUpperCase();
                                 document.getElementById('rDate').innerText = new Date().toLocaleString();
                                 document.getElementById('rPlan').innerText = planName;
                                 document.getElementById('rAmount').innerText = "₹" + amount;
-                                const txnId = response.razorpay_payment_id || "TXN_" + Math.random().toString(36).substr(2,9).toUpperCase();
                                 document.getElementById('rTxn').innerText = txnId;
                                 
-                                // Send Receipt via Backend
-                                try {
-                                    await fetch('/api/send-receipt', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ email: currentUser.email, planName, amount, txnId })
-                                    });
-                                } catch(e) {
-                                    console.error("Receipt email failed");
-                                }
-
-                                const popup = document.getElementById('receiptPopup');
-                                popup.style.display = 'flex';
+                                document.getElementById('receiptPopup').style.display = 'flex';
                             }
                         };
                         upgradeModal.style.display = 'none';
@@ -370,10 +188,8 @@
                         selectPremiumBtn.addEventListener('click', () => handleCheckout(999, 'Premium Plan', 'premium'));
                         selectVipBtn.addEventListener('click', () => handleCheckout(2999, 'VIP Plan', 'vip'));
                     }
-                } else {
-                    upgradeBtn.style.display = 'none';
                 }
-                
+
                 document.getElementById('closeReceiptBtn').addEventListener('click', () => {
                     window.location.reload();
                 });
@@ -385,7 +201,7 @@
                     }
                 });
 
-                // Live Image Gallery
+                // Gallery & Hover Tools
                 const hostGalleryContainer = document.getElementById('hostGalleryContainer');
                 const hostGallery = document.getElementById('hostGallery');
                 hostGalleryContainer.style.display = 'block';
@@ -413,7 +229,7 @@
                         }
                     } catch (err) { console.error('Gallery fetch error', err); }
                 };
-                
+
                 window.downloadImage = async (fileId, fileName) => {
                     try {
                         const dlUrl = storage.getFileDownload(cfg.BUCKET_ID, fileId).href;
@@ -427,9 +243,7 @@
                         a.click();
                         document.body.removeChild(a);
                         URL.revokeObjectURL(blobUrl);
-                    } catch(err) {
-                        alert("Failed to download image.");
-                    }
+                    } catch(err) { alert("Failed to download image."); }
                 };
 
                 window.deleteImage = async (fileId) => {
@@ -437,15 +251,13 @@
                     try {
                         await storage.deleteFile(cfg.BUCKET_ID, fileId);
                         fetchAndRenderGallery();
-                    } catch(err) {
-                        alert("Failed to delete image: " + err.message);
-                    }
+                    } catch(err) { alert("Failed to delete image: " + err.message); }
                 };
 
-                const downloadBtn = document.getElementById('downloadZipBtn');
+                // Real Browser ZIP Download Implementation
                 if (downloadBtn) {
                     downloadBtn.addEventListener('click', async () => {
-                        if (currentEvent.tier === 'free' || currentEvent.tier === 'pro') {
+                        if (currentEvent.tier === 'starter') {
                             alert("ZIP Downloads are available on Premium & VIP plans. Please upgrade to download your gallery.");
                             return;
                         }
@@ -457,7 +269,7 @@
                         try {
                             const res = await storage.listFiles(cfg.BUCKET_ID, [
                                 Appwrite.Query.startsWith('name', currentEvent.eventId + '_'),
-                                Appwrite.Query.limit(100) // Assumes <100 photos for this demo, adjust if pagination needed
+                                Appwrite.Query.limit(100) 
                             ]);
 
                             if (res.files.length === 0) {
@@ -469,7 +281,6 @@
                             }
 
                             const zip = new JSZip();
-
                             const downloadPromises = res.files.map(async (file) => {
                                 const dlUrl = storage.getFileDownload(cfg.BUCKET_ID, file.$id).href;
                                 try {
@@ -480,7 +291,6 @@
                             });
 
                             await Promise.all(downloadPromises);
-                            
                             const content = await zip.generateAsync({ type: "blob" });
                             saveAs(content, "SnapNexus_" + currentEvent.eventName + ".zip");
 
