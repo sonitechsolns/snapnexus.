@@ -10,12 +10,10 @@
     <title>SnapNexus | Host Login</title>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Urbanist:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,600&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Urbanist', sans-serif; background: #020617; color: #ffffff; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; position: relative; overflow-x: hidden; }
         
-        /* Continuous Background Animation */
         .liquid-mesh { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -3; background: radial-gradient(circle at 20% 30%, #020617, #1e3a8a 30%, #3b82f6 65%, #4f46e5); background-size: 200% 200%; animation: liquidShift 16s ease infinite alternate; }
         @keyframes liquidShift { 0% { background-position: 0% 0%; } 50% { background-position: 100% 100%; } 100% { background-position: 0% 50%; } }
         
@@ -36,7 +34,8 @@
         .history-item strong { display: block; font-size: 1.1rem; margin-bottom: 4px; }
         .history-item span { font-size: 0.85rem; color: #94a3b8; }
         .badge { background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
-        #historySection { display: none; }
+        
+        #historySection, #verifySection { display: none; }
         
         @keyframes spin { 100% { transform: rotate(360deg); } }
         .lucide-spin { animation: spin 1s linear infinite; }
@@ -47,17 +46,36 @@
     <div class="glass-panel">
         <h1 id="authTitle">SnapNexus Host</h1>
         <p class="subtitle" id="authSubtitle">Sign in to manage your events</p>
+        
         <div id="authForm">
+            <div class="input-group" id="nameGroup" style="display: none;">
+                <label>Full Name</label>
+                <input type="text" id="nameInput" placeholder="John Doe">
+            </div>
             <div class="input-group">
                 <label>Email Address</label>
                 <input type="email" id="emailInput" placeholder="host@example.com">
             </div>
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" id="passwordInput" placeholder="••••••••">
+            </div>
+            <div class="input-group" id="confirmPassGroup" style="display: none;">
+                <label>Confirm Password</label>
+                <input type="password" id="confirmPasswordInput" placeholder="••••••••">
+            </div>
             <button class="btn-primary" id="loginBtn">Sign In <i data-lucide="arrow-right"></i></button>
+            <p class="toggle-text" id="toggleAuth">Don't have an account? Create one.</p>
         </div>
-        <div id="verifyingSection" style="display: none; text-align: center;">
-            <i data-lucide="loader-2" class="lucide-spin" style="width: 48px; height: 48px; color: #3b82f6; margin-bottom: 16px;"></i>
-            <h3 style="font-family: 'Syne'; margin-bottom: 16px; font-size: 1.2rem;">Verifying your secure link...</h3>
+
+        <div id="verifySection" style="text-align: center;">
+            <i data-lucide="mail-warning" style="width: 48px; height: 48px; color: #f59e0b; margin-bottom: 16px;"></i>
+            <h3 style="font-family: 'Syne'; margin-bottom: 16px; font-size: 1.4rem;">Verify Your Email</h3>
+            <p style="color: #94a3b8; margin-bottom: 24px;">We've sent a verification link to your email address. Please click it to activate your account. You only have to do this once!</p>
+            <button class="btn-primary" id="resendVerifyBtn" style="background: #10b981; margin-bottom: 12px;">Resend Verification Link</button>
+            <p class="toggle-text" id="logoutVerifyBtn" style="color: #ef4444;">Sign Out</p>
         </div>
+
         <div id="historySection">
             <button class="btn-primary" id="createNewEventBtn" style="margin-bottom: 24px; background: #10b981;">
                 <i data-lucide="plus-circle"></i> Create New Event
@@ -69,6 +87,12 @@
     </div>
 
     <script>
+        const cfg = window.SnapNexus;
+        const client = new Appwrite.Client().setEndpoint(cfg.ENDPOINT).setProject(cfg.PROJECT_ID);
+        const account = new Appwrite.Account(client);
+        const databases = new Appwrite.Databases(client);
+
+        let isSignup = false;
         let currentUser = null;
         let currentUserPrefs = null;
         let globalEventHistory = [];
@@ -76,28 +100,30 @@
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
             const authForm = document.getElementById('authForm');
-            const verifyingSection = document.getElementById('verifyingSection');
             const historySection = document.getElementById('historySection');
+            const verifySection = document.getElementById('verifySection');
             const historyList = document.getElementById('historyList');
 
+            // 1. Check if returning from a Verification Email
             const urlParams = new URLSearchParams(window.location.search);
             const userId = urlParams.get('userId');
             const secret = urlParams.get('secret');
 
             if (userId && secret) {
                 authForm.style.display = 'none';
-                if (verifyingSection) verifyingSection.style.display = 'block';
                 try {
-                    await account.updateMagicURLSession(userId, secret);
-                    window.history.replaceState({}, document.title, window.location.pathname);
+                    await account.updateVerification(userId, secret);
+                    alert("Account verified successfully! Welcome to SnapNexus.");
+                    window.location.href = window.location.pathname; // Clear URL
+                    return;
                 } catch (err) {
-                    alert("Failed to verify secure link. It may have expired.");
-                    window.history.replaceState({}, document.title, window.location.pathname);
-                    window.location.reload();
+                    alert("Verification link expired or invalid. Please log in to request a new one.");
+                    window.location.href = window.location.pathname;
                     return;
                 }
             }
 
+            // 2. Load History for verified users
             async function loadHistory() {
                 try {
                     historyList.innerHTML = '<p style="color: #94a3b8; text-align: center;"><i data-lucide="loader-2" class="lucide-spin"></i> Loading events...</p>';
@@ -135,69 +161,31 @@
                             </div>
                         `;
                         div.addEventListener('click', () => { 
-                            if (isVipUser) {
-                                window.location.href = cfg.resolveUrl(`vip_dashboard.html?event=${doc.eventId}`);
-                            } else {
-                                window.location.href = cfg.resolveUrl(`dashboard.html?event=${doc.eventId}`); 
-                            }
+                            if (isVipUser) window.location.href = cfg.resolveUrl(`vip_dashboard.html?event=${doc.eventId}`);
+                            else window.location.href = cfg.resolveUrl(`dashboard.html?event=${doc.eventId}`); 
                         });
                         historyList.appendChild(div);
                     });
                 } catch(e) { historyList.innerHTML = '<p style="color: #ef4444; text-align: center;">Failed to load history.</p>'; }
             }
 
+            // 3. Main Session Check
             async function checkSession() {
                 try {
                     currentUser = await account.get();
                     
-                    // 5. VIP Subscription Engine - Timer & Tier handling
-                    let prefs = await account.getPrefs();
-                    currentUserPrefs = prefs;
-                    if (prefs.subExpiry) {
-                        const now = Date.now();
-                        const bufferMs = 3 * 3600000; // 3 hours
-                        
-                        try {
-                            if (prefs.tier === 'pro' || prefs.tier === 'premium') {
-                                if (now > prefs.subExpiry) {
-                                    const activeReq = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [
-                                        Appwrite.Query.equal('hostEmail', currentUser.email),
-                                        Appwrite.Query.equal('status', 'active')
-                                    ]);
-                                    for (let doc of activeReq.documents) {
-                                        await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, doc.$id, { status: 'ended' });
-                                    }
-                                }
-                                if (now > prefs.subExpiry + bufferMs) {
-                                    const proReq = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [
-                                        Appwrite.Query.equal('hostEmail', currentUser.email),
-                                        Appwrite.Query.notEqual('tier', 'starter')
-                                    ]);
-                                    for (let doc of proReq.documents) {
-                                        await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, doc.$id, { tier: 'starter' });
-                                    }
-                                    await account.updatePrefs({ tier: 'starter', subExpiry: null });
-                                    prefs.tier = 'starter';
-                                }
-                            } else if (prefs.tier === 'vip') {
-                                if (now > prefs.subExpiry) {
-                                    const vipReq = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [
-                                        Appwrite.Query.equal('hostEmail', currentUser.email),
-                                        Appwrite.Query.equal('tier', 'vip')
-                                    ]);
-                                    for (let doc of vipReq.documents) {
-                                        await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, doc.$id, { tier: 'starter' });
-                                    }
-                                    await account.updatePrefs({ tier: 'starter', subExpiry: null });
-                                    prefs.tier = 'starter';
-                                }
-                            }
-                        } catch(e) { console.error('Subscription expiry update failed', e); }
+                    // IF LOGGED IN BUT NOT VERIFIED -> Show Verification Wall
+                    if (!currentUser.emailVerification) {
+                        authForm.style.display = 'none';
+                        verifySection.style.display = 'block';
+                        return;
                     }
 
+                    // IF VERIFIED -> Load Dashboard
+                    currentUserPrefs = await account.getPrefs();
                     authForm.style.display = 'none';
-                    if (verifyingSection) verifyingSection.style.display = 'none';
                     historySection.style.display = 'block';
+                    
                     if (currentUserPrefs && currentUserPrefs.tier === 'vip') {
                         document.getElementById('authTitle').innerHTML = `<i data-lucide="crown" style="color: #fbbf24; vertical-align: middle;"></i> Welcome, ${currentUser.name || 'VIP Host'}`;
                         document.getElementById('authTitle').style.color = '#fbbf24';
@@ -206,96 +194,128 @@
                         document.getElementById('authTitle').innerText = `Welcome, ${currentUser.name || 'Host'}`;
                         document.getElementById('authSubtitle').innerText = 'Your event dashboard';
                     }
-                    loadHistory();
-
-                    const urlParams = new URLSearchParams(window.location.search);
-
-                    const planMap = {
-                        'pro': { amount: 499, name: 'Pro Plan' },
-                        'premium': { amount: 999, name: 'Premium Plan' },
-                        'vip': { amount: 2999, name: 'VIP Plan' }
-                    };
                     
-                    const p = urlParams.get('plan');
-                    if (p && planMap[p]) {
-                        if (!confirm("By proceeding with this payment, you agree to our Privacy Policy and Terms of Service.")) {
-                            window.history.replaceState({}, document.title, 'login.html');
-                            return;
-                        }
-                        const planDetails = planMap[p];
+                    loadHistory();
+                    handleUpgrades(); // Razorpay setup
 
-                        const options = {
-                            key: window.cfg.RAZORPAY_KEY,
-                            amount: planDetails.amount * 100,
-                            currency: 'INR', 
-                            name: 'SnapNexus', 
-                            description: `Upgrade to ${planDetails.name}`,
-                            handler: async function (response) {
-                                const subExpiry = Date.now() + 30 * 24 * 60 * 60 * 1000;
-                                await account.updatePrefs({ tier: p, subExpiry: subExpiry });
-                                
-                                try {
-                                    const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [
-                                        Appwrite.Query.equal('hostEmail', currentUser.email),
-                                        Appwrite.Query.equal('status', 'active')
-                                    ]);
-                                    for (let doc of res.documents) {
-                                        await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, doc.$id, { tier: p });
-                                    }
-                                } catch(e) { console.error('Failed to sync events', e); }
-                                
-                                const txnId = response.razorpay_payment_id || "TXN_" + Math.random().toString(36).substr(2,9).toUpperCase();
-                                
-                                const { jsPDF } = window.jspdf;
-                                const doc = new jsPDF();
-                                doc.setFont("Helvetica", "bold");
-                                doc.text("SnapNexus Digital Receipt", 20, 20);
-                                doc.setFont("Helvetica", "normal");
-                                doc.text(`Transaction ID: ${txnId}`, 20, 30);
-                                doc.text(`Plan Name: ${planDetails.name}`, 20, 40);
-                                doc.text(`Amount: INR ${planDetails.amount}`, 20, 50);
-                                doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 60);
-                                doc.save('SnapNexus_Receipt_' + txnId + '.pdf');
-
-                                alert(`Payment Successful! Your digital receipt has been downloaded. Welcome to the ${planDetails.name}.`);
-                                window.location.href = 'login.html'; // Refresh without params
-                            },
-                            modal: {
-                                ondismiss: function() {
-                                    window.history.replaceState({}, document.title, 'login.html');
-                                }
-                            }
-                        };
-                        new window.Razorpay(options).open();
-                    } else if (p) {
-                        window.history.replaceState({}, document.title, 'login.html');
-                    }
                 } catch(err) {
-                    if (verifyingSection) verifyingSection.style.display = 'none';
+                    // NOT LOGGED IN -> Show Auth Form
                     authForm.style.display = 'block';
                     historySection.style.display = 'none';
+                    verifySection.style.display = 'none';
                 }
             }
 
+            // 4. Razorpay Upgrade Logic (from pricing page)
+            function handleUpgrades() {
+                const planMap = {
+                    'pro': { amount: 499, name: 'Pro Plan' },
+                    'premium': { amount: 999, name: 'Premium Plan' },
+                    'vip': { amount: 2999, name: 'VIP Plan' }
+                };
+                const p = urlParams.get('plan');
+                if (p && planMap[p]) {
+                    if (!confirm("By proceeding with this payment, you agree to our Privacy Policy and Terms of Service.")) {
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                        return;
+                    }
+                    const planDetails = planMap[p];
+                    const options = {
+                        key: 'rzp_test_Sf5GBrljv03Pmk',
+                        amount: planDetails.amount * 100,
+                        currency: 'INR', 
+                        name: 'SnapNexus', 
+                        description: `Upgrade to ${planDetails.name}`,
+                        handler: async function (response) {
+                            const subExpiry = Date.now() + 30 * 24 * 60 * 60 * 1000;
+                            await account.updatePrefs({ tier: p, subExpiry: subExpiry });
+                            try {
+                                const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [
+                                    Appwrite.Query.equal('hostEmail', currentUser.email),
+                                    Appwrite.Query.equal('status', 'active')
+                                ]);
+                                for (let doc of res.documents) {
+                                    await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, doc.$id, { tier: p });
+                                }
+                            } catch(e) {}
+                            alert(`Payment Successful! You are now on the ${planDetails.name}.`);
+                            window.location.href = window.location.pathname; 
+                        },
+                        modal: {
+                            ondismiss: function() { window.history.replaceState({}, document.title, window.location.pathname); }
+                        }
+                    };
+                    new window.Razorpay(options).open();
+                }
+            }
+
+            // 5. Toggle Login/Signup Form
+            document.getElementById('toggleAuth').addEventListener('click', () => {
+                isSignup = !isSignup;
+                document.getElementById('nameGroup').style.display = isSignup ? 'block' : 'none';
+                document.getElementById('confirmPassGroup').style.display = isSignup ? 'block' : 'none';
+                document.getElementById('loginBtn').innerHTML = isSignup ? 'Create Account <i data-lucide="user-plus"></i>' : 'Sign In <i data-lucide="arrow-right"></i>';
+                document.getElementById('toggleAuth').innerText = isSignup ? 'Already have an account? Sign In.' : "Don't have an account? Create one.";
+                lucide.createIcons();
+            });
+
+            // 6. Login / Register Execution
             document.getElementById('loginBtn').addEventListener('click', async () => {
                 const email = document.getElementById('emailInput').value;
-                if(!email) return alert('Email required.');
+                const password = document.getElementById('passwordInput').value;
+                const name = document.getElementById('nameInput').value;
+                const confirmPassword = document.getElementById('confirmPasswordInput').value;
+                
+                if(!email || !password) return alert('Email and password are required.');
+
                 const btn = document.getElementById('loginBtn');
                 btn.disabled = true;
-                btn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin"></i> Sending Link...';
+                btn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin"></i> Processing...';
                 lucide.createIcons();
+                
                 try {
-                    await account.createMagicURLToken(Appwrite.ID.unique(), email, window.location.origin + window.location.pathname);
-                    btn.innerHTML = 'Check your email!';
-                    alert('A secure login link has been sent to your email.');
+                    if (isSignup) {
+                        if (password !== confirmPassword) throw new Error("Passwords do not match.");
+                        if (password.length < 8) throw new Error("Password must be at least 8 characters.");
+                        
+                        // Create User
+                        await account.create(Appwrite.ID.unique(), email, password, name);
+                        // Log them in immediately
+                        await account.createEmailPasswordSession(email, password);
+                        await account.updatePrefs({ tier: 'starter' });
+                        // Send the ONE-TIME verification email
+                        await account.createVerification(window.location.origin + window.location.pathname);
+                        alert("Account created successfully! Please check your email to verify your account.");
+                    } else {
+                        // Standard Login
+                        await account.createEmailPasswordSession(email, password);
+                    }
+                    window.location.reload();
                 } catch(e) { 
                     alert('Error: ' + e.message); 
                     btn.disabled = false;
-                    btn.innerHTML = 'Sign In <i data-lucide="arrow-right"></i>';
+                    btn.innerHTML = isSignup ? 'Create Account <i data-lucide="user-plus"></i>' : 'Sign In <i data-lucide="arrow-right"></i>';
                     lucide.createIcons();
                 }
             });
 
+            // 7. Verification Actions
+            document.getElementById('resendVerifyBtn').addEventListener('click', async () => {
+                const btn = document.getElementById('resendVerifyBtn');
+                btn.disabled = true;
+                btn.innerText = 'Sending...';
+                try {
+                    await account.createVerification(window.location.origin + window.location.pathname);
+                    alert("A new verification link has been sent to your email!");
+                    btn.innerText = 'Sent Successfully!';
+                } catch (e) {
+                    alert("Error sending link: " + e.message);
+                    btn.innerText = 'Resend Verification Link';
+                    btn.disabled = false;
+                }
+            });
+
+            // 8. Event Creation Logic
             document.getElementById('createNewEventBtn').addEventListener('click', async () => {
                 const btn = document.getElementById('createNewEventBtn');
                 btn.disabled = true;
@@ -304,46 +324,29 @@
                 lucide.createIcons();
                 
                 let userTier = 'starter';
-                try {
-                    const prefs = await account.getPrefs();
-                    if (prefs.tier) userTier = prefs.tier;
-                } catch(e) {}
+                if (currentUserPrefs && currentUserPrefs.tier) userTier = currentUserPrefs.tier;
 
                 const activeCount = globalEventHistory.filter(e => e.status === 'active').length;
-                let limit = 1;
-                if (userTier === 'premium') limit = 5;
-                if (userTier === 'vip') limit = Infinity;
+                let limit = (userTier === 'premium') ? 5 : (userTier === 'vip') ? Infinity : 1;
 
                 if (activeCount >= limit) {
-                    alert(`Limit Reached: Your current plan allows only ${limit} active event(s) at a time.\\n\\nPlease click your active event below and press "End Event", or upgrade for more capacity.`);
+                    alert(`Limit Reached: Your current plan allows only ${limit} active event(s) at a time.`);
                     btn.disabled = false;
                     btn.innerHTML = oldHtml;
                     return;
                 }
 
                 const eventName = prompt('Enter Event Name for TV Wall:');
-                if (!eventName) {
-                    btn.disabled = false;
-                    btn.innerHTML = oldHtml;
-                    return;
-                }
+                if (!eventName) { btn.disabled = false; btn.innerHTML = oldHtml; return; }
                 
                 const realEventId = 'evt_' + Math.random().toString(36).substr(2, 9);
                 
                 try {
                     await databases.createDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, realEventId, {
-                        eventName: eventName, 
-                        eventId: realEventId, 
-                        tier: userTier, 
-                        hostEmail: currentUser.email, 
-                        status: 'active'
+                        eventName: eventName, eventId: realEventId, tier: userTier, hostEmail: currentUser.email, status: 'active'
                     });
-                    // Redirect according to tier
-                    if (userTier === 'vip') {
-                         window.location.href = `vip_dashboard.html?event=${realEventId}`;
-                    } else {
-                         window.location.href = `dashboard.html?event=${realEventId}`;
-                    }
+                    if (userTier === 'vip') window.location.href = `vip_dashboard.html?event=${realEventId}`;
+                    else window.location.href = `dashboard.html?event=${realEventId}`;
                 } catch(err) { 
                     alert('Failed to create event: ' + err.message); 
                     btn.disabled = false;
@@ -351,10 +354,13 @@
                 }
             });
 
-            document.getElementById('logoutBtn').addEventListener('click', async () => {
+            // Sign Out handlers
+            const handleLogout = async () => {
                 await account.deleteSession('current');
                 window.location.reload();
-            });
+            };
+            document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+            document.getElementById('logoutVerifyBtn').addEventListener('click', handleLogout);
 
             checkSession();
         });
