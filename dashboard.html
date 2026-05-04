@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta name="robots" content="noindex, nofollow">
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <script src="/config.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="/favicon.png">
     <title>SnapNexus | Host Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Urbanist:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -274,25 +276,48 @@
                             return;
                         }
 
-                        // OTP Verification Simulation
-                        const mockOtp = Math.floor(100000 + Math.random() * 900000).toString();
-                        alert(`[OTP SYSTEM] An OTP has been sent to your email for verification.\\n\\nFor this demo, your OTP is: ${mockOtp}`);
-                        const userOtp = prompt(`Enter the 6-digit OTP sent to your email to proceed to payment:`);
-                        if (userOtp !== mockOtp) {
-                            alert('Invalid OTP. Verification failed.');
+                        // OTP Verification via Backend
+                        alert('Sending OTP to your email...');
+                        try {
+                            const otpResponse = await fetch('/api/send-otp', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ email: currentUser.email })
+                            });
+                            
+                            const otpData = await otpResponse.json();
+                            
+                            if (!otpResponse.ok || !otpData.success) {
+                                alert(`Failed to send OTP: ${otpData.error || 'Unknown error'}`);
+                                return;
+                            }
+
+                            if (otpData.mock) {
+                                alert(`[DEV MODE] Using mock OTP locally because Resend isn't configured yet.\n\nYour OTP is: ${otpData.mockOtp}`);
+                            }
+
+                            const userOtp = prompt(`Enter the 6-digit OTP sent to your email to proceed to payment:`);
+                            if (!userOtp) return;
+
+                            const verifyResponse = await fetch('/api/verify-otp', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ email: currentUser.email, otp: userOtp })
+                            });
+                            const verifyData = await verifyResponse.json();
+
+                            if (!verifyData.success) {
+                                alert('Invalid OTP. Verification failed: ' + verifyData.error);
+                                return;
+                            }
+                        } catch (err) {
+                            console.error(err);
+                            alert("Failed to send or verify OTP.");
                             return;
                         }
 
-                        // Mock Email Logic
-                        const sendReceiptEmail = (planName, amount) => {
-                            console.log(`Sending receipt email via sooperfast.net@yahoo.com...`);
-                            setTimeout(() => {
-                                alert(`Receipt for ${planName} (₹${amount}) was mailed securely from sooperfast.net@yahoo.com.`);
-                            }, 500);
-                        };
-
                         const options = {
-                            key: 'rzp_test_Sf5GBrljv03Pmk',
+                            key: window.cfg.RAZORPAY_KEY, // Dynamic key from config
                             amount: amount * 100,
                             currency: 'INR', 
                             name: 'SnapNexus', 
@@ -309,9 +334,19 @@
                                 document.getElementById('rDate').innerText = new Date().toLocaleString();
                                 document.getElementById('rPlan').innerText = planName;
                                 document.getElementById('rAmount').innerText = "₹" + amount;
-                                document.getElementById('rTxn').innerText = response.razorpay_payment_id || "TXN_" + Math.random().toString(36).substr(2,9).toUpperCase();
+                                const txnId = response.razorpay_payment_id || "TXN_" + Math.random().toString(36).substr(2,9).toUpperCase();
+                                document.getElementById('rTxn').innerText = txnId;
                                 
-                                sendReceiptEmail(planName, amount);
+                                // Send Receipt via Backend
+                                try {
+                                    await fetch('/api/send-receipt', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ email: currentUser.email, planName, amount, txnId })
+                                    });
+                                } catch(e) {
+                                    console.error("Receipt email failed");
+                                }
 
                                 const popup = document.getElementById('receiptPopup');
                                 popup.style.display = 'flex';
@@ -364,15 +399,101 @@
                         ]);
                         hostGallery.innerHTML = res.files.map(f => {
                             const url = storage.getFileView(cfg.BUCKET_ID, f.$id).href;
-                            return `<div style="border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); aspect-ratio: 1; background: #000;">
+                            return `<div style="border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); aspect-ratio: 1; background: #000; position: relative;" onmouseenter="this.querySelector('.hover-overlay').style.opacity='1';" onmouseleave="this.querySelector('.hover-overlay').style.opacity='0';">
                                         <img src="${url}" style="width: 100%; height: 100%; object-fit: cover;">
+                                        <div class="hover-overlay" style="position: absolute; inset: 0; background: rgba(0,0,0,0.6); opacity: 0; transition: opacity 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 15px;">
+                                            <button onclick="downloadImage('${f.$id}', '${f.name.replace(/'/g, "\\'")}')" style="background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: white;"><i data-lucide="download"></i></button>
+                                            <button onclick="deleteImage('${f.$id}')" style="background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer;"><i data-lucide="trash-2" style="color: #ef4444;"></i></button>
+                                        </div>
                                     </div>`;
                         }).join('');
+                        lucide.createIcons();
                         if (res.files.length === 0) {
                             hostGallery.innerHTML = '<p style="color: #94a3b8; grid-column: 1 / -1;">No photos have been uploaded yet.</p>';
                         }
                     } catch (err) { console.error('Gallery fetch error', err); }
                 };
+                
+                window.downloadImage = async (fileId, fileName) => {
+                    try {
+                        const dlUrl = storage.getFileDownload(cfg.BUCKET_ID, fileId).href;
+                        const response = await fetch(dlUrl);
+                        const blob = await response.blob();
+                        const blobUrl = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = blobUrl;
+                        a.download = fileName || "SnapNexus_Photo.jpg";
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(blobUrl);
+                    } catch(err) {
+                        alert("Failed to download image.");
+                    }
+                };
+
+                window.deleteImage = async (fileId) => {
+                    if (!confirm("Are you sure you want to permanently delete this photo?")) return;
+                    try {
+                        await storage.deleteFile(cfg.BUCKET_ID, fileId);
+                        fetchAndRenderGallery();
+                    } catch(err) {
+                        alert("Failed to delete image: " + err.message);
+                    }
+                };
+
+                const downloadBtn = document.getElementById('downloadZipBtn');
+                if (downloadBtn) {
+                    downloadBtn.addEventListener('click', async () => {
+                        if (currentEvent.tier === 'free' || currentEvent.tier === 'pro') {
+                            alert("ZIP Downloads are available on Premium & VIP plans. Please upgrade to download your gallery.");
+                            return;
+                        }
+
+                        downloadBtn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin"></i> Zipping...';
+                        downloadBtn.disabled = true;
+                        lucide.createIcons();
+
+                        try {
+                            const res = await storage.listFiles(cfg.BUCKET_ID, [
+                                Appwrite.Query.startsWith('name', currentEvent.eventId + '_'),
+                                Appwrite.Query.limit(100) // Assumes <100 photos for this demo, adjust if pagination needed
+                            ]);
+
+                            if (res.files.length === 0) {
+                                alert("There are no photos to download!");
+                                downloadBtn.innerHTML = '<i data-lucide="download"></i> Download Gallery (ZIP)';
+                                downloadBtn.disabled = false;
+                                lucide.createIcons();
+                                return;
+                            }
+
+                            const zip = new JSZip();
+
+                            const downloadPromises = res.files.map(async (file) => {
+                                const dlUrl = storage.getFileDownload(cfg.BUCKET_ID, file.$id).href;
+                                try {
+                                    const response = await fetch(dlUrl);
+                                    const blobData = await response.blob();
+                                    zip.file(file.name, blobData);
+                                } catch(e) { console.error("Failed to fetch", file.$id, e); }
+                            });
+
+                            await Promise.all(downloadPromises);
+                            
+                            const content = await zip.generateAsync({ type: "blob" });
+                            saveAs(content, "SnapNexus_" + currentEvent.eventName + ".zip");
+
+                        } catch (err) {
+                            console.error("ZIP Error", err);
+                            alert("Failed to generate ZIP.");
+                        } finally {
+                            downloadBtn.innerHTML = '<i data-lucide="download"></i> Download Gallery (ZIP)';
+                            downloadBtn.disabled = false;
+                            lucide.createIcons();
+                        }
+                    });
+                }
 
                 document.getElementById('refreshGalleryBtn').addEventListener('click', () => {
                     const icon = document.querySelector('#refreshGalleryBtn i');

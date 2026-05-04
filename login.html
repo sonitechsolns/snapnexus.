@@ -10,6 +10,7 @@
     <title>SnapNexus | Host Login</title>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Urbanist:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,600&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Urbanist', sans-serif; background: #020617; color: #ffffff; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; position: relative; overflow-x: hidden; }
@@ -223,52 +224,6 @@
                         }
                         const planDetails = planMap[p];
 
-                        // OTP Verification via Backend
-                        alert('Sending OTP to your email...');
-                        try {
-                            const otpResponse = await fetch('/api/send-otp', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ email: currentUser.email })
-                            });
-                            
-                            const otpData = await otpResponse.json();
-                            
-                            if (!otpResponse.ok || !otpData.success) {
-                                alert(`Failed to send OTP: ${otpData.error || 'Unknown error'}`);
-                                window.history.replaceState({}, document.title, 'login.html');
-                                return;
-                            }
-
-                            if (otpData.mock) {
-                                alert(`[DEV MODE] Using mock OTP locally because Resend isn't configured yet.\n\nYour OTP is: ${otpData.mockOtp}`);
-                            }
-
-                            const userOtp = prompt(`Enter the 6-digit OTP sent to your email to proceed to payment:`);
-                            if (!userOtp) {
-                                window.history.replaceState({}, document.title, 'login.html');
-                                return;
-                            }
-
-                            const verifyResponse = await fetch('/api/verify-otp', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ email: currentUser.email, otp: userOtp })
-                            });
-                            const verifyData = await verifyResponse.json();
-
-                            if (!verifyData.success) {
-                                alert('Invalid OTP. Verification failed: ' + verifyData.error);
-                                window.history.replaceState({}, document.title, 'login.html');
-                                return;
-                            }
-                        } catch (err) {
-                            console.error(err);
-                            alert("Failed to send or verify OTP.");
-                            window.history.replaceState({}, document.title, 'login.html');
-                            return;
-                        }
-
                         const options = {
                             key: window.cfg.RAZORPAY_KEY,
                             amount: planDetails.amount * 100,
@@ -291,18 +246,18 @@
                                 
                                 const txnId = response.razorpay_payment_id || "TXN_" + Math.random().toString(36).substr(2,9).toUpperCase();
                                 
-                                // Send Receipt via Backend
-                                try {
-                                    await fetch('/api/send-receipt', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ email: currentUser.email, planName: planDetails.name, amount: planDetails.amount, txnId })
-                                    });
-                                } catch(e) {
-                                    console.error("Receipt email failed");
-                                }
+                                const { jsPDF } = window.jspdf;
+                                const doc = new jsPDF();
+                                doc.setFont("Helvetica", "bold");
+                                doc.text("SnapNexus Digital Receipt", 20, 20);
+                                doc.setFont("Helvetica", "normal");
+                                doc.text(`Transaction ID: ${txnId}`, 20, 30);
+                                doc.text(`Plan Name: ${planDetails.name}`, 20, 40);
+                                doc.text(`Amount: INR ${planDetails.amount}`, 20, 50);
+                                doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 60);
+                                doc.save('SnapNexus_Receipt_' + txnId + '.pdf');
 
-                                alert(`Payment Successful! You are now on the ${planDetails.name}.`);
+                                alert(`Payment Successful! Your digital receipt has been downloaded. Welcome to the ${planDetails.name}.`);
                                 window.location.href = 'login.html'; // Refresh without params
                             },
                             modal: {
@@ -330,7 +285,7 @@
                 btn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin"></i> Sending Link...';
                 lucide.createIcons();
                 try {
-                    await account.createMagicURLSession(Appwrite.ID.unique(), email, window.location.origin + window.location.pathname);
+                    await account.createMagicURLToken(Appwrite.ID.unique(), email, window.location.origin + window.location.pathname);
                     btn.innerHTML = 'Check your email!';
                     alert('A secure login link has been sent to your email.');
                 } catch(e) { 

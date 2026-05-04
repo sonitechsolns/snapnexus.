@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta name="robots" content="noindex, nofollow">
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
     <script src="/config.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <link rel="icon" type="image/png" href="/favicon.png">
     <title>SnapNexus | Guest Upload</title>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Urbanist:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -35,6 +35,10 @@
         </button>
         <p class="status-msg" id="statusMsg">Tap to send a photo</p>
         <input type="file" id="fileInput" accept="image/*">
+    </div>
+
+    <div class="guest-gallery-container" style="width: 100%; max-width: 800px; padding: 20px; z-index: 10; position: relative;">
+        <div id="guestGallery" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px;"></div>
     </div>
 
     <script>
@@ -139,6 +143,51 @@
                 } catch(e) {}
             }
             setInterval(checkEventStatus, 5000);
+
+            // Live Gallery logic
+            const guestGallery = document.getElementById('guestGallery');
+
+            async function fetchAndRenderGuestGallery() {
+                try {
+                    const res = await storage.listFiles(cfg.BUCKET_ID, [
+                        Appwrite.Query.startsWith('name', eventId + '_'),
+                        Appwrite.Query.orderDesc('$createdAt'),
+                        Appwrite.Query.limit(50)
+                    ]);
+                    
+                    guestGallery.innerHTML = res.files.map(f => {
+                        const url = storage.getFileView(cfg.BUCKET_ID, f.$id).href;
+                        return `<div style="border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); aspect-ratio: 1; background: #000; position: relative;" onmouseenter="this.querySelector('.hover-overlay').style.opacity='1';" onmouseleave="this.querySelector('.hover-overlay').style.opacity='0';">
+                                    <img src="${url}" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <div class="hover-overlay" style="position: absolute; inset: 0; background: rgba(0,0,0,0.6); opacity: 0; transition: opacity 0.2s ease; display: flex; align-items: center; justify-content: center;">
+                                        <button onclick="downloadImage('${f.$id}', '${f.name.replace(/'/g, "\\'")}')" style="background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: white;"><i data-lucide="download"></i></button>
+                                    </div>
+                                </div>`;
+                    }).join('');
+                    lucide.createIcons();
+                } catch (err) { console.error('Gallery fetch error', err); }
+            }
+
+            window.downloadImage = async (fileId, fileName) => {
+                try {
+                    const dlUrl = storage.getFileDownload(cfg.BUCKET_ID, fileId).href;
+                    const response = await fetch(dlUrl);
+                    const blob = await response.blob();
+                    const blobUrl = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = blobUrl;
+                    a.download = fileName || "SnapNexus_Photo.jpg";
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(blobUrl);
+                } catch(err) {
+                    alert("Failed to download image.");
+                }
+            };
+
+            fetchAndRenderGuestGallery();
+            setInterval(fetchAndRenderGuestGallery, 15000);
         });
     </script>
 </body>
