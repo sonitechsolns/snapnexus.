@@ -64,7 +64,6 @@
             <span class="badge" id="dashEventStatus">Status: Loading</span>
         </div>
         
-        <!-- FIXED: Print QR Code Button Ensured in Grid -->
         <div class="grid-buttons" id="mainActionButtons">
             <button class="btn btn-blue" id="openTvBtn"><i data-lucide="monitor"></i> Open TV Display</button>
             <button class="btn btn-dark" id="openQrBtn"><i data-lucide="smartphone"></i> Copy Guest Link</button>
@@ -73,16 +72,20 @@
             <button class="btn btn-red" id="endEventBtn"><i data-lucide="power"></i> End Event</button>
         </div>
 
+        <!-- UPDATED: Data Export Block with Timer -->
         <div style="background: rgba(0,0,0,0.3); border-radius: 16px; padding: 20px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 40px;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
                 <div>
                     <h3 style="font-family: 'Syne'; font-size: 1.4rem;">Data Retention & Export</h3>
                     <p id="downloadStatusText" style="color: #94a3b8; font-size: 0.95rem; margin-top: 5px;">Download all photos as a ZIP file.</p>
+                    <div id="retentionTimer" style="display: none; margin-top: 8px; font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; color: #fbbf24; font-weight: bold;">
+                        <i data-lucide="clock" style="width: 16px; display: inline-block; vertical-align: text-bottom;"></i> <span id="timeRemaining">--:--:--</span> remaining
+                    </div>
                 </div>
                 <button class="btn btn-blue" id="downloadZipBtn"><i data-lucide="download"></i> Download Gallery (ZIP)</button>
             </div>
             <div id="upsellText" style="display: none; margin-top: 15px; color: #ef4444; font-weight: 600; font-size: 0.9rem;">
-                </div>
+            </div>
         </div>
         
         <div id="hostGalleryContainer" style="margin-top: 40px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 40px; display: none;">
@@ -132,21 +135,54 @@
     </div>
 
     <script>
-        const cfg = window.SnapNexus;
-        const client = new Appwrite.Client().setEndpoint(cfg.ENDPOINT).setProject(cfg.PROJECT_ID);
-        const account = new Appwrite.Account(client);
-        const databases = new Appwrite.Databases(client);
-        const storage = new Appwrite.Storage(client);
+        // --- Universal Client Initialization ---
+        let cfg, client, account, databases, storage;
+
+        const isCanvasPreview = window.location.protocol === 'blob:' || window.location.origin === 'null';
+        
+        if (isCanvasPreview && !window.SnapNexus) {
+            // Mock environment for Canvas preview protection
+            cfg = { ENDPOINT: '', PROJECT_ID: '', DATABASE_ID: '', COLLECTION_ID: '', BUCKET_ID: '', resolveUrl: (p)=>p };
+            account = { get: async()=>({email: 'demo@snapnexus.com'}), getPrefs: async()=>({tier: 'starter', subExpiry: null}), updatePrefs: async()=>{} };
+            databases = { listDocuments: async()=>({documents: [{ $id:'1', eventId:'demo-event', eventName:'Demo Canvas Preview', tier:'starter', status:'active', $createdAt: new Date().toISOString() }]}), updateDocument: async()=>{} };
+            storage = { listFiles: async()=>({files: []}), getFileView: ()=>({href:''}), getFileDownload: ()=>({href:''}), createFile: async()=>({$id:'1'}), deleteFile: async()=>{} };
+        } else {
+            // REAL PRODUCTION ENVIRONMENT INIT
+            cfg = window.SnapNexus;
+            client = new Appwrite.Client().setEndpoint(cfg.ENDPOINT).setProject(cfg.PROJECT_ID);
+            account = new Appwrite.Account(client);
+            databases = new Appwrite.Databases(client);
+            storage = new Appwrite.Storage(client);
+        }
+
+        function safeRedirect(url) {
+            try { 
+                window.location.href = url; 
+            } catch (e) { 
+                console.warn("Canvas routing prevented to:", url);
+                document.body.innerHTML = `<div class="container" style="text-align:center;"><h2>Routing Prevented</h2><p>In production, you would be redirected to: <b>${url}</b></p></div>`; 
+            }
+        }
+        
+        function safeReload() {
+            try { window.location.reload(); } catch (e) { console.warn("Canvas reload prevented"); }
+        }
+        // -----------------------------------------------------
 
         const urlParams = new URLSearchParams(window.location.search);
-        const eventId = urlParams.get('event');
+        let eventId = urlParams.get('event');
         
+        if (!eventId && isCanvasPreview) {
+            eventId = 'demo-event';
+        }
+
         if (!eventId) {
-            window.location.href = 'login.html';
+            safeRedirect('login.html');
             throw new Error("No Event ID - Redirecting");
         }
 
         let currentEvent = null;
+        let isExpired = false;
 
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
@@ -158,13 +194,14 @@
                 currentUser = await account.get(); 
                 userPrefs = await account.getPrefs();
             } catch(e) { 
-                window.location.href = 'login.html'; 
+                console.error("Auth error:", e);
+                safeRedirect('login.html'); 
                 throw new Error("User Not Logged In"); 
             }
 
             // Strict Tier Checks & VIP Bouncer
             if (userPrefs && userPrefs.tier === 'vip') {
-                window.location.href = `vip_dashboard.html?event=${eventId}`;
+                safeRedirect(`vip_dashboard.html?event=${eventId}`);
                 throw new Error("Redirecting VIP user");
             }
 
@@ -188,7 +225,7 @@
                             await account.updatePrefs({ tier: 'starter', subExpiry: null });
                             currentEvent.tier = 'starter';
                             userPrefs.tier = 'starter';
-                            window.location.reload();
+                            safeReload();
                         }
                     }
                 }
@@ -211,22 +248,63 @@
                     document.getElementById('printQrBtn').style.display = 'none';
                 }
 
-                // Data Retention Timers
+                // ==========================================
+                // ✨ 24-HOUR COUNTDOWN TIMER LOGIC ✨
+                // ==========================================
                 const downloadBtn = document.getElementById('downloadZipBtn');
                 const upsellText = document.getElementById('upsellText');
-                
-                if (currentEvent.tier === 'starter') {
+                const retentionTimer = document.getElementById('retentionTimer');
+                const timeRemaining = document.getElementById('timeRemaining');
+
+                function updateTimer() {
                     const eventAgeMs = Date.now() - new Date(currentEvent.$createdAt).getTime();
                     const hours24 = 24 * 60 * 60 * 1000;
-                    if (eventAgeMs > hours24) {
-                        downloadBtn.disabled = true;
-                        downloadBtn.innerHTML = '<i data-lucide="lock"></i> Gallery Expired';
-                        upsellText.style.display = 'block';
-                        upsellText.style.color = '#ef4444';
-                        upsellText.innerText = "Downloads expire in 24 hours on the Free plan. Upgrade to Pro (₹499) to unlock 30-day gallery retention!";
+                    const timeLeft = hours24 - eventAgeMs;
+
+                    if (timeLeft <= 0) {
+                        isExpired = true;
+                        if (retentionTimer) {
+                            retentionTimer.innerHTML = '<i data-lucide="lock" style="width: 16px; display: inline-block; vertical-align: text-bottom;"></i> Gallery Expired';
+                            retentionTimer.style.color = '#ef4444';
+                        }
+                        
+                        if (downloadBtn) {
+                            downloadBtn.className = 'btn btn-gold';
+                            downloadBtn.innerHTML = '<i data-lucide="unlock"></i> Upgrade to Unlock';
+                        }
+                        
+                        if (upsellText) {
+                            upsellText.style.display = 'block';
+                            upsellText.style.color = '#ef4444';
+                            upsellText.innerText = "Downloads expired. Upgrade to a premium plan to unlock your gallery permanently!";
+                        }
                         lucide.createIcons();
+                        return true; 
+                    } else {
+                        isExpired = false;
+                        const h = Math.floor(timeLeft / (1000 * 60 * 60));
+                        const m = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                        const s = Math.floor((timeLeft % (1000 * 60)) / 1000);
+                        if (timeRemaining) {
+                            timeRemaining.innerText = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+                        }
+                        return false;
                     }
                 }
+
+                if (currentEvent.tier === 'starter') {
+                    if (retentionTimer) retentionTimer.style.display = 'block';
+                    const expired = updateTimer();
+                    if (!expired) {
+                        const tInt = setInterval(() => {
+                            if (updateTimer()) clearInterval(tInt);
+                        }, 1000);
+                    }
+                }
+
+                // ==========================================
+                // HOST CONTROLS
+                // ==========================================
 
                 document.getElementById('openTvBtn').addEventListener('click', () => {
                     if (currentEvent.tier === 'pro' || currentEvent.tier === 'premium' || currentEvent.tier === 'vip') {
@@ -240,7 +318,6 @@
                     navigator.clipboard.writeText(cfg.resolveUrl(`app.html?event=${currentEvent.eventId}`)).then(() => alert("Guest Link Copied!"));
                 });
 
-                // FIXED: Dedicated Print QR function
                 document.getElementById('printQrBtn').addEventListener('click', () => {
                     const guestLink = cfg.resolveUrl(`app.html?event=${currentEvent.eventId}`);
                     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(guestLink)}`;
@@ -262,7 +339,7 @@
                     printWindow.document.close();
                 });
 
-                // Upgrade Plan Logic (Stripped of Fake APIs)
+                // Upgrade Plan Logic
                 const upgradeBtn = document.getElementById('upgradeBtn');
                 const upgradeModal = document.getElementById('upgradeModal');
                 const closeModalBtn = document.getElementById('closeModalBtn');
@@ -277,6 +354,11 @@
 
                     const handleCheckout = (amount, planName, tierId) => {
                         if (!confirm("By proceeding with this payment, you agree to our Privacy Policy and Terms of Service.")) return;
+
+                        if (typeof window.Razorpay !== 'function') {
+                            alert("Payment gateway not loaded yet in preview mode.");
+                            return;
+                        }
 
                         const options = {
                             key: 'rzp_test_Sf5GBrljv03Pmk', 
@@ -333,13 +415,13 @@
                 }
 
                 document.getElementById('closeReceiptBtn').addEventListener('click', () => {
-                    window.location.reload();
+                    safeReload();
                 });
 
                 document.getElementById('endEventBtn').addEventListener('click', async () => {
                     if(confirm("End event? Guests can no longer upload.")) {
                         await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { status: 'ended' });
-                        window.location.reload();
+                        safeReload();
                     }
                 });
 
@@ -398,9 +480,12 @@
 
                 // Real Browser ZIP Download Implementation
                 if (downloadBtn) {
-                    downloadBtn.addEventListener('click', async () => {
-                        if (currentEvent.tier === 'starter') {
-                            alert("ZIP Downloads are available on Premium & VIP plans. Please upgrade to download your gallery.");
+                    downloadBtn.addEventListener('click', async (e) => {
+                        // ✨ If expired Starter, open Upgrade Modal ✨
+                        if (currentEvent.tier === 'starter' && isExpired) {
+                            e.preventDefault();
+                            document.getElementById('upgradeModal').style.display = 'flex';
+                            lucide.createIcons();
                             return;
                         }
 
@@ -422,7 +507,6 @@
                                 return;
                             }
 
-                            // PERFECTED ZIP LOGIC (Actually processes and zips locally)
                             const zip = new JSZip();
                             const folder = zip.folder("SnapNexus_" + currentEvent.eventName);
                             
@@ -438,7 +522,19 @@
 
                             await Promise.all(downloadPromises);
                             const content = await zip.generateAsync({ type: "blob" });
-                            saveAs(content, "SnapNexus_" + currentEvent.eventName + ".zip");
+                            
+                            // iOS / Safari Safe Download execution
+                            const blobUrl = window.URL.createObjectURL(content);
+                            const a = document.createElement('a');
+                            a.href = blobUrl;
+                            a.download = "SnapNexus_" + currentEvent.eventName + ".zip";
+                            document.body.appendChild(a);
+                            a.click();
+                            
+                            setTimeout(() => {
+                                document.body.removeChild(a);
+                                window.URL.revokeObjectURL(blobUrl);
+                            }, 100);
 
                         } catch (err) {
                             console.error("ZIP Error", err);
@@ -461,9 +557,9 @@
                 setInterval(fetchAndRenderGallery, 15000);
 
             } catch (err) { 
-                alert("Event not found or failed to load. Redirecting to Login.");
-                window.location.href = 'login.html';
                 console.error(err); 
+                alert("Event not found or failed to load. Redirecting to Login.");
+                safeRedirect('login.html');
             }
         });
     </script>
