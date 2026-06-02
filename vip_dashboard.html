@@ -339,7 +339,19 @@
 
                             await Promise.all(downloadPromises);
                             const content = await zip.generateAsync({ type: "blob" });
-                            saveAs(content, "SnapNexus_VIP_" + currentEvent.eventName + ".zip");
+                            
+                            // FIXED: iOS / Safari Safe Download execution
+                            const blobUrl = window.URL.createObjectURL(content);
+                            const a = document.createElement('a');
+                            a.href = blobUrl;
+                            a.download = "SnapNexus_VIP_" + currentEvent.eventName + ".zip";
+                            document.body.appendChild(a);
+                            a.click();
+                            
+                            setTimeout(() => {
+                                document.body.removeChild(a);
+                                window.URL.revokeObjectURL(blobUrl);
+                            }, 100);
 
                         } catch (err) {
                             console.error("ZIP Error", err);
