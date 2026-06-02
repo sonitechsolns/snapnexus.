@@ -56,7 +56,6 @@
             <span class="badge" id="dashEventStatus">Status: Loading</span>
         </div>
         
-        <!-- FIXED: Added Print QR button -->
         <div class="grid-buttons">
             <button class="btn btn-gold" id="openTvBtn"><i data-lucide="monitor-play"></i> Open VIP TV Wall</button>
             <button class="btn btn-dark" id="openQrBtn"><i data-lucide="share-2"></i> Copy Guest Link</button>
@@ -106,11 +105,38 @@
     <style>@keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }</style>
 
     <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const eventId = urlParams.get('event');
+        // --- FIXED: Canvas Preview Polyfill & Safe Routing ---
+        const isCanvasPreview = window.location.protocol === 'blob:' || window.location.origin === 'null';
+        if (isCanvasPreview && !window.SnapNexus) {
+            window.SnapNexus = { ENDPOINT: '', PROJECT_ID: '', DATABASE_ID: '', COLLECTION_ID: '', BUCKET_ID: '', resolveUrl: (p)=>p };
+            window.SnapNexusAccount = { get: async()=>({}), getPrefs: async()=>({tier: 'vip', subExpiry: Date.now() + 100000}), updatePrefs: async()=>{} };
+            window.SnapNexusDatabases = { listDocuments: async()=>({documents: [{ $id:'1', eventId:'demo-vip-event', eventName:'VIP Canvas Preview', tier:'vip', status:'active' }]}), updateDocument: async()=>{} };
+            window.SnapNexusStorage = { listFiles: async()=>({files: []}), getFileView: ()=>({href:''}), getFileDownload: ()=>({href:''}), createFile: async()=>({$id:'1'}), deleteFile: async()=>{} };
+        }
+
+        function safeRedirect(url) {
+            try { 
+                window.location.href = url; 
+            } catch (e) { 
+                console.warn("Canvas routing prevented to:", url);
+                document.body.innerHTML = `<div class="container" style="text-align:center;"><h2>Routing Prevented</h2><p>In production, you would be redirected to: <b>${url}</b></p></div>`; 
+            }
+        }
         
+        function safeReload() {
+            try { window.location.reload(); } catch (e) { console.warn("Canvas reload prevented"); }
+        }
+        // -----------------------------------------------------
+
+        const urlParams = new URLSearchParams(window.location.search);
+        let eventId = urlParams.get('event');
+        
+        if (!eventId && isCanvasPreview) {
+            eventId = 'demo-vip-event';
+        }
+
         if (!eventId) {
-            window.location.href = 'login.html';
+            safeRedirect('login.html');
             throw new Error("Halt");
         }
 
@@ -123,7 +149,10 @@
             try { 
                 await window.SnapNexusAccount.get(); 
                 userPrefs = await window.SnapNexusAccount.getPrefs();
-            } catch(e) { window.location.href = 'login.html'; throw new Error("Halt"); }
+            } catch(e) { 
+                safeRedirect('login.html'); 
+                throw new Error("Halt"); 
+            }
 
             try {
                 const cfg = window.SnapNexus;
@@ -132,7 +161,7 @@
 
                 const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [ Appwrite.Query.equal('eventId', eventId) ]);
                 if (res.documents.length === 0) { 
-                    window.location.href = `dashboard.html?event=${eventId}`;
+                    safeRedirect(`dashboard.html?event=${eventId}`);
                     throw new Error("Unauthorized: Not VIP"); 
                 }
                 
@@ -148,7 +177,7 @@
                 }
 
                 if (currentTier !== 'vip' || !userPrefs || userPrefs.tier !== 'vip') {
-                    window.location.href = `dashboard.html?event=${eventId}`;
+                    safeRedirect(`dashboard.html?event=${eventId}`);
                     throw new Error("Unauthorized: Not VIP");
                 }
                 
@@ -188,7 +217,7 @@
                     navigator.clipboard.writeText(cfg.resolveUrl(`app.html?event=${currentEvent.eventId}`)).then(() => alert("VIP Guest Link Copied!"));
                 });
 
-                // FIXED: Dedicated Print QR function
+                // Dedicated Print QR function
                 document.getElementById('printQrBtn').addEventListener('click', () => {
                     const guestLink = cfg.resolveUrl(`app.html?event=${currentEvent.eventId}`);
                     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(guestLink)}`;
@@ -211,7 +240,7 @@
                     printWindow.document.close();
                 });
 
-                // FIXED: Real ZIP Download implementation
+                // Real ZIP Download implementation
                 const downloadBtn = document.getElementById('downloadZipBtn');
                 if (downloadBtn) {
                     downloadBtn.addEventListener('click', async () => {
@@ -292,7 +321,7 @@
                 document.getElementById('endEventBtn').addEventListener('click', async () => {
                     if(confirm("Lock event? Guests can no longer upload photos.")) {
                         await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { status: 'ended' });
-                        window.location.reload();
+                        safeReload();
                     }
                 });
 
@@ -332,7 +361,6 @@
                         ]);
                         hostGallery.innerHTML = res.files.map(f => {
                             const url = storage.getFileView(cfg.BUCKET_ID, f.$id).href;
-                            // FIXED: Added hover tools to VIP gallery
                             return `<div style="border-radius: 12px; overflow: hidden; border: 1px solid rgba(251,191,36,0.3); outline: 2px solid rgba(0,0,0,0); transition: 0.2s; aspect-ratio: 1; background: #000; position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.3);" onmouseenter="this.querySelector('.hover-overlay').style.opacity='1';" onmouseleave="this.querySelector('.hover-overlay').style.opacity='0';">
                                         <img src="${url}" style="width: 100%; height: 100%; object-fit: cover;">
                                         <div class="hover-overlay" style="position: absolute; inset: 0; background: rgba(0,0,0,0.6); opacity: 0; transition: opacity 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 15px;">
