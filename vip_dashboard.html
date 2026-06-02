@@ -105,13 +105,24 @@
     <style>@keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }</style>
 
     <script>
-        // --- FIXED: Canvas Preview Polyfill & Safe Routing ---
+        // --- FIXED: Universal Client Initialization ---
+        let cfg, client, account, databases, storage;
+
         const isCanvasPreview = window.location.protocol === 'blob:' || window.location.origin === 'null';
+        
         if (isCanvasPreview && !window.SnapNexus) {
-            window.SnapNexus = { ENDPOINT: '', PROJECT_ID: '', DATABASE_ID: '', COLLECTION_ID: '', BUCKET_ID: '', resolveUrl: (p)=>p };
-            window.SnapNexusAccount = { get: async()=>({}), getPrefs: async()=>({tier: 'vip', subExpiry: Date.now() + 100000}), updatePrefs: async()=>{} };
-            window.SnapNexusDatabases = { listDocuments: async()=>({documents: [{ $id:'1', eventId:'demo-vip-event', eventName:'VIP Canvas Preview', tier:'vip', status:'active' }]}), updateDocument: async()=>{} };
-            window.SnapNexusStorage = { listFiles: async()=>({files: []}), getFileView: ()=>({href:''}), getFileDownload: ()=>({href:''}), createFile: async()=>({$id:'1'}), deleteFile: async()=>{} };
+            // Mock environment for Canvas preview protection
+            cfg = { ENDPOINT: '', PROJECT_ID: '', DATABASE_ID: '', COLLECTION_ID: '', BUCKET_ID: '', resolveUrl: (p)=>p };
+            account = { get: async()=>({}), getPrefs: async()=>({tier: 'vip', subExpiry: Date.now() + 100000}), updatePrefs: async()=>{} };
+            databases = { listDocuments: async()=>({documents: [{ $id:'1', eventId:'demo-vip-event', eventName:'VIP Canvas Preview', tier:'vip', status:'active' }]}), updateDocument: async()=>{} };
+            storage = { listFiles: async()=>({files: []}), getFileView: ()=>({href:''}), getFileDownload: ()=>({href:''}), createFile: async()=>({$id:'1'}), deleteFile: async()=>{} };
+        } else {
+            // REAL PRODUCTION ENVIRONMENT INIT
+            cfg = window.SnapNexus;
+            client = new Appwrite.Client().setEndpoint(cfg.ENDPOINT).setProject(cfg.PROJECT_ID);
+            account = new Appwrite.Account(client);
+            databases = new Appwrite.Databases(client);
+            storage = new Appwrite.Storage(client);
         }
 
         function safeRedirect(url) {
@@ -147,18 +158,15 @@
             
             let userPrefs = null;
             try { 
-                await window.SnapNexusAccount.get(); 
-                userPrefs = await window.SnapNexusAccount.getPrefs();
+                await account.get(); 
+                userPrefs = await account.getPrefs();
             } catch(e) { 
+                console.error("Auth missing:", e);
                 safeRedirect('login.html'); 
                 throw new Error("Halt"); 
             }
 
             try {
-                const cfg = window.SnapNexus;
-                const storage = window.SnapNexusStorage;
-                const databases = window.SnapNexusDatabases;
-
                 const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [ Appwrite.Query.equal('eventId', eventId) ]);
                 if (res.documents.length === 0) { 
                     safeRedirect(`dashboard.html?event=${eventId}`);
@@ -171,7 +179,7 @@
                 let currentTier = currentEvent.tier;
                 if (userPrefs && userPrefs.subExpiry && userPrefs.tier === 'vip' && Date.now() > userPrefs.subExpiry) {
                     await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { tier: 'starter' });
-                    await window.SnapNexusAccount.updatePrefs({ tier: 'starter', subExpiry: null });
+                    await account.updatePrefs({ tier: 'starter', subExpiry: null });
                     currentTier = 'starter';
                     userPrefs.tier = 'starter';
                 }
