@@ -35,6 +35,7 @@
         
         .liquid-mesh { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -3; background: radial-gradient(circle at 20% 30%, #020617, #1e3a8a 30%, #3b82f6 65%, #4f46e5); background-size: 200% 200%; animation: liquidShift 16s ease infinite alternate; }
         @keyframes liquidShift { 0% { background-position: 0% 0%; } 50% { background-position: 100% 100%; } 100% { background-position: 0% 50%; } }
+        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
 
         .camera-ui { width: 100%; max-width: 400px; padding: 20px; text-align: center; z-index: 10; position: relative; background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
         .logo-text { font-family: 'Syne'; font-size: 2rem; margin-bottom: 40px; color: #3b82f6; }
@@ -57,8 +58,19 @@
             <input type="file" id="fileInput" accept="image/*" multiple>
         </div>
 
-        <div class="guest-gallery-container" style="width: 100%; padding: 20px 0; z-index: 10; position: relative; margin-top: 20px;">
-            <div id="guestGallery" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px;"></div>
+        <!-- ✨ FIXED: Permanent Gallery Header with Sync Pulse so it never vanishes -->
+        <div class="guest-gallery-container" style="width: 100%; padding: 30px 0 20px 0; z-index: 10; position: relative; margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="font-family: 'Syne'; margin: 0; font-size: 1.4rem; color: #ffffff;"><i data-lucide="image" style="width: 20px; display: inline-block; vertical-align: middle; margin-right: 8px;"></i> Live Gallery</h3>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <span style="font-size: 0.8rem; color: #10b981; display:flex; align-items:center; gap:6px;">
+                        <span style="width:8px;height:8px;border-radius:50%;background:#10b981;display:inline-block;animation:pulse 2s infinite;"></span> Live Sync
+                    </span>
+                </div>
+            </div>
+            <div id="guestGallery" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px;">
+                <p style="color: #94a3b8; grid-column: 1 / -1; padding: 10px 0;">Loading live photos...</p>
+            </div>
         </div>
     </div>
 
@@ -103,12 +115,13 @@
             }
 
             try {
+                // Guests might not have permission to read this, wrapped in try/catch
                 const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [ Appwrite.Query.equal('eventId', eventId) ]);
                 if (res.documents.length > 0) {
                     currentEvent = res.documents[0];
                 }
             } catch (e) {
-                console.warn("Could not fetch event details:", e);
+                console.warn("Could not fetch event details. Running in guest fallback mode.", e);
             }
 
             document.getElementById('uploadBtn').addEventListener('click', () => {
@@ -173,8 +186,10 @@
                             img.src = URL.createObjectURL(file);
                         });
 
-                        const fileName = (currentEvent ? currentEvent.eventId : 'demo') + '_' + Date.now() + '_' + Math.random().toString(36).substring(7) + '.jpg';
-                        await storage.createFile(cfg.BUCKET_ID, fileName, new File([compressedBlob], fileName, { type: 'image/jpeg' }));
+                        const safeFileId = 'img' + Date.now().toString(36) + Math.random().toString(36).substring(2, 10);
+                        const fileName = eventId + '_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8) + '.jpg';
+                        
+                        await storage.createFile(cfg.BUCKET_ID, safeFileId, new File([compressedBlob], fileName, { type: 'image/jpeg' }));
                         successCount++;
                     } catch (err) {
                         console.error('Upload failed for a file:', err);
@@ -188,53 +203,12 @@
                     msg.innerText = files.length > 1 ? `Successfully sent ${successCount} photos!` : 'Sent successfully!';
                     try { if(typeof fetchAndRenderGuestGallery === 'function') fetchAndRenderGuestGallery(); } catch(e){}
                 } else {
-                    msg.innerText = 'Upload failed.';
+                    msg.innerText = 'Upload failed. Network error.';
                 }
 
                 setTimeout(() => msg.innerText = 'Tap to send a photo', 3000);
                 e.target.value = ''; 
             });
-
-            function compressImage(file, maxWidth) {
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.readAsDataURL(file);
-                    reader.onload = event => {
-                        const img = new Image();
-                        img.src = event.target.result;
-                        img.onload = () => {
-                            const canvas = document.createElement('canvas');
-                            let width = img.width;
-                            let height = img.height;
-
-                            if (width > maxWidth) {
-                                height = Math.round((height * maxWidth) / width);
-                                width = maxWidth;
-                            }
-
-                            canvas.width = width;
-                            canvas.height = height;
-                            const ctx = canvas.getContext('2d');
-                            ctx.drawImage(img, 0, 0, width, height);
-
-                            const wmSize = Math.max(24, Math.floor(width * 0.04)); 
-                            ctx.font = `800 ${wmSize}px 'Urbanist', sans-serif`;
-                            ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-                            ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
-                            ctx.shadowBlur = 12;
-                            ctx.shadowOffsetX = 3;
-                            ctx.shadowOffsetY = 3;
-                            ctx.textAlign = 'right';
-                            ctx.textBaseline = 'top';
-                            ctx.fillText('SnapNexus', width - 20, 20);
-
-                            canvas.toBlob(blob => { resolve(blob); }, 'image/jpeg', 0.8);
-                        };
-                        img.onerror = e => reject(e);
-                    };
-                    reader.onerror = e => reject(e);
-                });
-            }
             
             async function checkEventStatus() {
                 if (isDemo) return;
@@ -267,10 +241,19 @@
                                     </div>
                                 </div>`;
                     }).join('');
+                    
                     if(typeof lucide !== 'undefined') lucide.createIcons();
-                } catch (err) { console.error('Gallery fetch error', err); }
+
+                    if (res.files.length === 0) {
+                        guestGallery.innerHTML = '<p style="color: #94a3b8; grid-column: 1 / -1; padding: 10px 0;">Be the first to upload a photo to the gallery!</p>';
+                    }
+                } catch (err) { 
+                    console.error('Gallery fetch error', err);
+                    guestGallery.innerHTML = '<p style="color: #ef4444; grid-column: 1 / -1; padding: 10px 0;">Gallery sync paused (Private Bucket or Network Error).</p>';
+                }
             }
 
+            // Fixed safe iOS download timeout wrapper
             window.downloadImage = async (fileId, fileName) => {
                 try {
                     const dlUrl = storage.getFileDownload(cfg.BUCKET_ID, fileId).href;
@@ -282,8 +265,10 @@
                     a.download = fileName || "SnapNexus_Photo.jpg";
                     document.body.appendChild(a);
                     a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(blobUrl);
+                    setTimeout(() => {
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(blobUrl);
+                    }, 100);
                 } catch(err) {
                     alert("Failed to download image.");
                 }
