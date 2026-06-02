@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script src="/config.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -54,9 +56,11 @@
             <span class="badge" id="dashEventStatus">Status: Loading</span>
         </div>
         
+        <!-- FIXED: Added Print QR button -->
         <div class="grid-buttons">
             <button class="btn btn-gold" id="openTvBtn"><i data-lucide="monitor-play"></i> Open VIP TV Wall</button>
             <button class="btn btn-dark" id="openQrBtn"><i data-lucide="share-2"></i> Copy Guest Link</button>
+            <button class="btn btn-dark" id="printQrBtn"><i data-lucide="printer"></i> Print QR Code</button>
             <button class="btn btn-red" id="endEventBtn"><i data-lucide="lock"></i> Lock / End Event</button>
         </div>
 
@@ -117,11 +121,15 @@
             
             let userPrefs = null;
             try { 
-                await account.get(); 
-                userPrefs = await account.getPrefs();
+                await window.SnapNexusAccount.get(); 
+                userPrefs = await window.SnapNexusAccount.getPrefs();
             } catch(e) { window.location.href = 'login.html'; throw new Error("Halt"); }
 
             try {
+                const cfg = window.SnapNexus;
+                const storage = window.SnapNexusStorage;
+                const databases = window.SnapNexusDatabases;
+
                 const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [ Appwrite.Query.equal('eventId', eventId) ]);
                 if (res.documents.length === 0) { 
                     window.location.href = `dashboard.html?event=${eventId}`;
@@ -134,7 +142,7 @@
                 let currentTier = currentEvent.tier;
                 if (userPrefs && userPrefs.subExpiry && userPrefs.tier === 'vip' && Date.now() > userPrefs.subExpiry) {
                     await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { tier: 'starter' });
-                    await account.updatePrefs({ tier: 'starter', subExpiry: null });
+                    await window.SnapNexusAccount.updatePrefs({ tier: 'starter', subExpiry: null });
                     currentTier = 'starter';
                     userPrefs.tier = 'starter';
                 }
@@ -155,6 +163,7 @@
                     statusBadge.classList.add('ended');
                     document.getElementById('endEventBtn').style.display = 'none';
                     document.getElementById('openQrBtn').style.display = 'none';
+                    document.getElementById('printQrBtn').style.display = 'none';
                     document.getElementById('openTvBtn').style.display = 'none';
                 } else {
                     statusBadge.classList.add('active');
@@ -175,13 +184,82 @@
                     window.open(`tv_2.html?event=${currentEvent.eventId}`, '_blank');
                 });
 
-                document.getElementById('downloadZipBtn').addEventListener('click', () => {
-                    alert("Preparing VIP High-Res ZIP! (simulated download logic)");
-                });
-
                 document.getElementById('openQrBtn').addEventListener('click', () => {
                     navigator.clipboard.writeText(cfg.resolveUrl(`app.html?event=${currentEvent.eventId}`)).then(() => alert("VIP Guest Link Copied!"));
                 });
+
+                // FIXED: Dedicated Print QR function
+                document.getElementById('printQrBtn').addEventListener('click', () => {
+                    const guestLink = cfg.resolveUrl(`app.html?event=${currentEvent.eventId}`);
+                    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(guestLink)}`;
+                    const printWindow = window.open('', '_blank');
+                    printWindow.document.write(`
+                        <html><head><title>Print SnapNexus VIP QR</title><style>
+                            body { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: 'Urbanist', sans-serif; text-align: center; background: #020617; color: #fff; }
+                            img { max-width: 400px; margin-bottom: 20px; border-radius: 12px; border: 4px solid #fbbf24; padding: 10px; background: white; }
+                            h1 { font-size: 3rem; margin: 0 0 10px 0; font-family: 'Syne', sans-serif; color: #fbbf24; }
+                            p { font-size: 1.5rem; color: #94a3b8; margin: 0; }
+                            .brand { font-size: 1rem; color: #64748b; margin-top: 20px; font-weight: bold; }
+                            @media print { body { background: white; color: black; } img { border: none; padding: 0; } h1 { color: black; } p { color: #555; } .brand { color: #888; } }
+                        </style></head><body>
+                            <h1>${currentEvent.eventName}</h1>
+                            <p>Scan to upload photos directly to the VIP live gallery!</p>
+                            <img src="${qrUrl}" onload="window.print();window.close();">
+                            <div class="brand">Powered by SnapNexus VIP</div>
+                        </body></html>
+                    `);
+                    printWindow.document.close();
+                });
+
+                // FIXED: Real ZIP Download implementation
+                const downloadBtn = document.getElementById('downloadZipBtn');
+                if (downloadBtn) {
+                    downloadBtn.addEventListener('click', async () => {
+                        downloadBtn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin"></i> Zipping VIP Gallery...';
+                        downloadBtn.disabled = true;
+                        lucide.createIcons();
+
+                        try {
+                            const res = await storage.listFiles(cfg.BUCKET_ID, [
+                                Appwrite.Query.startsWith('name', currentEvent.eventId + '_'),
+                                Appwrite.Query.limit(5000) // Increased limit for VIP bulk photos
+                            ]);
+
+                            if (res.files.length === 0) {
+                                alert("There are no photos to download!");
+                                downloadBtn.innerHTML = '<i data-lucide="download"></i> Download Gallery (ZIP)';
+                                downloadBtn.disabled = false;
+                                lucide.createIcons();
+                                return;
+                            }
+
+                            const zip = new JSZip();
+                            const folder = zip.folder("SnapNexus_VIP_" + currentEvent.eventName);
+                            
+                            const downloadPromises = res.files.map(async (file) => {
+                                const dlUrl = storage.getFileDownload(cfg.BUCKET_ID, file.$id).href;
+                                try {
+                                    const response = await fetch(dlUrl);
+                                    if (!response.ok) throw new Error("Network issue fetching image blob");
+                                    const blobData = await response.blob();
+                                    folder.file(file.name, blobData);
+                                } catch(e) { console.error("Failed to fetch", file.$id, e); }
+                            });
+
+                            await Promise.all(downloadPromises);
+                            const content = await zip.generateAsync({ type: "blob" });
+                            saveAs(content, "SnapNexus_VIP_" + currentEvent.eventName + ".zip");
+
+                        } catch (err) {
+                            console.error("ZIP Error", err);
+                            alert("Failed to generate ZIP. Please check your connection.");
+                        } finally {
+                            downloadBtn.innerHTML = '<i data-lucide="download"></i> Download Gallery (ZIP)';
+                            downloadBtn.disabled = false;
+                            lucide.createIcons();
+                        }
+                    });
+                }
 
                 document.getElementById('uploadWatermarkBtn').addEventListener('click', async () => {
                     const file = document.getElementById('watermarkInput').files[0];
@@ -220,6 +298,31 @@
 
                 const hostGallery = document.getElementById('hostGallery');
                 
+                // Add Delete and Download global functions
+                window.downloadImage = async (fileId, fileName) => {
+                    try {
+                        const dlUrl = storage.getFileDownload(cfg.BUCKET_ID, fileId).href;
+                        const response = await fetch(dlUrl);
+                        const blob = await response.blob();
+                        const blobUrl = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = blobUrl;
+                        a.download = fileName || "SnapNexus_VIP_Photo.jpg";
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(blobUrl);
+                    } catch(err) { alert("Failed to download image."); }
+                };
+
+                window.deleteImage = async (fileId) => {
+                    if (!confirm("Are you sure you want to permanently delete this photo?")) return;
+                    try {
+                        await storage.deleteFile(cfg.BUCKET_ID, fileId);
+                        fetchAndRenderGallery();
+                    } catch(err) { alert("Failed to delete image: " + err.message); }
+                };
+                
                 const fetchAndRenderGallery = async () => {
                     try {
                         const res = await storage.listFiles(cfg.BUCKET_ID, [
@@ -229,10 +332,16 @@
                         ]);
                         hostGallery.innerHTML = res.files.map(f => {
                             const url = storage.getFileView(cfg.BUCKET_ID, f.$id).href;
-                            return `<div style="border-radius: 12px; overflow: hidden; border: 1px solid rgba(251,191,36,0.3); outline: 2px solid rgba(0,0,0,0); transition: 0.2s; aspect-ratio: 1; background: #000; position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.3);" onmouseover="this.style.transform='scale(1.05)';this.style.zIndex='10'" onmouseout="this.style.transform='scale(1)';this.style.zIndex='1'">
+                            // FIXED: Added hover tools to VIP gallery
+                            return `<div style="border-radius: 12px; overflow: hidden; border: 1px solid rgba(251,191,36,0.3); outline: 2px solid rgba(0,0,0,0); transition: 0.2s; aspect-ratio: 1; background: #000; position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.3);" onmouseenter="this.querySelector('.hover-overlay').style.opacity='1';" onmouseleave="this.querySelector('.hover-overlay').style.opacity='0';">
                                         <img src="${url}" style="width: 100%; height: 100%; object-fit: cover;">
+                                        <div class="hover-overlay" style="position: absolute; inset: 0; background: rgba(0,0,0,0.6); opacity: 0; transition: opacity 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 15px;">
+                                            <button onclick="downloadImage('${f.$id}', '${f.name.replace(/'/g, "\\'")}')" style="background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: white;"><i data-lucide="download"></i></button>
+                                            <button onclick="deleteImage('${f.$id}')" style="background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer;"><i data-lucide="trash-2" style="color: #ef4444;"></i></button>
+                                        </div>
                                     </div>`;
                         }).join('');
+                        lucide.createIcons();
                         if (res.files.length === 0) {
                             hostGallery.innerHTML = '<p style="color: #94a3b8; grid-column: 1 / -1;">Waiting for live photos...</p>';
                         }
