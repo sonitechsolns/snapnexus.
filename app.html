@@ -12,7 +12,6 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
-        /* FIXED: Scrolling enabled, flex removed from body for mobile support */
         body { 
             font-family: 'Urbanist', sans-serif; 
             background: #020617; 
@@ -22,7 +21,7 @@
             overflow-y: auto; 
             padding: 5vh 20px;
             position: relative; 
-            display: block; /* Removed flex that breaks mobile scrolling */
+            display: block; 
         }
         
         .main-wrapper {
@@ -34,7 +33,6 @@
             width: 100%;
         }
         
-        /* Continuous Background Animation */
         .liquid-mesh { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -3; background: radial-gradient(circle at 20% 30%, #020617, #1e3a8a 30%, #3b82f6 65%, #4f46e5); background-size: 200% 200%; animation: liquidShift 16s ease infinite alternate; }
         @keyframes liquidShift { 0% { background-position: 0% 0%; } 50% { background-position: 100% 100%; } 100% { background-position: 0% 50%; } }
 
@@ -56,7 +54,7 @@
                 <div class="shutter-inner" id="shutterInner"></div>
             </button>
             <p class="status-msg" id="statusMsg">Tap to send a photo</p>
-            <input type="file" id="fileInput" accept="image/*">
+            <input type="file" id="fileInput" accept="image/*" multiple>
         </div>
 
         <div class="guest-gallery-container" style="width: 100%; padding: 20px 0; z-index: 10; position: relative; margin-top: 20px;">
@@ -65,68 +63,138 @@
     </div>
 
     <script>
-        const cfg = window.SnapNexus;
-        const client = new Appwrite.Client()
-            .setEndpoint(cfg.ENDPOINT)
-            .setProject(cfg.PROJECT_ID);
-        const databases = new Appwrite.Databases(client);
-        const storage = new Appwrite.Storage(client);
+        // --- Universal Client Initialization ---
+        let cfg, client, account, databases, storage;
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const eventId = urlParams.get('event');
+        const isCanvasPreview = window.location.protocol === 'blob:' || window.location.origin === 'null';
         
-        if (!eventId) {
-            document.body.innerHTML = '<h2 style="color:white; text-align:center; margin-top:50px;">Invalid Link</h2>';
-            throw new Error("Halt");
+        if (isCanvasPreview && !window.SnapNexus) {
+            // Mock environment for Canvas preview protection
+            cfg = { ENDPOINT: '', PROJECT_ID: '', DATABASE_ID: '', COLLECTION_ID: '', BUCKET_ID: '', resolveUrl: (p)=>p };
+            account = { get: async()=>({}), getPrefs: async()=>({tier: 'vip', subExpiry: Date.now() + 100000}), updatePrefs: async()=>{} };
+            databases = { listDocuments: async()=>({documents: [{ $id:'1', eventId:'demo-vip-event', eventName:'Demo Event', tier:'vip', status:'active', watermarkConfigured: false, watermarkText: 'SnapNexus Preview' }]}), updateDocument: async()=>{} };
+            storage = { listFiles: async()=>({files: []}), getFileView: ()=>({href:''}), getFileDownload: ()=>({href:''}), createFile: async()=>({$id:'1'}), deleteFile: async()=>{} };
+        } else {
+            // REAL PRODUCTION ENVIRONMENT INIT
+            cfg = window.SnapNexus;
+            client = new Appwrite.Client().setEndpoint(cfg.ENDPOINT).setProject(cfg.PROJECT_ID);
+            account = new Appwrite.Account(client);
+            databases = new Appwrite.Databases(client);
+            storage = new Appwrite.Storage(client);
         }
 
-        const isDemo = eventId.startsWith('demo_');
+        const urlParams = new URLSearchParams(window.location.search);
+        let eventId = urlParams.get('event');
+        let isDemo = false;
+        
+        if (!eventId && isCanvasPreview) {
+            eventId = 'demo-vip-event';
+            isDemo = true;
+        }
+
+        let currentEvent = null;
 
         document.addEventListener('DOMContentLoaded', async () => {
-            const statusMsg = document.getElementById('statusMsg');
-            const uploadBtn = document.getElementById('uploadBtn');
-            const fileInput = document.getElementById('fileInput');
+            if(typeof lucide !== 'undefined') lucide.createIcons();
 
-            if (!isDemo) {
-                try {
-                    const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [ Appwrite.Query.equal('eventId', eventId) ]);
-                    if (res.documents.length === 0 || res.documents[0].status === 'ended') {
-                        statusMsg.innerText = 'Event has ended or not found.'; uploadBtn.disabled = true; throw new Error("Halt");
-                    }
-                } catch (err) { statusMsg.innerText = 'Connection error.'; }
-            } else { statusMsg.innerText = "Sandbox Mode Active"; }
+            if (!eventId && !isDemo) {
+                document.body.innerHTML = '<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; text-align:center;"><h2>No Event ID</h2><p>Please scan a valid event QR code.</p></div>';
+                return;
+            }
 
-            uploadBtn.addEventListener('click', () => fileInput.click());
-
-            fileInput.addEventListener('change', async (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-
-                uploadBtn.disabled = true;
-                statusMsg.innerText = 'Compressing...';
-
-                try {
-                    // Compress Image and add Permanent Watermark
-                    const compressedBlob = await compressImage(file, 1920); // max 1080p
-                    statusMsg.innerText = 'Uploading...';
-
-                    // Secure Appwrite v14 filename isolation
-                    const safeName = `${eventId}_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '')}`;
-                    const safeFile = new File([compressedBlob], safeName, { type: 'image/jpeg' });
-
-                    await storage.createFile(cfg.BUCKET_ID, Appwrite.ID.unique(), safeFile);
-                    statusMsg.innerText = 'Sent to TV! 🚀';
-                    setTimeout(() => { statusMsg.innerText = 'Tap to send a photo'; uploadBtn.disabled = false; }, 2000);
-                } catch(err) {
-                    // Fallback to original file or show error
-                    console.error("Compression/Upload Error:", err);
-                    alert('Upload failed: ' + err.message);
-                    statusMsg.innerText = 'Upload failed.'; uploadBtn.disabled = false;
+            try {
+                const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [ Appwrite.Query.equal('eventId', eventId) ]);
+                if (res.documents.length > 0) {
+                    currentEvent = res.documents[0];
                 }
-                fileInput.value = '';
+            } catch (e) {
+                console.warn("Could not fetch event details:", e);
+            }
+
+            document.getElementById('uploadBtn').addEventListener('click', () => {
+                document.getElementById('fileInput').click();
             });
 
-            // Image Compression & Watermark Helper
+            document.getElementById('fileInput').addEventListener('change', async (e) => {
+                let files = Array.from(e.target.files);
+                if (files.length === 0) return;
+
+                if (files.length > 5) {
+                    alert("You can upload a maximum of 5 photos at a time. Only the first 5 will be processed.");
+                    files = files.slice(0, 5);
+                }
+
+                const btn = document.getElementById('uploadBtn');
+                const inner = document.getElementById('shutterInner');
+                const msg = document.getElementById('statusMsg');
+                
+                btn.style.pointerEvents = 'none';
+                inner.style.transform = 'scale(0.8)';
+                
+                let successCount = 0;
+
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    msg.innerText = files.length > 1 ? `Uploading ${i + 1} of ${files.length}...` : 'Uploading...';
+                    
+                    try {
+                        const compressedBlob = await new Promise((resolve, reject) => {
+                            const img = new Image();
+                            img.onload = () => {
+                                const canvas = document.createElement('canvas');
+                                let width = img.width;
+                                let height = img.height;
+                                const maxDim = 1920;
+                                if (width > maxDim || height > maxDim) {
+                                    if (width > height) { height = Math.round(height *= maxDim / width); width = maxDim; }
+                                    else { width = Math.round(width *= maxDim / height); height = maxDim; }
+                                }
+                                canvas.width = width;
+                                canvas.height = height;
+                                const ctx = canvas.getContext('2d');
+                                ctx.drawImage(img, 0, 0, width, height);
+
+                                const wmSize = Math.max(24, Math.floor(width * 0.04));
+                                ctx.font = `800 ${wmSize}px 'Urbanist', sans-serif`;
+                                ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+                                ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+                                ctx.shadowBlur = 12;
+                                ctx.shadowOffsetX = 3;
+                                ctx.shadowOffsetY = 3;
+                                ctx.textAlign = 'right';
+                                ctx.textBaseline = 'top';
+                                
+                                const watermarkText = (currentEvent && currentEvent.watermarkText) ? currentEvent.watermarkText : 'SnapNexus';
+                                ctx.fillText(watermarkText, width - 20, 20);
+
+                                canvas.toBlob(blob => { resolve(blob); }, 'image/jpeg', 0.8);
+                            };
+                            img.onerror = e => reject(e);
+                            img.src = URL.createObjectURL(file);
+                        });
+
+                        const fileName = (currentEvent ? currentEvent.eventId : 'demo') + '_' + Date.now() + '_' + Math.random().toString(36).substring(7) + '.jpg';
+                        await storage.createFile(cfg.BUCKET_ID, fileName, new File([compressedBlob], fileName, { type: 'image/jpeg' }));
+                        successCount++;
+                    } catch (err) {
+                        console.error('Upload failed for a file:', err);
+                    }
+                }
+
+                inner.style.transform = 'scale(1)';
+                btn.style.pointerEvents = 'auto';
+                
+                if (successCount > 0) {
+                    msg.innerText = files.length > 1 ? `Successfully sent ${successCount} photos!` : 'Sent successfully!';
+                    try { if(typeof fetchAndRenderGuestGallery === 'function') fetchAndRenderGuestGallery(); } catch(e){}
+                } else {
+                    msg.innerText = 'Upload failed.';
+                }
+
+                setTimeout(() => msg.innerText = 'Tap to send a photo', 3000);
+                e.target.value = ''; 
+            });
+
             function compressImage(file, maxWidth) {
                 return new Promise((resolve, reject) => {
                     const reader = new FileReader();
@@ -149,8 +217,7 @@
                             const ctx = canvas.getContext('2d');
                             ctx.drawImage(img, 0, 0, width, height);
 
-                            // --- FIXED: PERMANENT WATERMARK BURNED INTO IMAGE ---
-                            const wmSize = Math.max(24, Math.floor(width * 0.04)); // Dynamic scaling
+                            const wmSize = Math.max(24, Math.floor(width * 0.04)); 
                             ctx.font = `800 ${wmSize}px 'Urbanist', sans-serif`;
                             ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
                             ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
@@ -159,9 +226,7 @@
                             ctx.shadowOffsetY = 3;
                             ctx.textAlign = 'right';
                             ctx.textBaseline = 'top';
-                            // Top right placement guaranteed
                             ctx.fillText('SnapNexus', width - 20, 20);
-                            // ----------------------------------------------------
 
                             canvas.toBlob(blob => { resolve(blob); }, 'image/jpeg', 0.8);
                         };
@@ -182,10 +247,10 @@
             }
             setInterval(checkEventStatus, 5000);
 
-            // Live Gallery logic
             const guestGallery = document.getElementById('guestGallery');
 
             async function fetchAndRenderGuestGallery() {
+                if (!guestGallery) return;
                 try {
                     const res = await storage.listFiles(cfg.BUCKET_ID, [
                         Appwrite.Query.startsWith('name', eventId + '_'),
@@ -202,7 +267,7 @@
                                     </div>
                                 </div>`;
                     }).join('');
-                    lucide.createIcons();
+                    if(typeof lucide !== 'undefined') lucide.createIcons();
                 } catch (err) { console.error('Gallery fetch error', err); }
             }
 
