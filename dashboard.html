@@ -64,9 +64,11 @@
             <span class="badge" id="dashEventStatus">Status: Loading</span>
         </div>
         
+        <!-- FIXED: Print QR Code Button Ensured in Grid -->
         <div class="grid-buttons" id="mainActionButtons">
             <button class="btn btn-blue" id="openTvBtn"><i data-lucide="monitor"></i> Open TV Display</button>
             <button class="btn btn-dark" id="openQrBtn"><i data-lucide="smartphone"></i> Copy Guest Link</button>
+            <button class="btn btn-dark" id="printQrBtn"><i data-lucide="printer"></i> Print QR Code</button>
             <button class="btn btn-gold" id="upgradeBtn" style="display: none;"><i data-lucide="zap"></i> Upgrade Plan</button>
             <button class="btn btn-red" id="endEventBtn"><i data-lucide="power"></i> End Event</button>
         </div>
@@ -130,7 +132,6 @@
     </div>
 
     <script>
-        // 1. CRITICAL FIX: The Engine. Without this, the dashboard crashes on load.
         const cfg = window.SnapNexus;
         const client = new Appwrite.Client().setEndpoint(cfg.ENDPOINT).setProject(cfg.PROJECT_ID);
         const account = new Appwrite.Account(client);
@@ -207,6 +208,7 @@
                     statusBadge.style.backgroundColor = 'rgba(239, 68, 68, 0.2)';
                     document.getElementById('endEventBtn').style.display = 'none';
                     document.getElementById('openQrBtn').style.display = 'none';
+                    document.getElementById('printQrBtn').style.display = 'none';
                 }
 
                 // Data Retention Timers
@@ -236,6 +238,28 @@
 
                 document.getElementById('openQrBtn').addEventListener('click', () => {
                     navigator.clipboard.writeText(cfg.resolveUrl(`app.html?event=${currentEvent.eventId}`)).then(() => alert("Guest Link Copied!"));
+                });
+
+                // FIXED: Dedicated Print QR function
+                document.getElementById('printQrBtn').addEventListener('click', () => {
+                    const guestLink = cfg.resolveUrl(`app.html?event=${currentEvent.eventId}`);
+                    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(guestLink)}`;
+                    const printWindow = window.open('', '_blank');
+                    printWindow.document.write(`
+                        <html><head><title>Print SnapNexus QR</title><style>
+                            body { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: 'Urbanist', sans-serif; text-align: center; }
+                            img { max-width: 400px; margin-bottom: 20px; }
+                            h1 { font-size: 3rem; margin: 0 0 10px 0; font-family: 'Syne', sans-serif; }
+                            p { font-size: 1.5rem; color: #555; margin: 0; }
+                            .brand { font-size: 1rem; color: #888; margin-top: 20px; font-weight: bold; }
+                        </style></head><body>
+                            <h1>${currentEvent.eventName}</h1>
+                            <p>Scan to upload photos directly to the live gallery!</p>
+                            <img src="${qrUrl}" onload="window.print();window.close();">
+                            <div class="brand">Powered by SnapNexus</div>
+                        </body></html>
+                    `);
+                    printWindow.document.close();
                 });
 
                 // Upgrade Plan Logic (Stripped of Fake APIs)
@@ -387,7 +411,7 @@
                         try {
                             const res = await storage.listFiles(cfg.BUCKET_ID, [
                                 Appwrite.Query.startsWith('name', currentEvent.eventId + '_'),
-                                Appwrite.Query.limit(100) 
+                                Appwrite.Query.limit(1000) // Pulled limit up to grab bulk photos
                             ]);
 
                             if (res.files.length === 0) {
@@ -398,13 +422,17 @@
                                 return;
                             }
 
+                            // PERFECTED ZIP LOGIC (Actually processes and zips locally)
                             const zip = new JSZip();
+                            const folder = zip.folder("SnapNexus_" + currentEvent.eventName);
+                            
                             const downloadPromises = res.files.map(async (file) => {
                                 const dlUrl = storage.getFileDownload(cfg.BUCKET_ID, file.$id).href;
                                 try {
                                     const response = await fetch(dlUrl);
+                                    if (!response.ok) throw new Error("Network issue fetching image blob");
                                     const blobData = await response.blob();
-                                    zip.file(file.name, blobData);
+                                    folder.file(file.name, blobData);
                                 } catch(e) { console.error("Failed to fetch", file.$id, e); }
                             });
 
@@ -414,7 +442,7 @@
 
                         } catch (err) {
                             console.error("ZIP Error", err);
-                            alert("Failed to generate ZIP.");
+                            alert("Failed to generate ZIP. Please check your connection.");
                         } finally {
                             downloadBtn.innerHTML = '<i data-lucide="download"></i> Download Gallery (ZIP)';
                             downloadBtn.disabled = false;
