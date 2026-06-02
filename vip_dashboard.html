@@ -34,11 +34,15 @@
         .btn-red { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
         .btn-red:hover:not(:disabled) { background: rgba(239, 68, 68, 0.2); }
         
-        .vip-settings { background: rgba(0, 0, 0, 0.3); border: 1px dashed #fbbf24; padding: 20px; border-radius: 16px; margin-top: 20px; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
         .lucide-spin { animation: spin 1s linear infinite; }
         
-        .logo-preview { max-width: 150px; max-height: 80px; border-radius: 8px; margin-top: 10px; display: none; object-fit: contain; background: rgba(255,255,255,0.05); padding: 5px; }
+        /* Modal Styles */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 99; backdrop-filter: blur(10px); }
+        .modal-content { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 100; width: 90%; max-width: 450px; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(251, 191, 36, 0.4); border-radius: 24px; padding: 30px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8); }
+        .warning-box { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px; padding: 16px; margin-bottom: 24px; display: flex; gap: 12px; align-items: flex-start; }
+        .text-input { width: 100%; padding: 16px; background: rgba(0,0,0,0.4); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 12px; color: white; font-family: inherit; font-size: 1rem; margin-bottom: 24px; transition: 0.3s; }
+        .text-input:focus { outline: none; border-color: #fbbf24; background: rgba(0,0,0,0.6); }
     </style>
 </head>
 <body>
@@ -61,21 +65,6 @@
             <button class="btn btn-dark" id="openQrBtn"><i data-lucide="share-2"></i> Copy Guest Link</button>
             <button class="btn btn-dark" id="printQrBtn"><i data-lucide="printer"></i> Print QR Code</button>
             <button class="btn btn-red" id="endEventBtn"><i data-lucide="lock"></i> Lock / End Event</button>
-        </div>
-
-        <div class="vip-settings" id="vipSettings">
-            <h3 style="color: #fbbf24; margin-bottom: 10px; font-family: 'Syne';"><i data-lucide="image"></i> Custom TV Watermark</h3>
-            <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 15px;">Upload a .png or .svg logo to overlay on your ad-free TV experience.</p>
-            <div style="display: flex; gap: 15px; align-items: flex-start; flex-wrap: wrap;">
-                <div>
-                    <input type="file" id="watermarkInput" accept="image/svg+xml, image/png" style="color: white; margin-bottom: 10px; display: block; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
-                    <button class="btn btn-dark" id="uploadWatermarkBtn" style="padding: 10px 20px;"><i data-lucide="upload"></i> Upload Logo</button>
-                </div>
-                <div>
-                    <img id="logoPreview" class="logo-preview" src="">
-                    <div id="noLogoText" style="color: #cbd5e1; font-size: 0.85rem; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">No custom logo uploaded</div>
-                </div>
-            </div>
         </div>
 
         <div style="background: rgba(0, 0, 0, 0.3); border: 1px dashed #fbbf24; padding: 20px; border-radius: 16px; margin-top: 20px;">
@@ -101,11 +90,36 @@
             </div>
         </div>
     </div>
+
+    <!-- VIP Text Watermark Modal -->
+    <div class="modal-overlay" id="watermarkModalOverlay"></div>
+    <div class="modal-content" id="watermarkModal">
+        <h3 style="font-family: 'Syne'; font-size: 1.6rem; margin-bottom: 10px; color: #fbbf24; display: flex; align-items: center; gap: 10px;">
+            <i data-lucide="pen-tool"></i> Premium Watermark
+        </h3>
+        <p style="color: #94a3b8; font-size: 1rem; margin-bottom: 20px; line-height: 1.5;">
+            Before starting your live event, set a custom text watermark for your gallery.
+        </p>
+
+        <div class="warning-box">
+            <i data-lucide="alert-triangle" style="color: #ef4444; flex-shrink: 0; margin-top: 2px;"></i>
+            <p style="color: #fca5a5; font-size: 0.9rem; line-height: 1.5;">
+                <strong>Permanent Warning:</strong> All images uploaded by guests will be having this text watermark burned into them permanently. This applies to the TV display and downloaded gallery ZIP files.
+            </p>
+        </div>
+
+        <input type="text" id="watermarkTextInput" class="text-input" placeholder="e.g. SnapNexus VIP 2026">
+
+        <div style="display: flex; gap: 12px;">
+            <button class="btn btn-gold" id="confirmWatermarkBtn" style="flex: 1.5;"><i data-lucide="check"></i> Add Watermark</button>
+            <button class="btn btn-dark" id="skipWatermarkBtn" style="flex: 1;">Skip</button>
+        </div>
+    </div>
     
     <style>@keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }</style>
 
     <script>
-        // --- FIXED: Universal Client Initialization ---
+        // Universal Client Initialization
         let cfg, client, account, databases, storage;
 
         const isCanvasPreview = window.location.protocol === 'blob:' || window.location.origin === 'null';
@@ -114,7 +128,7 @@
             // Mock environment for Canvas preview protection
             cfg = { ENDPOINT: '', PROJECT_ID: '', DATABASE_ID: '', COLLECTION_ID: '', BUCKET_ID: '', resolveUrl: (p)=>p };
             account = { get: async()=>({}), getPrefs: async()=>({tier: 'vip', subExpiry: Date.now() + 100000}), updatePrefs: async()=>{} };
-            databases = { listDocuments: async()=>({documents: [{ $id:'1', eventId:'demo-vip-event', eventName:'VIP Canvas Preview', tier:'vip', status:'active' }]}), updateDocument: async()=>{} };
+            databases = { listDocuments: async()=>({documents: [{ $id:'1', eventId:'demo-vip-event', eventName:'VIP Canvas Preview', tier:'vip', status:'active', watermarkConfigured: false }]}), updateDocument: async()=>{} };
             storage = { listFiles: async()=>({files: []}), getFileView: ()=>({href:''}), getFileDownload: ()=>({href:''}), createFile: async()=>({$id:'1'}), deleteFile: async()=>{} };
         } else {
             // REAL PRODUCTION ENVIRONMENT INIT
@@ -137,7 +151,6 @@
         function safeReload() {
             try { window.location.reload(); } catch (e) { console.warn("Canvas reload prevented"); }
         }
-        // -----------------------------------------------------
 
         const urlParams = new URLSearchParams(window.location.search);
         let eventId = urlParams.get('event');
@@ -175,7 +188,7 @@
                 
                 currentEvent = res.documents[0];
                 
-                // 1. Strict Tier Checks & VIP Bouncer
+                // Strict Tier Checks & VIP Bouncer
                 let currentTier = currentEvent.tier;
                 if (userPrefs && userPrefs.subExpiry && userPrefs.tier === 'vip' && Date.now() > userPrefs.subExpiry) {
                     await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { tier: 'starter' });
@@ -205,17 +218,60 @@
                 } else {
                     statusBadge.classList.add('active');
                 }
-                
-                // Try to load any existing watermark from storage
-                const existingLogoUrl = `${cfg.ENDPOINT}/storage/buckets/${cfg.BUCKET_ID}/files/${currentEvent.eventId}_logo/view?project=${cfg.PROJECT_ID}`;
-                const imgCheck = new Image();
-                imgCheck.onload = () => {
-                    const preview = document.getElementById('logoPreview');
-                    preview.src = existingLogoUrl;
-                    preview.style.display = 'block';
-                    document.getElementById('noLogoText').style.display = 'none';
-                };
-                imgCheck.src = existingLogoUrl;
+
+                // ==========================================
+                // ✨ TEXT WATERMARK POPUP LOGIC ✨
+                // ==========================================
+                const wmOverlay = document.getElementById('watermarkModalOverlay');
+                const wmModal = document.getElementById('watermarkModal');
+
+                if (!currentEvent.watermarkConfigured && currentEvent.status !== 'ended') {
+                    wmOverlay.style.display = 'block';
+                    wmModal.style.display = 'block';
+                }
+
+                document.getElementById('confirmWatermarkBtn').addEventListener('click', async () => {
+                    const text = document.getElementById('watermarkTextInput').value.trim();
+                    if (!text) return alert("Please enter your watermark text, or click Skip.");
+
+                    const btn = document.getElementById('confirmWatermarkBtn');
+                    btn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin"></i> Applying...';
+                    btn.disabled = true;
+                    lucide.createIcons();
+
+                    try {
+                        await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, {
+                            watermarkText: text,
+                            watermarkConfigured: true
+                        });
+                    } catch (e) {
+                        console.warn("DB Update failed (missing schema?), bypassing locally:", e);
+                    }
+                    wmOverlay.style.display = 'none';
+                    wmModal.style.display = 'none';
+                });
+
+                document.getElementById('skipWatermarkBtn').addEventListener('click', async () => {
+                    const btn = document.getElementById('skipWatermarkBtn');
+                    btn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin"></i> Skipping...';
+                    btn.disabled = true;
+                    lucide.createIcons();
+
+                    try {
+                        await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, {
+                            watermarkText: null,
+                            watermarkConfigured: true
+                        });
+                    } catch (e) {
+                        console.warn("DB Update failed (missing schema?), bypassing locally:", e);
+                    }
+                    wmOverlay.style.display = 'none';
+                    wmModal.style.display = 'none';
+                });
+
+                // ==========================================
+                // HOST CONTROLS
+                // ==========================================
 
                 document.getElementById('openTvBtn').addEventListener('click', () => {
                     window.open(`tv_2.html?event=${currentEvent.eventId}`, '_blank');
@@ -225,7 +281,6 @@
                     navigator.clipboard.writeText(cfg.resolveUrl(`app.html?event=${currentEvent.eventId}`)).then(() => alert("VIP Guest Link Copied!"));
                 });
 
-                // Dedicated Print QR function
                 document.getElementById('printQrBtn').addEventListener('click', () => {
                     const guestLink = cfg.resolveUrl(`app.html?event=${currentEvent.eventId}`);
                     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(guestLink)}`;
@@ -248,7 +303,6 @@
                     printWindow.document.close();
                 });
 
-                // Real ZIP Download implementation
                 const downloadBtn = document.getElementById('downloadZipBtn');
                 if (downloadBtn) {
                     downloadBtn.addEventListener('click', async () => {
@@ -259,7 +313,7 @@
                         try {
                             const res = await storage.listFiles(cfg.BUCKET_ID, [
                                 Appwrite.Query.startsWith('name', currentEvent.eventId + '_'),
-                                Appwrite.Query.limit(5000) // Increased limit for VIP bulk photos
+                                Appwrite.Query.limit(5000)
                             ]);
 
                             if (res.files.length === 0) {
@@ -298,34 +352,6 @@
                     });
                 }
 
-                document.getElementById('uploadWatermarkBtn').addEventListener('click', async () => {
-                    const file = document.getElementById('watermarkInput').files[0];
-                    if(!file) return alert('Select an image (.png or .svg).');
-                    
-                    const btn = document.getElementById('uploadWatermarkBtn');
-                    btn.disabled = true;
-                    btn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin"></i> Uploading...';
-                    lucide.createIcons();
-                    
-                    try {
-                        const adId = currentEvent.eventId + '_logo';
-                        try { await storage.deleteFile(cfg.BUCKET_ID, adId); } catch(e){} 
-                        const uploaded = await storage.createFile(cfg.BUCKET_ID, adId, file);
-                        const viewUrl = storage.getFileView(cfg.BUCKET_ID, uploaded.$id).href;
-                        
-                        alert('Logo saved for VIP TV Wall!');
-                        
-                        document.getElementById('logoPreview').src = viewUrl;
-                        document.getElementById('logoPreview').style.display = 'block';
-                        document.getElementById('noLogoText').style.display = 'none';
-                    } catch(err) {
-                        alert("Upload failed: " + err.message);
-                    }
-                    btn.disabled = false;
-                    btn.innerHTML = '<i data-lucide="upload"></i> Upload Logo';
-                    lucide.createIcons();
-                });
-
                 document.getElementById('endEventBtn').addEventListener('click', async () => {
                     if(confirm("Lock event? Guests can no longer upload photos.")) {
                         await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { status: 'ended' });
@@ -335,7 +361,6 @@
 
                 const hostGallery = document.getElementById('hostGallery');
                 
-                // Add Delete and Download global functions
                 window.downloadImage = async (fileId, fileName) => {
                     try {
                         const dlUrl = storage.getFileDownload(cfg.BUCKET_ID, fileId).href;
