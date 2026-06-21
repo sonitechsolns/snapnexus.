@@ -11,6 +11,10 @@
         * { margin:0; padding:0; box-sizing:border-box; }
 
         /* ---------- Theme tokens ---------- */
+        :root {
+            /* Brand font is fixed — never overridden by a theme block. */
+            --font-brand: 'Syne', sans-serif;
+        }
         :root,
         [data-theme="default"] {
             --bg-mesh-a: #020617; --bg-mesh-b: #1e3a8a; --bg-mesh-c: #3b82f6; --bg-mesh-d: #4f46e5;
@@ -82,11 +86,11 @@
 
         /* The "Ad" Ribbon Header/Footer */
         .ad-banner { position: absolute; bottom: 0; left: 300px; width: calc(100vw - 300px); height: 60px; background: var(--surface-bg); backdrop-filter: blur(10px); border-top: 1px solid var(--surface-border); display: flex; align-items: center; justify-content: center; overflow: hidden; z-index: 15; transition: background 0.4s ease, border-color 0.4s ease; }
-        .ad-text { position: absolute; font-size: 1.2rem; color: var(--accent-strong); font-weight: 700; font-family: var(--font-heading); transition: opacity 0.8s ease, transform 0.8s ease; opacity: 0; transform: translateY(20px); text-transform: uppercase; letter-spacing: 1px; }
+        .ad-text { position: absolute; font-size: 1.2rem; color: var(--accent-strong); font-weight: 700; font-family: var(--font-brand); transition: opacity 0.8s ease, transform 0.8s ease; opacity: 0; transform: translateY(20px); text-transform: uppercase; letter-spacing: 1px; }
         .ad-text.active { opacity: 1; transform: translateY(0); }
         .ad-text.exit { opacity: 0; transform: translateY(-20px); }
 
-        .watermark { position: absolute; top: 30px; right: 40px; font-size: 1.2rem; color: var(--text-secondary); font-weight: 800; font-family: var(--font-heading); z-index: 10; text-shadow: 0 2px 10px black; }
+        .watermark { position: absolute; top: 30px; right: 40px; font-size: 1.2rem; color: var(--text-secondary); font-weight: 800; font-family: var(--font-brand); z-index: 10; text-shadow: 0 2px 10px black; }
     </style>
 </head>
 <body>

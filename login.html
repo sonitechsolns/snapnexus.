@@ -7,31 +7,101 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SnapNexus | Host Login</title>
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Urbanist:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Urbanist:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,600&family=Playfair+Display:wght@600;700&family=Lora:ital,wght@0,500;1,500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        // Carry over the vibe chosen on the homepage preview, if any.
+        (function () {
+            try {
+                var t = localStorage.getItem('snapnexus_theme_preview') || 'default';
+                document.documentElement.setAttribute('data-theme', t);
+            } catch (e) {}
+        })();
+    </script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Urbanist', sans-serif; background: #020617; color: #ffffff; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; position: relative; overflow-x: hidden; }
-        
+
+        /* ---------- Theme tokens (mirrors index.html / app.html) ---------- */
+        :root {
+            /* Brand font is fixed — never overridden by a theme block. */
+            --font-brand: 'Syne', sans-serif;
+        }
+        :root,
+        [data-theme="default"] {
+            --bg-mesh-a: #020617; --bg-mesh-b: #1e3a8a; --bg-mesh-c: #3b82f6; --bg-mesh-d: #4f46e5;
+            --bg-solid: #020617;
+            --surface-bg: rgba(30, 41, 59, 0.7);
+            --surface-border: rgba(255, 255, 255, 0.1);
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --accent: #3b82f6;
+            --accent-strong: #2563eb;
+            --font-heading: 'Syne', sans-serif;
+            --font-body: 'Urbanist', sans-serif;
+            --radius-card: 24px;
+        }
+        [data-theme="wedding"] {
+            --bg-mesh-a: #fff7f3; --bg-mesh-b: #fde2e7; --bg-mesh-c: #f6c9d0; --bg-mesh-d: #e9c9a8;
+            --bg-solid: #fdf6f2;
+            --surface-bg: rgba(255, 255, 255, 0.8);
+            --surface-border: rgba(196, 154, 108, 0.4);
+            --text-primary: #5c3a3a;
+            --text-secondary: #8a6a64;
+            --accent: #c9a063;
+            --accent-strong: #a9824f;
+            --font-heading: 'Playfair Display', serif;
+            --font-body: 'Lora', serif;
+            --radius-card: 30px;
+        }
+        [data-theme="corporate"] {
+            --bg-mesh-a: #0a0f1c; --bg-mesh-b: #0f172a; --bg-mesh-c: #1e293b; --bg-mesh-d: #334155;
+            --bg-solid: #0a0f1c;
+            --surface-bg: rgba(15, 23, 42, 0.88);
+            --surface-border: rgba(148, 163, 184, 0.25);
+            --text-primary: #e8edf5;
+            --text-secondary: #94a3b8;
+            --accent: #2563eb;
+            --accent-strong: #1d4ed8;
+            --font-heading: 'Inter', sans-serif;
+            --font-body: 'Inter', sans-serif;
+            --radius-card: 14px;
+        }
+        [data-theme="party"] {
+            --bg-mesh-a: #070110; --bg-mesh-b: #1a0530; --bg-mesh-c: #5b0fb5; --bg-mesh-d: #ff00c8;
+            --bg-solid: #070110;
+            --surface-bg: rgba(20, 4, 32, 0.72);
+            --surface-border: rgba(255, 0, 200, 0.4);
+            --text-primary: #f5f3ff;
+            --text-secondary: #c4b5fd;
+            --accent: #00f0ff;
+            --accent-strong: #ff00c8;
+            --font-heading: 'Urbanist', sans-serif;
+            --font-body: 'Urbanist', sans-serif;
+            --radius-card: 20px;
+        }
+
+        body { font-family: var(--font-body); background: var(--bg-solid); color: var(--text-primary); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; position: relative; overflow-x: hidden; transition: background 0.4s ease, color 0.4s ease; }
+
         /* Continuous Background Animation */
-        .liquid-mesh { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -3; background: radial-gradient(circle at 20% 30%, #020617, #1e3a8a 30%, #3b82f6 65%, #4f46e5); background-size: 200% 200%; animation: liquidShift 16s ease infinite alternate; }
+        .liquid-mesh { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -3; background: radial-gradient(circle at 20% 30%, var(--bg-mesh-a), var(--bg-mesh-b) 30%, var(--bg-mesh-c) 65%, var(--bg-mesh-d)); background-size: 200% 200%; animation: liquidShift 16s ease infinite alternate; transition: background 0.6s ease; }
         @keyframes liquidShift { 0% { background-position: 0% 0%; } 50% { background-position: 100% 100%; } 100% { background-position: 0% 50%; } }
-        
-        .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 40px; width: 100%; max-width: 480px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); z-index: 10; }
-        h1 { font-family: 'Syne', sans-serif; font-size: 2rem; margin-bottom: 8px; text-align: center; }
-        p.subtitle { color: #94a3b8; text-align: center; margin-bottom: 32px; }
+
+        .glass-panel { background: var(--surface-bg); backdrop-filter: blur(16px); border: 1px solid var(--surface-border); border-radius: var(--radius-card); padding: 40px; width: 100%; max-width: 480px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); z-index: 10; transition: background 0.4s ease, border-color 0.4s ease, border-radius 0.4s ease; }
+        /* Title shows the brand name initially ("SnapNexus Host") — keep it on the fixed brand font */
+        h1 { font-family: var(--font-brand); font-size: 2rem; margin-bottom: 8px; text-align: center; color: var(--text-primary); }
+        p.subtitle { color: var(--text-secondary); text-align: center; margin-bottom: 32px; }
         .input-group { margin-bottom: 20px; }
-        label { display: block; font-size: 0.9rem; font-weight: 600; color: #cbd5e1; margin-bottom: 8px; }
+        label { display: block; font-size: 0.9rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; }
         input { width: 100%; padding: 14px 16px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; color: white; font-family: inherit; font-size: 1rem; transition: all 0.3s ease; }
-        input:focus { outline: none; border-color: #3b82f6; background: rgba(15, 23, 42, 0.8); }
-        .btn-primary { width: 100%; padding: 16px; background: #3b82f6; color: white; border: none; border-radius: 12px; font-weight: 700; font-size: 1.1rem; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; }
-        .btn-primary:hover:not(:disabled) { background: #2563eb; transform: translateY(-2px); }
+        input:focus { outline: none; border-color: var(--accent); background: rgba(15, 23, 42, 0.8); }
+        .btn-primary { width: 100%; padding: 16px; background: var(--accent); color: white; border: none; border-radius: 12px; font-weight: 700; font-size: 1.1rem; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; }
+        .btn-primary:hover:not(:disabled) { background: var(--accent-strong); transform: translateY(-2px); }
         .btn-primary:disabled { opacity: 0.7; cursor: not-allowed; }
-        .toggle-text { text-align: center; margin-top: 24px; color: #94a3b8; cursor: pointer; font-weight: 600; transition: color 0.3s ease; }
-        .toggle-text:hover { color: #ffffff; }
+        .toggle-text { text-align: center; margin-top: 24px; color: var(--text-secondary); cursor: pointer; font-weight: 600; transition: color 0.3s ease; }
+        .toggle-text:hover { color: var(--text-primary); }
         .history-item { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.05); padding: 16px; border-radius: 12px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s ease; display: flex; justify-content: space-between; align-items: center; }
-        .history-item:hover { background: rgba(30, 41, 59, 0.8); border-color: #3b82f6; }
-        .history-item strong { display: block; font-size: 1.1rem; margin-bottom: 4px; }
+        .history-item:hover { background: rgba(30, 41, 59, 0.8); border-color: var(--accent); }
+        .history-item strong { display: block; font-size: 1.1rem; margin-bottom: 4px; color: white; }
         .history-item span { font-size: 0.85rem; color: #94a3b8; }
         .badge { background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
         #historySection { display: none; }

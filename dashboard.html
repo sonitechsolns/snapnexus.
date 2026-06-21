@@ -11,13 +11,73 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Urbanist', sans-serif; background: #020617; color: #ffffff; padding: 20px; overflow-x: hidden; }
-        
-        .liquid-mesh { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -3; background: radial-gradient(circle at 20% 30%, #020617, #1e3a8a 30%, #3b82f6 65%, #4f46e5); background-size: 200% 200%; animation: liquidShift 16s ease infinite alternate; }
+
+        /* ---------- Theme tokens (mirrors app.html / tv.html) ---------- */
+        :root {
+            /* Brand font is fixed — never overridden by a theme block. */
+            --font-brand: 'Syne', sans-serif;
+        }
+        :root,
+        [data-theme="default"] {
+            --bg-mesh-a: #020617; --bg-mesh-b: #1e3a8a; --bg-mesh-c: #3b82f6; --bg-mesh-d: #4f46e5;
+            --bg-solid: #020617;
+            --surface-bg: rgba(30, 41, 59, 0.7);
+            --surface-border: rgba(255, 255, 255, 0.1);
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --accent: #3b82f6;
+            --accent-soft: rgba(59, 130, 246, 0.35);
+            --font-heading: 'Syne', sans-serif;
+            --font-body: 'Urbanist', sans-serif;
+            --radius-card: 24px;
+        }
+        [data-theme="wedding"] {
+            --bg-mesh-a: #fff7f3; --bg-mesh-b: #fde2e7; --bg-mesh-c: #f6c9d0; --bg-mesh-d: #e9c9a8;
+            --bg-solid: #fdf6f2;
+            --surface-bg: rgba(255, 255, 255, 0.85);
+            --surface-border: rgba(196, 154, 108, 0.4);
+            --text-primary: #5c3a3a;
+            --text-secondary: #8a6a64;
+            --accent: #c9a063;
+            --accent-soft: rgba(201, 160, 99, 0.35);
+            --font-heading: 'Playfair Display', serif;
+            --font-body: 'Lora', serif;
+            --radius-card: 30px;
+        }
+        [data-theme="corporate"] {
+            --bg-mesh-a: #0a0f1c; --bg-mesh-b: #0f172a; --bg-mesh-c: #1e293b; --bg-mesh-d: #334155;
+            --bg-solid: #0a0f1c;
+            --surface-bg: rgba(15, 23, 42, 0.9);
+            --surface-border: rgba(148, 163, 184, 0.25);
+            --text-primary: #e8edf5;
+            --text-secondary: #94a3b8;
+            --accent: #2563eb;
+            --accent-soft: rgba(37, 99, 235, 0.3);
+            --font-heading: 'Inter', sans-serif;
+            --font-body: 'Inter', sans-serif;
+            --radius-card: 14px;
+        }
+        [data-theme="party"] {
+            --bg-mesh-a: #070110; --bg-mesh-b: #1a0530; --bg-mesh-c: #5b0fb5; --bg-mesh-d: #ff00c8;
+            --bg-solid: #070110;
+            --surface-bg: rgba(20, 4, 32, 0.75);
+            --surface-border: rgba(255, 0, 200, 0.4);
+            --text-primary: #f5f3ff;
+            --text-secondary: #c4b5fd;
+            --accent: #00f0ff;
+            --accent-soft: rgba(0, 240, 255, 0.45);
+            --font-heading: 'Urbanist', sans-serif;
+            --font-body: 'Urbanist', sans-serif;
+            --radius-card: 20px;
+        }
+
+        body { font-family: var(--font-body); background: var(--bg-solid); color: var(--text-primary); padding: 20px; overflow-x: hidden; transition: background 0.4s ease, color 0.4s ease; }
+
+        .liquid-mesh { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -3; background: radial-gradient(circle at 20% 30%, var(--bg-mesh-a), var(--bg-mesh-b) 30%, var(--bg-mesh-c) 65%, var(--bg-mesh-d)); background-size: 200% 200%; animation: liquidShift 16s ease infinite alternate; transition: background 0.6s ease; }
         @keyframes liquidShift { 0% { background-position: 0% 0%; } 50% { background-position: 100% 100%; } 100% { background-position: 0% 50%; } }
 
-        .container { max-width: 900px; margin: 40px auto; background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 40px; position: relative; z-index: 10; }
-        h1 { font-family: 'Syne', sans-serif; font-size: 2.5rem; margin-bottom: 10px; }
+        .container { max-width: 900px; margin: 40px auto; background: var(--surface-bg); backdrop-filter: blur(16px); border: 1px solid var(--surface-border); border-radius: var(--radius-card); padding: 40px; position: relative; z-index: 10; transition: background 0.4s ease, border-color 0.4s ease, border-radius 0.4s ease; }
+        h1 { font-family: var(--font-heading); font-size: 2.5rem; margin-bottom: 10px; }
         .meta-tags { display: flex; gap: 12px; margin-bottom: 30px; flex-wrap: wrap; }
         .badge { background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 0.9rem; }
         .badge.vip { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
@@ -35,12 +95,12 @@
 
         /* Theme Picker */
         .theme-picker-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 40px; }
-        .theme-swatch { cursor: pointer; border-radius: 16px; padding: 16px; border: 2px solid rgba(255,255,255,0.1); transition: 0.2s; position: relative; }
-        .theme-swatch:hover { border-color: rgba(255,255,255,0.3); transform: translateY(-2px); }
-        .theme-swatch.active { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.25); }
+        .theme-swatch { cursor: pointer; border-radius: 16px; padding: 16px; border: 2px solid var(--surface-border); transition: 0.2s; position: relative; background: var(--surface-bg); }
+        .theme-swatch:hover { border-color: var(--accent); transform: translateY(-2px); }
+        .theme-swatch.active { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
         .theme-swatch-preview { height: 56px; border-radius: 10px; margin-bottom: 10px; }
-        .theme-swatch-label { font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; gap: 6px; }
-        .theme-swatch-check { display: none; color: #3b82f6; }
+        .theme-swatch-label { font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; gap: 6px; color: var(--text-primary); }
+        .theme-swatch-check { display: none; color: var(--accent); }
         .theme-swatch.active .theme-swatch-check { display: inline-flex; }
         .theme-save-status { font-size: 0.85rem; color: #10b981; margin-top: 10px; height: 1.2em; opacity: 0; transition: opacity 0.3s ease; }
         .theme-save-status.show { opacity: 1; }
@@ -175,6 +235,10 @@
 
         let currentEvent = null;
 
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme || 'default');
+        }
+
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
             
@@ -197,7 +261,8 @@
                 const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [ Appwrite.Query.equal('eventId', eventId) ]);
                 if (res.documents.length === 0) throw new Error("Not Found");
                 currentEvent = res.documents[0];
-                
+                applyTheme(currentEvent.theme);
+
                 // Enforce Subscriptions and Buffer rules locally
                 if (userPrefs && userPrefs.subExpiry) {
                     const now = Date.now();
@@ -293,6 +358,7 @@
                     swatch.addEventListener('click', async () => {
                         const theme = swatch.dataset.theme;
                         setActiveSwatch(theme);
+                        applyTheme(theme);
                         try {
                             await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { theme });
                             currentEvent.theme = theme;
@@ -301,6 +367,7 @@
                         } catch (err) {
                             console.error('Theme save error', err);
                             setActiveSwatch(currentEvent.theme);
+                            applyTheme(currentEvent.theme);
                             alert("Couldn't save theme. (Does the EventsTable collection have a 'theme' attribute?)");
                         }
                     });
