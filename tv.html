@@ -1,60 +1,117 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta name="robots" content="noindex, nofollow">
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
     <script src="/config.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SnapNexus | Live TV</title>
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Urbanist:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Urbanist:wght@400;600;800&family=Playfair+Display:wght@600;700&family=Lora:ital,wght@0,500;1,500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:'Urbanist',sans-serif; background:#020617; color:#ffffff; overflow:hidden; height:100vh; width:100vw; }
-        
-        .liquid-mesh { position:fixed; top:0; left:0; width:100%; height:100%; z-index:-3; background:radial-gradient(circle at 20% 30%, #020617, #1e3a8a 30%, #3b82f6 65%, #4f46e5); background-size:200% 200%; animation: meshAnim 15s ease infinite alternate; }
+
+        /* ---------- Theme tokens ---------- */
+        :root,
+        [data-theme="default"] {
+            --bg-mesh-a: #020617; --bg-mesh-b: #1e3a8a; --bg-mesh-c: #3b82f6; --bg-mesh-d: #4f46e5;
+            --bg-solid: #020617;
+            --surface-bg: rgba(0,0,0,0.5);
+            --surface-border: rgba(255,255,255,0.1);
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --accent: #3b82f6;
+            --accent-strong: #fbbf24;
+            --accent-soft: rgba(59, 130, 246, 0.35);
+            --font-heading: 'Syne', sans-serif;
+            --font-body: 'Urbanist', sans-serif;
+        }
+        [data-theme="wedding"] {
+            --bg-mesh-a: #fff7f3; --bg-mesh-b: #fde2e7; --bg-mesh-c: #f6c9d0; --bg-mesh-d: #e9c9a8;
+            --bg-solid: #fdf6f2;
+            --surface-bg: rgba(255,255,255,0.55);
+            --surface-border: rgba(196, 154, 108, 0.4);
+            --text-primary: #5c3a3a;
+            --text-secondary: #8a6a64;
+            --accent: #c9a063;
+            --accent-strong: #a9824f;
+            --accent-soft: rgba(201, 160, 99, 0.35);
+            --font-heading: 'Playfair Display', serif;
+            --font-body: 'Lora', serif;
+        }
+        [data-theme="corporate"] {
+            --bg-mesh-a: #0a0f1c; --bg-mesh-b: #0f172a; --bg-mesh-c: #1e293b; --bg-mesh-d: #334155;
+            --bg-solid: #0a0f1c;
+            --surface-bg: rgba(15, 23, 42, 0.65);
+            --surface-border: rgba(148, 163, 184, 0.25);
+            --text-primary: #e8edf5;
+            --text-secondary: #94a3b8;
+            --accent: #2563eb;
+            --accent-strong: #2563eb;
+            --accent-soft: rgba(37, 99, 235, 0.3);
+            --font-heading: 'Inter', sans-serif;
+            --font-body: 'Inter', sans-serif;
+        }
+        [data-theme="party"] {
+            --bg-mesh-a: #070110; --bg-mesh-b: #1a0530; --bg-mesh-c: #5b0fb5; --bg-mesh-d: #ff00c8;
+            --bg-solid: #070110;
+            --surface-bg: rgba(20, 4, 32, 0.55);
+            --surface-border: rgba(255, 0, 200, 0.4);
+            --text-primary: #f5f3ff;
+            --text-secondary: #c4b5fd;
+            --accent: #00f0ff;
+            --accent-strong: #ff00c8;
+            --accent-soft: rgba(0, 240, 255, 0.45);
+            --font-heading: 'Urbanist', sans-serif;
+            --font-body: 'Urbanist', sans-serif;
+        }
+
+        body { font-family: var(--font-body); background: var(--bg-solid); color: var(--text-primary); overflow:hidden; height:100vh; width:100vw; transition: background 0.4s ease, color 0.4s ease; }
+
+        .liquid-mesh { position:fixed; top:0; left:0; width:100%; height:100%; z-index:-3; background:radial-gradient(circle at 20% 30%, var(--bg-mesh-a), var(--bg-mesh-b) 30%, var(--bg-mesh-c) 65%, var(--bg-mesh-d)); background-size:200% 200%; animation: meshAnim 15s ease infinite alternate; transition: background 0.6s ease; }
         @keyframes meshAnim { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
-        
+
         /* The Un-collapsible QR Sidebar */
-        .sidebar { position: absolute; left: 0; top: 0; width: 300px; height: 100vh; background: rgba(0,0,0,0.5); backdrop-filter: blur(10px); padding: 40px 20px; display: flex; flex-direction: column; align-items: center; z-index: 10; border-right: 1px solid rgba(255,255,255,0.1); }
-        .sidebar h1 { font-family: 'Syne'; font-size: 2rem; margin-bottom: 20px; text-align: center; }
-        .qr-placeholder { width: 200px; height: 200px; background: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: black; font-weight: bold; margin-bottom: 20px; }
-        
+        .sidebar { position: absolute; left: 0; top: 0; width: 300px; height: 100vh; background: var(--surface-bg); backdrop-filter: blur(10px); padding: 40px 20px; display: flex; flex-direction: column; align-items: center; z-index: 10; border-right: 1px solid var(--surface-border); transition: background 0.4s ease, border-color 0.4s ease; }
+        .sidebar h1 { font-family: var(--font-heading); font-size: 2rem; margin-bottom: 20px; text-align: center; color: var(--text-primary); }
+        .qr-placeholder { width: 200px; height: 200px; background: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: black; font-weight: bold; margin-bottom: 20px; box-shadow: 0 0 25px var(--accent-soft); }
+
         .slideshow-container { position: absolute; left: 300px; width: calc(100vw - 300px); height: calc(100vh - 60px); display: flex; align-items: center; justify-content: center; }
-        .photo-layer { position: absolute; max-width: 85%; max-height: 85%; object-fit: contain; opacity: 0; transform: scale(0.95); transition: opacity 1s ease, transform 1s ease; border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
+        .photo-layer { position: absolute; max-width: 85%; max-height: 85%; display: flex; align-items: center; justify-content: center; opacity: 0; transform: scale(0.95); transition: opacity 1s ease, transform 1s ease; }
         .photo-layer.active { opacity: 1; transform: scale(1); }
-        
+        .photo-layer img, .photo-layer video { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5), 0 0 40px var(--accent-soft); }
+
         /* The "Ad" Ribbon Header/Footer */
-        .ad-banner { position: absolute; bottom: 0; left: 300px; width: calc(100vw - 300px); height: 120px; background: rgba(0,0,0,0.8); border-top: 1px solid rgba(255,255,255,0.1); overflow: hidden; z-index: 15; }
-        .ad-pic { position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover; opacity: 0; transition: opacity 1s ease; }
-        .ad-pic.active { opacity: 1; }
-        
-        .watermark { position: absolute; top: 30px; right: 40px; font-size: 1.2rem; color: rgba(255,255,255,0.6); font-weight: 800; font-family: 'Syne'; z-index: 10; text-shadow: 0 2px 10px black; }
+        .ad-banner { position: absolute; bottom: 0; left: 300px; width: calc(100vw - 300px); height: 60px; background: var(--surface-bg); backdrop-filter: blur(10px); border-top: 1px solid var(--surface-border); display: flex; align-items: center; justify-content: center; overflow: hidden; z-index: 15; transition: background 0.4s ease, border-color 0.4s ease; }
+        .ad-text { position: absolute; font-size: 1.2rem; color: var(--accent-strong); font-weight: 700; font-family: var(--font-heading); transition: opacity 0.8s ease, transform 0.8s ease; opacity: 0; transform: translateY(20px); text-transform: uppercase; letter-spacing: 1px; }
+        .ad-text.active { opacity: 1; transform: translateY(0); }
+        .ad-text.exit { opacity: 0; transform: translateY(-20px); }
+
+        .watermark { position: absolute; top: 30px; right: 40px; font-size: 1.2rem; color: var(--text-secondary); font-weight: 800; font-family: var(--font-heading); z-index: 10; text-shadow: 0 2px 10px black; }
     </style>
 </head>
 <body>
     <div class="liquid-mesh"></div>
-    
+
     <div class="sidebar">
         <h1 id="tvEventName">Live Event</h1>
-        <p style="margin-bottom: 10px; color: #bfdbfe;">Scan to upload!</p>
+        <p style="margin-bottom: 10px; color: var(--text-secondary);">Scan to upload!</p>
         <div class="qr-placeholder">
             <img id="qrImage" src="" style="width: 100%; border-radius: 10px;">
         </div>
-        <p style="margin-top: auto; font-size: 0.9rem; color: #94a3b8; text-align: center;">Want this full screen? Host can upgrade to VIP.</p>
+        <p style="margin-top: auto; font-size: 0.9rem; color: var(--text-secondary); text-align: center;">Want this full screen? Host can upgrade to VIP.</p>
     </div>
 
     <div class="slideshow-container">
-        <img id="layer1" class="photo-layer" src="" alt="">
-        <img id="layer2" class="photo-layer" src="" alt="">
+        <div id="layer1" class="photo-layer"></div>
+        <div id="layer2" class="photo-layer"></div>
     </div>
 
     <div class="watermark">Powered by SnapNexus</div>
-    
-    <div class="ad-banner" id="adBanner">
-        <img class="ad-pic active" id="adPic1" src="https://images.unsplash.com/photo-1549451371-64aa98a6fcf0?w=1920&q=80" />
-        <img class="ad-pic" id="adPic2" src="https://images.unsplash.com/photo-1549451371-64aa98a6fcf0?w=1920&q=80" />
-        <img class="ad-pic" id="adPic3" src="https://images.unsplash.com/photo-1549451371-64aa98a6fcf0?w=1920&q=80" />
+
+    <div class="ad-banner">
+        <div class="ad-text active" id="ad1">Host your own interactive photo wall at SnapNexus.in</div>
+        <div class="ad-text" id="ad2">Upgrade to VIP to remove this banner - SnapNexus.in</div>
+        <div class="ad-text" id="ad3">Soni Tech Solutions - Web Development</div>
     </div>
 
     <script>
@@ -72,6 +129,19 @@
 
         document.getElementById('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(cfg.resolveUrl(`app.html?event=${eventId}`))}`;
 
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme || 'default');
+        }
+
+        function renderLayer(el, item) {
+            if (!item) { el.innerHTML = ''; return; }
+            if (item.type === 'video') {
+                el.innerHTML = `<video src="${item.url}" autoplay muted loop playsinline></video>`;
+            } else {
+                el.innerHTML = `<img src="${item.url}" alt="">`;
+            }
+        }
+
         let photos = [];
         let currentIndex = 0;
         let activeLayer = 1;
@@ -85,7 +155,10 @@
             } else {
                 try {
                     const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [ Appwrite.Query.equal('eventId', eventId) ]);
-                    if (res.documents.length > 0) document.getElementById('tvEventName').innerText = res.documents[0].eventName;
+                    if (res.documents.length > 0) {
+                        document.getElementById('tvEventName').innerText = res.documents[0].eventName;
+                        applyTheme(res.documents[0].theme);
+                    }
                 } catch(e) { console.error(e); }
             }
 
@@ -94,11 +167,15 @@
                     const res = await storage.listFiles(cfg.BUCKET_ID, [
                         Appwrite.Query.startsWith('name', eventId + '_'), Appwrite.Query.limit(100), Appwrite.Query.orderDesc('$createdAt')
                     ]);
-                    const newUrls = res.files.map(f => storage.getFileView(cfg.BUCKET_ID, f.$id).href);
-                    if (JSON.stringify(newUrls) !== JSON.stringify(photos)) {
-                        photos = newUrls;
+                    const newItems = res.files.map(f => ({
+                        url: storage.getFileView(cfg.BUCKET_ID, f.$id).href,
+                        type: (f.mimeType || '').startsWith('video/') ? 'video' : 'image'
+                    }));
+                    if (JSON.stringify(newItems) !== JSON.stringify(photos)) {
+                        photos = newItems;
                         if (photos.length > 0 && !layer1.classList.contains('active') && !layer2.classList.contains('active')) {
-                            layer1.src = photos[0]; layer1.classList.add('active');
+                            renderLayer(layer1, photos[0]);
+                            layer1.classList.add('active');
                         }
                     }
                 } catch(e) {}
@@ -107,47 +184,44 @@
             function nextSlide() {
                 if (photos.length === 0) return;
                 currentIndex = (currentIndex + 1) % photos.length;
-                const nextUrl = photos[currentIndex];
-                if (activeLayer === 1) { layer2.src = nextUrl; layer2.classList.add('active'); layer1.classList.remove('active'); activeLayer = 2; }
-                else { layer1.src = nextUrl; layer1.classList.add('active'); layer2.classList.remove('active'); activeLayer = 1; }
+                const nextItem = photos[currentIndex];
+                if (activeLayer === 1) { renderLayer(layer2, nextItem); layer2.classList.add('active'); layer1.classList.remove('active'); activeLayer = 2; }
+                else { renderLayer(layer1, nextItem); layer1.classList.add('active'); layer2.classList.remove('active'); activeLayer = 1; }
             }
 
             fetchPhotos(); setInterval(fetchPhotos, 1500); setInterval(nextSlide, 4500);
-            
+
             async function checkEventStatus() {
                 if (isDemo) return;
                 try {
                     const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [ Appwrite.Query.equal('eventId', eventId) ]);
                     if (res.documents.length > 0 && res.documents[0].status === 'ended') {
                         document.body.innerHTML = '<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; width:100vw; background:#020617; z-index:9999; position:absolute; top:0; left:0;"><h1 style="font-size: 4rem; color: #ef4444; font-family:\'Syne\';">Event Ended</h1><p style="color: #94a3b8; font-size: 1.5rem; margin-top: 10px;">Thanks for participating! - SnapNexus</p></div>';
+                    } else if (res.documents.length > 0) {
+                        applyTheme(res.documents[0].theme);
                     }
                 } catch(e) {}
             }
             setInterval(checkEventStatus, 5000);
-            
-            // Ad Loading & Rotation Logic
-            const ads = [document.getElementById('adPic1'), document.getElementById('adPic2'), document.getElementById('adPic3')];
+
+            // Ad Rotation Logic
+            const ads = [document.getElementById('ad1'), document.getElementById('ad2'), document.getElementById('ad3')];
             let currentAdIndex = 0;
-            
-            // Initial load
-            const fallback = "https://images.unsplash.com/photo-1549451371-64aa98a6fcf0?w=1920&q=80";
-            for (let i=1; i<=3; i++) {
-                const url = `${cfg.ENDPOINT}/storage/buckets/${cfg.BUCKET_ID}/files/global_ad_${i}/view?project=${cfg.PROJECT_ID}`;
-                const imgCheck = new Image();
-                imgCheck.onload = () => { if (ads[i-1]) ads[i-1].src = url; };
-                imgCheck.onerror = () => { if (ads[i-1]) ads[i-1].src = fallback; };
-                imgCheck.src = url;
-            }
 
             setInterval(() => {
                 const currentAd = ads[currentAdIndex];
-                if(currentAd) currentAd.classList.remove('active');
-                
+                currentAd.classList.remove('active');
+                currentAd.classList.add('exit');
+
                 currentAdIndex = (currentAdIndex + 1) % ads.length;
                 const nextAd = ads[currentAdIndex];
-                
-                if(nextAd) nextAd.classList.add('active');
-            }, 10000);
+
+                setTimeout(() => {
+                    currentAd.classList.remove('exit');
+                    nextAd.classList.add('active');
+                }, 800);
+
+            }, 15000);
         });
     </script>
 </body>

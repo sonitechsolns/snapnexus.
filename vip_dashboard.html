@@ -2,8 +2,6 @@
 <html lang="en">
 <head>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script src="/config.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -34,15 +32,23 @@
         .btn-red { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
         .btn-red:hover:not(:disabled) { background: rgba(239, 68, 68, 0.2); }
         
+        .vip-settings { background: rgba(0, 0, 0, 0.3); border: 1px dashed #fbbf24; padding: 20px; border-radius: 16px; margin-top: 20px; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
         .lucide-spin { animation: spin 1s linear infinite; }
+
+        /* Theme Picker */
+        .theme-picker-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-top: 16px; }
+        .theme-swatch { cursor: pointer; border-radius: 16px; padding: 16px; border: 2px solid rgba(255,255,255,0.1); transition: 0.2s; }
+        .theme-swatch:hover { border-color: rgba(251,191,36,0.4); transform: translateY(-2px); }
+        .theme-swatch.active { border-color: #fbbf24; box-shadow: 0 0 0 3px rgba(251,191,36,0.25); }
+        .theme-swatch-preview { height: 56px; border-radius: 10px; margin-bottom: 10px; }
+        .theme-swatch-label { font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; gap: 6px; }
+        .theme-swatch-check { display: none; color: #fbbf24; }
+        .theme-swatch.active .theme-swatch-check { display: inline-flex; }
+        .theme-save-status { font-size: 0.85rem; color: #10b981; margin-top: 10px; height: 1.2em; opacity: 0; transition: opacity 0.3s ease; }
+        .theme-save-status.show { opacity: 1; }
         
-        /* Modal Styles */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 99; backdrop-filter: blur(10px); }
-        .modal-content { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 100; width: 90%; max-width: 450px; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(251, 191, 36, 0.4); border-radius: 24px; padding: 30px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8); }
-        .warning-box { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px; padding: 16px; margin-bottom: 24px; display: flex; gap: 12px; align-items: flex-start; }
-        .text-input { width: 100%; padding: 16px; background: rgba(0,0,0,0.4); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 12px; color: white; font-family: inherit; font-size: 1rem; margin-bottom: 24px; transition: 0.3s; }
-        .text-input:focus { outline: none; border-color: #fbbf24; background: rgba(0,0,0,0.6); }
+        .logo-preview { max-width: 150px; max-height: 80px; border-radius: 8px; margin-top: 10px; display: none; object-fit: contain; background: rgba(255,255,255,0.05); padding: 5px; }
     </style>
 </head>
 <body>
@@ -63,17 +69,45 @@
         <div class="grid-buttons">
             <button class="btn btn-gold" id="openTvBtn"><i data-lucide="monitor-play"></i> Open VIP TV Wall</button>
             <button class="btn btn-dark" id="openQrBtn"><i data-lucide="share-2"></i> Copy Guest Link</button>
-            <button class="btn btn-dark" id="printQrBtn"><i data-lucide="printer"></i> Print QR Code</button>
             <button class="btn btn-red" id="endEventBtn"><i data-lucide="lock"></i> Lock / End Event</button>
         </div>
 
-        <div style="background: rgba(0, 0, 0, 0.3); border: 1px dashed #fbbf24; padding: 20px; border-radius: 16px; margin-top: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
-                <div>
-                    <h3 style="font-family: 'Syne'; font-size: 1.4rem; color: #fbbf24;">Data Export</h3>
-                    <p style="color: #94a3b8; font-size: 0.95rem; margin-top: 5px;">Download all photos as a ZIP file (VIP Unrestricted).</p>
+        <div class="vip-settings" style="margin-bottom: 20px;">
+            <h3 style="color: #fbbf24; margin-bottom: 4px; font-family: 'Syne';"><i data-lucide="palette"></i> Gallery Theme</h3>
+            <p style="color: #94a3b8; font-size: 0.95rem;">Pick a look for the guest upload page and VIP TV wall. Updates live for everyone viewing the event.</p>
+            <div class="theme-picker-grid" id="themePickerGrid">
+                <div class="theme-swatch" data-theme="default">
+                    <div class="theme-swatch-preview" style="background: linear-gradient(135deg, #020617, #3b82f6);"></div>
+                    <div class="theme-swatch-label"><i data-lucide="check-circle" class="theme-swatch-check"></i> Default</div>
                 </div>
-                <button class="btn btn-gold" id="downloadZipBtn" style="padding: 10px 20px;"><i data-lucide="download"></i> Download Gallery (ZIP)</button>
+                <div class="theme-swatch" data-theme="wedding">
+                    <div class="theme-swatch-preview" style="background: linear-gradient(135deg, #fff7f3, #f6c9d0, #c9a063);"></div>
+                    <div class="theme-swatch-label"><i data-lucide="check-circle" class="theme-swatch-check"></i> Wedding</div>
+                </div>
+                <div class="theme-swatch" data-theme="corporate">
+                    <div class="theme-swatch-preview" style="background: linear-gradient(135deg, #0a0f1c, #1e293b, #2563eb);"></div>
+                    <div class="theme-swatch-label"><i data-lucide="check-circle" class="theme-swatch-check"></i> Corporate</div>
+                </div>
+                <div class="theme-swatch" data-theme="party">
+                    <div class="theme-swatch-preview" style="background: linear-gradient(135deg, #070110, #5b0fb5, #ff00c8);"></div>
+                    <div class="theme-swatch-label"><i data-lucide="check-circle" class="theme-swatch-check"></i> Party</div>
+                </div>
+            </div>
+            <p class="theme-save-status" id="themeSaveStatus">Theme saved!</p>
+        </div>
+
+        <div class="vip-settings" id="vipSettings">
+            <h3 style="color: #fbbf24; margin-bottom: 10px; font-family: 'Syne';"><i data-lucide="image"></i> Custom TV Watermark</h3>
+            <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 15px;">Upload a .png or .svg logo to overlay on your ad-free TV experience.</p>
+            <div style="display: flex; gap: 15px; align-items: flex-start; flex-wrap: wrap;">
+                <div>
+                    <input type="file" id="watermarkInput" accept="image/svg+xml, image/png" style="color: white; margin-bottom: 10px; display: block; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+                    <button class="btn btn-dark" id="uploadWatermarkBtn" style="padding: 10px 20px;"><i data-lucide="upload"></i> Upload Logo</button>
+                </div>
+                <div>
+                    <img id="logoPreview" class="logo-preview" src="">
+                    <div id="noLogoText" style="color: #cbd5e1; font-size: 0.85rem; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">No custom logo uploaded</div>
+                </div>
             </div>
         </div>
 
@@ -90,77 +124,21 @@
             </div>
         </div>
     </div>
-
-    <!-- VIP Text Watermark Modal -->
-    <div class="modal-overlay" id="watermarkModalOverlay"></div>
-    <div class="modal-content" id="watermarkModal">
-        <h3 style="font-family: 'Syne'; font-size: 1.6rem; margin-bottom: 10px; color: #fbbf24; display: flex; align-items: center; gap: 10px;">
-            <i data-lucide="pen-tool"></i> Premium Watermark
-        </h3>
-        <p style="color: #94a3b8; font-size: 1rem; margin-bottom: 20px; line-height: 1.5;">
-            Before starting your live event, set a custom text watermark for your gallery.
-        </p>
-
-        <div class="warning-box">
-            <i data-lucide="alert-triangle" style="color: #ef4444; flex-shrink: 0; margin-top: 2px;"></i>
-            <p style="color: #fca5a5; font-size: 0.9rem; line-height: 1.5;">
-                <strong>Permanent Warning:</strong> All images uploaded by guests will be having this text watermark burned into them permanently. This applies to the TV display and downloaded gallery ZIP files.
-            </p>
-        </div>
-
-        <input type="text" id="watermarkTextInput" class="text-input" placeholder="e.g. SnapNexus VIP 2026">
-
-        <div style="display: flex; gap: 12px;">
-            <button class="btn btn-gold" id="confirmWatermarkBtn" style="flex: 1.5;"><i data-lucide="check"></i> Add Watermark</button>
-            <button class="btn btn-dark" id="skipWatermarkBtn" style="flex: 1;">Skip</button>
-        </div>
-    </div>
     
     <style>@keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }</style>
 
     <script>
-        // Universal Client Initialization
-        let cfg, client, account, databases, storage;
-
-        const isCanvasPreview = window.location.protocol === 'blob:' || window.location.origin === 'null';
-        
-        if (isCanvasPreview && !window.SnapNexus) {
-            // Mock environment for Canvas preview protection
-            cfg = { ENDPOINT: '', PROJECT_ID: '', DATABASE_ID: '', COLLECTION_ID: '', BUCKET_ID: '', resolveUrl: (p)=>p };
-            account = { get: async()=>({}), getPrefs: async()=>({tier: 'vip', subExpiry: Date.now() + 100000}), updatePrefs: async()=>{} };
-            databases = { listDocuments: async()=>({documents: [{ $id:'1', eventId:'demo-vip-event', eventName:'VIP Canvas Preview', tier:'vip', status:'active', watermarkConfigured: false }]}), updateDocument: async()=>{} };
-            storage = { listFiles: async()=>({files: []}), getFileView: ()=>({href:''}), getFileDownload: ()=>({href:''}), createFile: async()=>({$id:'1'}), deleteFile: async()=>{} };
-        } else {
-            // REAL PRODUCTION ENVIRONMENT INIT
-            cfg = window.SnapNexus;
-            client = new Appwrite.Client().setEndpoint(cfg.ENDPOINT).setProject(cfg.PROJECT_ID);
-            account = new Appwrite.Account(client);
-            databases = new Appwrite.Databases(client);
-            storage = new Appwrite.Storage(client);
-        }
-
-        function safeRedirect(url) {
-            try { 
-                window.location.href = url; 
-            } catch (e) { 
-                console.warn("Canvas routing prevented to:", url);
-                document.body.innerHTML = `<div class="container" style="text-align:center;"><h2>Routing Prevented</h2><p>In production, you would be redirected to: <b>${url}</b></p></div>`; 
-            }
-        }
-        
-        function safeReload() {
-            try { window.location.reload(); } catch (e) { console.warn("Canvas reload prevented"); }
-        }
+        const cfg = window.SnapNexus;
+        const client = new Appwrite.Client().setEndpoint(cfg.ENDPOINT).setProject(cfg.PROJECT_ID);
+        const account = new Appwrite.Account(client);
+        const databases = new Appwrite.Databases(client);
+        const storage = new Appwrite.Storage(client);
 
         const urlParams = new URLSearchParams(window.location.search);
-        let eventId = urlParams.get('event');
+        const eventId = urlParams.get('event');
         
-        if (!eventId && isCanvasPreview) {
-            eventId = 'demo-vip-event';
-        }
-
         if (!eventId) {
-            safeRedirect('login.html');
+            window.location.href = 'login.html';
             throw new Error("Halt");
         }
 
@@ -173,32 +151,20 @@
             try { 
                 await account.get(); 
                 userPrefs = await account.getPrefs();
-            } catch(e) { 
-                console.error("Auth missing:", e);
-                safeRedirect('login.html'); 
-                throw new Error("Halt"); 
-            }
+            } catch(e) { window.location.href = 'login.html'; throw new Error("Halt"); }
 
             try {
                 const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [ Appwrite.Query.equal('eventId', eventId) ]);
                 if (res.documents.length === 0) { 
-                    safeRedirect(`dashboard.html?event=${eventId}`);
+                    window.location.href = `dashboard.html?event=${eventId}`;
                     throw new Error("Unauthorized: Not VIP"); 
                 }
                 
                 currentEvent = res.documents[0];
                 
-                // Strict Tier Checks & VIP Bouncer
-                let currentTier = currentEvent.tier;
-                if (userPrefs && userPrefs.subExpiry && userPrefs.tier === 'vip' && Date.now() > userPrefs.subExpiry) {
-                    await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { tier: 'starter' });
-                    await account.updatePrefs({ tier: 'starter', subExpiry: null });
-                    currentTier = 'starter';
-                    userPrefs.tier = 'starter';
-                }
-
-                if (currentTier !== 'vip' || !userPrefs || userPrefs.tier !== 'vip') {
-                    safeRedirect(`dashboard.html?event=${eventId}`);
+                // 1. Strict Tier Checks & VIP Bouncer
+                if (currentEvent.tier !== 'vip' || !userPrefs || userPrefs.tier !== 'vip') {
+                    window.location.href = `dashboard.html?event=${eventId}`;
                     throw new Error("Unauthorized: Not VIP");
                 }
                 
@@ -213,65 +179,42 @@
                     statusBadge.classList.add('ended');
                     document.getElementById('endEventBtn').style.display = 'none';
                     document.getElementById('openQrBtn').style.display = 'none';
-                    document.getElementById('printQrBtn').style.display = 'none';
-                    document.getElementById('openTvBtn').style.display = 'none';
                 } else {
                     statusBadge.classList.add('active');
                 }
-
-                // ==========================================
-                // ✨ TEXT WATERMARK POPUP LOGIC ✨
-                // ==========================================
-                const wmOverlay = document.getElementById('watermarkModalOverlay');
-                const wmModal = document.getElementById('watermarkModal');
-
-                if (!currentEvent.watermarkConfigured && currentEvent.status !== 'ended') {
-                    wmOverlay.style.display = 'block';
-                    wmModal.style.display = 'block';
+                
+                if (currentEvent.customWatermark) {
+                    const preview = document.getElementById('logoPreview');
+                    preview.src = currentEvent.customWatermark;
+                    preview.style.display = 'block';
+                    document.getElementById('noLogoText').style.display = 'none';
                 }
 
-                document.getElementById('confirmWatermarkBtn').addEventListener('click', async () => {
-                    const text = document.getElementById('watermarkTextInput').value.trim();
-                    if (!text) return alert("Please enter your watermark text, or click Skip.");
-
-                    const btn = document.getElementById('confirmWatermarkBtn');
-                    btn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin"></i> Applying...';
-                    btn.disabled = true;
-                    lucide.createIcons();
-
-                    try {
-                        await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, {
-                            watermarkText: text,
-                            watermarkConfigured: true
-                        });
-                    } catch (e) {
-                        console.warn("DB Update failed (missing schema?), bypassing locally:", e);
-                    }
-                    wmOverlay.style.display = 'none';
-                    wmModal.style.display = 'none';
+                // Theme Picker
+                const themePickerGrid = document.getElementById('themePickerGrid');
+                const themeSaveStatus = document.getElementById('themeSaveStatus');
+                const setActiveSwatch = (theme) => {
+                    document.querySelectorAll('.theme-swatch').forEach(el => {
+                        el.classList.toggle('active', el.dataset.theme === (theme || 'default'));
+                    });
+                };
+                setActiveSwatch(currentEvent.theme);
+                themePickerGrid.querySelectorAll('.theme-swatch').forEach(swatch => {
+                    swatch.addEventListener('click', async () => {
+                        const theme = swatch.dataset.theme;
+                        setActiveSwatch(theme);
+                        try {
+                            await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { theme });
+                            currentEvent.theme = theme;
+                            themeSaveStatus.classList.add('show');
+                            setTimeout(() => themeSaveStatus.classList.remove('show'), 2000);
+                        } catch (err) {
+                            console.error('Theme save error', err);
+                            setActiveSwatch(currentEvent.theme);
+                            alert("Couldn't save theme. (Does the EventsTable collection have a 'theme' attribute?)");
+                        }
+                    });
                 });
-
-                document.getElementById('skipWatermarkBtn').addEventListener('click', async () => {
-                    const btn = document.getElementById('skipWatermarkBtn');
-                    btn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin"></i> Skipping...';
-                    btn.disabled = true;
-                    lucide.createIcons();
-
-                    try {
-                        await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, {
-                            watermarkText: null,
-                            watermarkConfigured: true
-                        });
-                    } catch (e) {
-                        console.warn("DB Update failed (missing schema?), bypassing locally:", e);
-                    }
-                    wmOverlay.style.display = 'none';
-                    wmModal.style.display = 'none';
-                });
-
-                // ==========================================
-                // HOST CONTROLS
-                // ==========================================
 
                 document.getElementById('openTvBtn').addEventListener('click', () => {
                     window.open(`tv_2.html?event=${currentEvent.eventId}`, '_blank');
@@ -281,121 +224,40 @@
                     navigator.clipboard.writeText(cfg.resolveUrl(`app.html?event=${currentEvent.eventId}`)).then(() => alert("VIP Guest Link Copied!"));
                 });
 
-                document.getElementById('printQrBtn').addEventListener('click', () => {
-                    const guestLink = cfg.resolveUrl(`app.html?event=${currentEvent.eventId}`);
-                    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(guestLink)}`;
-                    const printWindow = window.open('', '_blank');
-                    printWindow.document.write(`
-                        <html><head><title>Print SnapNexus VIP QR</title><style>
-                            body { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: 'Urbanist', sans-serif; text-align: center; background: #020617; color: #fff; }
-                            img { max-width: 400px; margin-bottom: 20px; border-radius: 12px; border: 4px solid #fbbf24; padding: 10px; background: white; }
-                            h1 { font-size: 3rem; margin: 0 0 10px 0; font-family: 'Syne', sans-serif; color: #fbbf24; }
-                            p { font-size: 1.5rem; color: #94a3b8; margin: 0; }
-                            .brand { font-size: 1rem; color: #64748b; margin-top: 20px; font-weight: bold; }
-                            @media print { body { background: white; color: black; } img { border: none; padding: 0; } h1 { color: black; } p { color: #555; } .brand { color: #888; } }
-                        </style></head><body>
-                            <h1>${currentEvent.eventName}</h1>
-                            <p>Scan to upload photos directly to the VIP live gallery!</p>
-                            <img src="${qrUrl}" onload="window.print();window.close();">
-                            <div class="brand">Powered by SnapNexus VIP</div>
-                        </body></html>
-                    `);
-                    printWindow.document.close();
+                document.getElementById('uploadWatermarkBtn').addEventListener('click', async () => {
+                    const file = document.getElementById('watermarkInput').files[0];
+                    if(!file) return alert('Select an image (.png or .svg).');
+                    
+                    const btn = document.getElementById('uploadWatermarkBtn');
+                    btn.disabled = true;
+                    btn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin"></i> Uploading...';
+                    lucide.createIcons();
+                    
+                    try {
+                        const uploaded = await storage.createFile(cfg.BUCKET_ID, Appwrite.ID.unique(), file);
+                        const viewUrl = storage.getFileView(cfg.BUCKET_ID, uploaded.$id).href;
+                        await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { customWatermark: viewUrl });
+                        alert('Logo saved for VIP TV Wall!');
+                        
+                        document.getElementById('logoPreview').src = viewUrl;
+                        document.getElementById('logoPreview').style.display = 'block';
+                        document.getElementById('noLogoText').style.display = 'none';
+                    } catch(err) {
+                        alert("Upload failed: " + err.message);
+                    }
+                    btn.disabled = false;
+                    btn.innerHTML = '<i data-lucide="upload"></i> Upload Logo';
+                    lucide.createIcons();
                 });
-
-                const downloadBtn = document.getElementById('downloadZipBtn');
-                if (downloadBtn) {
-                    downloadBtn.addEventListener('click', async () => {
-                        downloadBtn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin"></i> Zipping VIP Gallery...';
-                        downloadBtn.disabled = true;
-                        lucide.createIcons();
-
-                        try {
-                            const res = await storage.listFiles(cfg.BUCKET_ID, [
-                                Appwrite.Query.startsWith('name', currentEvent.eventId + '_'),
-                                Appwrite.Query.limit(5000)
-                            ]);
-
-                            if (res.files.length === 0) {
-                                alert("There are no photos to download!");
-                                downloadBtn.innerHTML = '<i data-lucide="download"></i> Download Gallery (ZIP)';
-                                downloadBtn.disabled = false;
-                                lucide.createIcons();
-                                return;
-                            }
-
-                            const zip = new JSZip();
-                            const folder = zip.folder("SnapNexus_VIP_" + currentEvent.eventName);
-                            
-                            const downloadPromises = res.files.map(async (file) => {
-                                const dlUrl = storage.getFileDownload(cfg.BUCKET_ID, file.$id).href;
-                                try {
-                                    const response = await fetch(dlUrl);
-                                    if (!response.ok) throw new Error("Network issue fetching image blob");
-                                    const blobData = await response.blob();
-                                    folder.file(file.name, blobData);
-                                } catch(e) { console.error("Failed to fetch", file.$id, e); }
-                            });
-
-                            await Promise.all(downloadPromises);
-                            const content = await zip.generateAsync({ type: "blob" });
-                            
-                            // FIXED: iOS / Safari Safe Download execution
-                            const blobUrl = window.URL.createObjectURL(content);
-                            const a = document.createElement('a');
-                            a.href = blobUrl;
-                            a.download = "SnapNexus_VIP_" + currentEvent.eventName + ".zip";
-                            document.body.appendChild(a);
-                            a.click();
-                            
-                            setTimeout(() => {
-                                document.body.removeChild(a);
-                                window.URL.revokeObjectURL(blobUrl);
-                            }, 100);
-
-                        } catch (err) {
-                            console.error("ZIP Error", err);
-                            alert("Failed to generate ZIP. Please check your connection.");
-                        } finally {
-                            downloadBtn.innerHTML = '<i data-lucide="download"></i> Download Gallery (ZIP)';
-                            downloadBtn.disabled = false;
-                            lucide.createIcons();
-                        }
-                    });
-                }
 
                 document.getElementById('endEventBtn').addEventListener('click', async () => {
                     if(confirm("Lock event? Guests can no longer upload photos.")) {
                         await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { status: 'ended' });
-                        safeReload();
+                        window.location.reload();
                     }
                 });
 
                 const hostGallery = document.getElementById('hostGallery');
-                
-                window.downloadImage = async (fileId, fileName) => {
-                    try {
-                        const dlUrl = storage.getFileDownload(cfg.BUCKET_ID, fileId).href;
-                        const response = await fetch(dlUrl);
-                        const blob = await response.blob();
-                        const blobUrl = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = blobUrl;
-                        a.download = fileName || "SnapNexus_VIP_Photo.jpg";
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(blobUrl);
-                    } catch(err) { alert("Failed to download image."); }
-                };
-
-                window.deleteImage = async (fileId) => {
-                    if (!confirm("Are you sure you want to permanently delete this photo?")) return;
-                    try {
-                        await storage.deleteFile(cfg.BUCKET_ID, fileId);
-                        fetchAndRenderGallery();
-                    } catch(err) { alert("Failed to delete image: " + err.message); }
-                };
                 
                 const fetchAndRenderGallery = async () => {
                     try {
@@ -406,15 +268,14 @@
                         ]);
                         hostGallery.innerHTML = res.files.map(f => {
                             const url = storage.getFileView(cfg.BUCKET_ID, f.$id).href;
-                            return `<div style="border-radius: 12px; overflow: hidden; border: 1px solid rgba(251,191,36,0.3); outline: 2px solid rgba(0,0,0,0); transition: 0.2s; aspect-ratio: 1; background: #000; position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.3);" onmouseenter="this.querySelector('.hover-overlay').style.opacity='1';" onmouseleave="this.querySelector('.hover-overlay').style.opacity='0';">
-                                        <img src="${url}" style="width: 100%; height: 100%; object-fit: cover;">
-                                        <div class="hover-overlay" style="position: absolute; inset: 0; background: rgba(0,0,0,0.6); opacity: 0; transition: opacity 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 15px;">
-                                            <button onclick="downloadImage('${f.$id}', '${f.name.replace(/'/g, "\\'")}')" style="background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: white;"><i data-lucide="download"></i></button>
-                                            <button onclick="deleteImage('${f.$id}')" style="background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer;"><i data-lucide="trash-2" style="color: #ef4444;"></i></button>
-                                        </div>
+                            const isVideo = (f.mimeType || '').startsWith('video/');
+                            const media = isVideo
+                                ? `<video src="${url}" muted loop playsinline style="width: 100%; height: 100%; object-fit: cover;" onmouseover="this.play()" onmouseout="this.pause()"></video>`
+                                : `<img src="${url}" style="width: 100%; height: 100%; object-fit: cover;">`;
+                            return `<div style="border-radius: 12px; overflow: hidden; border: 1px solid rgba(251,191,36,0.3); outline: 2px solid rgba(0,0,0,0); transition: 0.2s; aspect-ratio: 1; background: #000; position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.3);" onmouseover="this.style.transform='scale(1.05)';this.style.zIndex='10'" onmouseout="this.style.transform='scale(1)';this.style.zIndex='1'">
+                                        ${media}
                                     </div>`;
                         }).join('');
-                        lucide.createIcons();
                         if (res.files.length === 0) {
                             hostGallery.innerHTML = '<p style="color: #94a3b8; grid-column: 1 / -1;">Waiting for live photos...</p>';
                         }

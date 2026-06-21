@@ -1,32 +1,83 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta name="robots" content="noindex, nofollow">
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
     <script src="/config.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SnapNexus | VIP Live TV</title>
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Urbanist:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Urbanist:wght@400;600;800&family=Playfair+Display:wght@600;700&family=Lora:ital,wght@0,500;1,500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:'Urbanist',sans-serif; background:#000; color:#ffffff; overflow:hidden; height:100vh; width:100vw; position: relative; }
-        
-        /* Continuous Background Animation */
-        .liquid-mesh { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -3; background: radial-gradient(circle at 20% 30%, #020617, #1e3a8a 30%, #3b82f6 65%, #4f46e5); background-size: 200% 200%; animation: liquidShift 16s ease infinite alternate; }
+
+        /* ---------- Theme tokens ---------- */
+        :root,
+        [data-theme="default"] {
+            --bg-mesh-a: #020617; --bg-mesh-b: #1e3a8a; --bg-mesh-c: #3b82f6; --bg-mesh-d: #4f46e5;
+            --surface-bg: rgba(0, 0, 0, 0.6);
+            --surface-border: rgba(255, 255, 255, 0.1);
+            --text-primary: #ffffff;
+            --text-secondary: #bfdbfe;
+            --accent: #3b82f6;
+            --accent-strong: #fbbf24;
+            --accent-soft: rgba(59, 130, 246, 0.35);
+            --font-heading: 'Syne', sans-serif;
+            --font-body: 'Urbanist', sans-serif;
+        }
+        [data-theme="wedding"] {
+            --bg-mesh-a: #fff7f3; --bg-mesh-b: #fde2e7; --bg-mesh-c: #f6c9d0; --bg-mesh-d: #e9c9a8;
+            --surface-bg: rgba(255, 255, 255, 0.5);
+            --surface-border: rgba(196, 154, 108, 0.4);
+            --text-primary: #5c3a3a;
+            --text-secondary: #8a6a64;
+            --accent: #c9a063;
+            --accent-strong: #a9824f;
+            --accent-soft: rgba(201, 160, 99, 0.35);
+            --font-heading: 'Playfair Display', serif;
+            --font-body: 'Lora', serif;
+        }
+        [data-theme="corporate"] {
+            --bg-mesh-a: #0a0f1c; --bg-mesh-b: #0f172a; --bg-mesh-c: #1e293b; --bg-mesh-d: #334155;
+            --surface-bg: rgba(15, 23, 42, 0.7);
+            --surface-border: rgba(148, 163, 184, 0.25);
+            --text-primary: #e8edf5;
+            --text-secondary: #94a3b8;
+            --accent: #2563eb;
+            --accent-strong: #2563eb;
+            --accent-soft: rgba(37, 99, 235, 0.3);
+            --font-heading: 'Inter', sans-serif;
+            --font-body: 'Inter', sans-serif;
+        }
+        [data-theme="party"] {
+            --bg-mesh-a: #070110; --bg-mesh-b: #1a0530; --bg-mesh-c: #5b0fb5; --bg-mesh-d: #ff00c8;
+            --surface-bg: rgba(20, 4, 32, 0.6);
+            --surface-border: rgba(255, 0, 200, 0.4);
+            --text-primary: #f5f3ff;
+            --text-secondary: #c4b5fd;
+            --accent: #00f0ff;
+            --accent-strong: #ff00c8;
+            --accent-soft: rgba(0, 240, 255, 0.45);
+            --font-heading: 'Urbanist', sans-serif;
+            --font-body: 'Urbanist', sans-serif;
+        }
+
+        body { font-family: var(--font-body); background: #000; color: var(--text-primary); overflow:hidden; height:100vh; width:100vw; position: relative; transition: color 0.4s ease; }
+
+        .liquid-mesh { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -3; background: radial-gradient(circle at 20% 30%, var(--bg-mesh-a), var(--bg-mesh-b) 30%, var(--bg-mesh-c) 65%, var(--bg-mesh-d)); background-size: 200% 200%; animation: liquidShift 16s ease infinite alternate; transition: background 0.6s ease; }
         @keyframes liquidShift { 0% { background-position: 0% 0%; } 50% { background-position: 100% 100%; } 100% { background-position: 0% 50%; } }
-        
+
         .slideshow-container { width: 100vw; height: 100vh; position: absolute; top:0; left:0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.4); z-index: 1; }
-        .photo-layer { position: absolute; max-width: 95%; max-height: 95%; object-fit: contain; opacity: 0; transition: opacity 1.5s ease-in-out; border-radius: 8px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8); }
+        .photo-layer { position: absolute; max-width: 95%; max-height: 95%; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 1.5s ease-in-out; }
         .photo-layer.active { opacity: 1; }
-        
+        .photo-layer img, .photo-layer video { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8), 0 0 50px var(--accent-soft); }
+
         /* Collapsible Sidebar for VIP */
-        .sidebar { position: absolute; left: 0; top: 0; width: 300px; height: 100vh; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); padding: 40px 20px; display: flex; flex-direction: column; align-items: center; z-index: 10; transition: transform 0.4s ease; border-right: 1px solid rgba(255,255,255,0.1); }
+        .sidebar { position: absolute; left: 0; top: 0; width: 300px; height: 100vh; background: var(--surface-bg); backdrop-filter: blur(10px); padding: 40px 20px; display: flex; flex-direction: column; align-items: center; z-index: 10; transition: transform 0.4s ease, background 0.4s ease, border-color 0.4s ease; border-right: 1px solid var(--surface-border); }
         .sidebar.collapsed { transform: translateX(-100%); }
-        .sidebar h1 { font-family: 'Syne'; font-size: 2rem; margin-bottom: 20px; text-align: center; }
-        .qr-placeholder { width: 200px; height: 200px; background: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
-        
+        .sidebar h1 { font-family: var(--font-heading); font-size: 2rem; margin-bottom: 20px; text-align: center; color: var(--text-primary); }
+        .qr-placeholder { width: 200px; height: 200px; background: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; box-shadow: 0 0 25px var(--accent-soft); }
+
         .controls { position: absolute; top: 20px; right: 20px; z-index: 20; display: flex; gap: 10px; }
         .ctrl-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 10px 15px; border-radius: 8px; cursor: pointer; transition: 0.2s; backdrop-filter: blur(5px); display: flex; align-items: center; gap: 5px; }
         .ctrl-btn:hover { background: rgba(255,255,255,0.2); }
@@ -36,10 +87,10 @@
 </head>
 <body>
     <div class="liquid-mesh"></div>
-    
+
     <div class="sidebar" id="sidebar">
         <h1 id="tvEventName">VIP Event</h1>
-        <p style="margin-bottom: 10px; color: #bfdbfe;">Scan to join!</p>
+        <p style="margin-bottom: 10px; color: var(--text-secondary);">Scan to join!</p>
         <div class="qr-placeholder">
             <img id="qrImage" src="" style="width: 100%; border-radius: 10px;">
         </div>
@@ -51,8 +102,8 @@
     </div>
 
     <div class="slideshow-container">
-        <img id="layer1" class="photo-layer" src="" alt="">
-        <img id="layer2" class="photo-layer" src="" alt="">
+        <div id="layer1" class="photo-layer"></div>
+        <div id="layer2" class="photo-layer"></div>
     </div>
 
     <img id="vipLogo" class="custom-watermark" src="" style="display: none;">
@@ -63,6 +114,19 @@
         if (!eventId) { document.body.innerHTML = '<h1 style="color:white; text-align:center; padding-top:20vh;">Invalid TV Link</h1>'; throw new Error("Halt"); }
 
         document.getElementById('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(cfg.resolveUrl(`app.html?event=${eventId}`))}`;
+
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme || 'default');
+        }
+
+        function renderLayer(el, item) {
+            if (!item) { el.innerHTML = ''; return; }
+            if (item.type === 'video') {
+                el.innerHTML = `<video src="${item.url}" autoplay muted loop playsinline></video>`;
+            } else {
+                el.innerHTML = `<img src="${item.url}" alt="">`;
+            }
+        }
 
         let photos = [];
         let currentIndex = 0;
@@ -78,19 +142,13 @@
                 if (res.documents.length > 0) {
                     const doc = res.documents[0];
                     document.getElementById('tvEventName').innerText = doc.eventName;
+                    applyTheme(doc.theme);
+                    if (doc.customWatermark) {
+                        const logoEl = document.getElementById('vipLogo');
+                        logoEl.src = doc.customWatermark;
+                        logoEl.style.display = 'block';
+                    }
                 }
-                
-                // Fetch VIP logo from storage
-                const logoEl = document.getElementById('vipLogo');
-                const adId = eventId + '_logo';
-                const logoUrl = `${cfg.ENDPOINT}/storage/buckets/${cfg.BUCKET_ID}/files/${adId}/view?project=${cfg.PROJECT_ID}`;
-                const imgCheck = new Image();
-                imgCheck.onload = () => { 
-                    logoEl.src = logoUrl; 
-                    logoEl.style.display = 'block';
-                };
-                imgCheck.src = logoUrl;
-                
             } catch(e) { console.error(e); }
 
             async function fetchPhotos() {
@@ -98,11 +156,15 @@
                     const res = await storage.listFiles(cfg.BUCKET_ID, [
                         Appwrite.Query.startsWith('name', eventId + '_'), Appwrite.Query.limit(100), Appwrite.Query.orderDesc('$createdAt')
                     ]);
-                    const newUrls = res.files.map(f => storage.getFileView(cfg.BUCKET_ID, f.$id).href);
-                    if (JSON.stringify(newUrls) !== JSON.stringify(photos)) {
-                        photos = newUrls;
+                    const newItems = res.files.map(f => ({
+                        url: storage.getFileView(cfg.BUCKET_ID, f.$id).href,
+                        type: (f.mimeType || '').startsWith('video/') ? 'video' : 'image'
+                    }));
+                    if (JSON.stringify(newItems) !== JSON.stringify(photos)) {
+                        photos = newItems;
                         if (photos.length > 0 && !layer1.classList.contains('active') && !layer2.classList.contains('active')) {
-                            layer1.src = photos[0]; layer1.classList.add('active');
+                            renderLayer(layer1, photos[0]);
+                            layer1.classList.add('active');
                         }
                     }
                 } catch(e) {}
@@ -111,36 +173,38 @@
             function nextSlide() {
                 if (photos.length === 0) return;
                 currentIndex = (currentIndex + 1) % photos.length;
-                const nextUrl = photos[currentIndex];
-                if (activeLayer === 1) { layer2.src = nextUrl; layer2.classList.add('active'); layer1.classList.remove('active'); activeLayer = 2; }
-                else { layer1.src = nextUrl; layer1.classList.add('active'); layer2.classList.remove('active'); activeLayer = 1; }
+                const nextItem = photos[currentIndex];
+                if (activeLayer === 1) { renderLayer(layer2, nextItem); layer2.classList.add('active'); layer1.classList.remove('active'); activeLayer = 2; }
+                else { renderLayer(layer1, nextItem); layer1.classList.add('active'); layer2.classList.remove('active'); activeLayer = 1; }
             }
 
             const sidebar = document.getElementById('sidebar');
             document.getElementById('collapseSidebarBtn').addEventListener('click', () => { sidebar.classList.toggle('collapsed'); });
-            
+
             const fullscreenBtn = document.getElementById('fullscreenBtn');
             fullscreenBtn.addEventListener('click', () => {
-                if (!document.fullscreenElement) { 
-                    document.documentElement.requestFullscreen(); 
-                    fullscreenBtn.innerHTML='<i data-lucide="minimize"></i> Exit Fullscreen'; 
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen();
+                    fullscreenBtn.innerHTML='<i data-lucide="minimize"></i> Exit Fullscreen';
                     sidebar.classList.add('collapsed');
-                } 
-                else { 
-                    document.exitFullscreen(); 
-                    fullscreenBtn.innerHTML='<i data-lucide="maximize"></i> Fullscreen'; 
+                }
+                else {
+                    document.exitFullscreen();
+                    fullscreenBtn.innerHTML='<i data-lucide="maximize"></i> Fullscreen';
                     sidebar.classList.remove('collapsed');
                 }
                 lucide.createIcons();
             });
 
             fetchPhotos(); setInterval(fetchPhotos, 1500); setInterval(nextSlide, 4000);
-            
+
             async function checkEventStatus() {
                 try {
                     const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [ Appwrite.Query.equal('eventId', eventId) ]);
                     if (res.documents.length > 0 && res.documents[0].status === 'ended') {
                         document.body.innerHTML = '<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; width:100vw; background:#000; z-index:9999; position:absolute; top:0; left:0;"><h1 style="font-size: 4rem; color: #fbbf24; font-family:\'Syne\';">Event Ended</h1></div>';
+                    } else if (res.documents.length > 0) {
+                        applyTheme(res.documents[0].theme);
                     }
                 } catch(e) {}
             }

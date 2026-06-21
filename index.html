@@ -34,7 +34,7 @@
         .sticky-header { position: fixed; top: 0; left: 0; width: 100%; z-index: 1000; padding: 20px 40px; transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1); background: rgba(2, 6, 23, 0.65); backdrop-filter: blur(18px); border-bottom: 1px solid rgba(255,255,255,0.08); }
         .sticky-header.shrink { padding: 12px 40px; background: rgba(2, 6, 23, 0.85); }
         .header-container { max-width: 1280px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
-        .logo { display: flex; align-items: center; gap: 14px; text-decoration: none; }
+        .logo { display: flex; align-items: center; gap: 14px; }
         .logo-img { width: 40px; height: 40px; border-radius: 10px; object-fit: cover; box-shadow: 0 0 15px rgba(251, 191, 36, 0.3); background: #fff; }
         .logo-text { font-weight: 800; font-size: 1.5rem; background: linear-gradient(135deg, #fde047, #f59e0b, #d97706); -webkit-background-clip: text; background-clip: text; color: transparent; letter-spacing: -0.5px; }
 
@@ -104,14 +104,7 @@
 
     <header class="sticky-header" id="stickyHeader">
         <div class="header-container">
-            <!-- UPDATED PLUMBING: Logo now links to STS portal with branding badge -->
-            <a href="https://soni-tech-solutions.vercel.app" class="logo">
-                <img src="SNAPN.png" alt="STS Logo" class="logo-img" onerror="this.style.display='none'">
-                <div style="display: flex; flex-direction: column; justify-content: center;">
-                    <span class="logo-text" style="line-height: 1;">SnapNexus</span>
-                    <span style="font-size: 0.55rem; letter-spacing: 2px; color: #93c5fd; text-transform: uppercase; font-weight: 800; margin-top: 4px; opacity: 0.9;">An STS Product</span>
-                </div>
-            </a>
+            <div class="logo"><img src="SNAPN.png" alt="SnapNexus Logo" class="logo-img" onerror="this.style.display='none'"><span class="logo-text">SnapNexus</span></div>
             <nav class="nav-links"><a href="#features">Features</a><a href="#pricing">Pricing</a><a href="login.html" id="navLoginBtn">Host Login</a><a href="dashboard.html" class="btn-physics btn-outline" style="padding: 8px 20px;">Dashboard</a></nav>
         </div>
     </header>
@@ -166,27 +159,9 @@
     <div class="mobile-sticky-cta"><button onclick="handlePlan('vip')" class="btn-physics btn-gold"><i data-lucide="zap"></i> Upgrade to VIP ₹2999</button></div>
 
     <footer class="glass-deep">
-        <!-- UPDATED PLUMBING: Contact Support now redirects to the STS centralized ticket system -->
-        <div class="footer-links"><a href="#" onclick="showPrivacyPolicy(event)">Privacy Policy</a><a href="#" onclick="showPrivacyPolicy(event)">Terms of Service</a><a href="#">Security</a><a href="https://soni-tech-solutions.vercel.app/#support" target="_blank">Contact Support</a><a href="admin.html">Admin Dashboard</a></div>
+        <div class="footer-links"><a href="#">Privacy Policy</a><a href="#">Terms of Service</a><a href="#">Security</a><a href="mailto:support@snapnexus.app">Contact Support</a></div>
         <p>© 2026 SnapNexus. Engineered by Soni Tech Solutions.</p>
     </footer>
-
-    <!-- Privacy Policy Modal -->
-    <div id="privacyModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(8px); padding: 20px;">
-        <div style="background: rgba(30, 41, 59, 1); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 40px; width: 100%; max-width: 600px; position: relative; max-height: 80vh; overflow-y: auto;">
-            <button onclick="document.getElementById('privacyModal').style.display='none'" style="position: absolute; top: 20px; right: 20px; background: transparent; border: none; color: #fff; cursor: pointer; font-size: 1.5rem;">✕</button>
-            <h2 style="font-family: 'Syne'; font-size: 2rem; margin-bottom: 20px;">Privacy Policy & Terms</h2>
-            <div style="color: #cbd5e1; line-height: 1.6; font-size: 0.95rem;">
-                <p>Welcome to SnapNexus. By using our service, you agree to the following terms:</p><br>
-                <p><strong>1. Data Collection:</strong> We collect photos uploaded during events and basic host account details.</p><br>
-                <p><strong>2. Data Retention:</strong> Photos are kept for 24 hours on Free plans, and up to 30 days or unlimited on premium plans, after which they may be permanently deleted.</p><br>
-                <p><strong>3. Content Moderation:</strong> Hosts are fully responsible for moderating the content projected on their screens. We provide tools to remove inappropriate imagery.</p><br>
-                <p><strong>4. Payments:</strong> Payments are processed securely via our partners. Subscriptions auto-expire and do not auto-renew unless explicitly stated.</p><br>
-                <p><strong>5. Use at Your Own Risk:</strong> The service is provided "as is" without warranty. We are not liable for user-uploaded content or event interruptions.</p>
-            </div>
-            <button class="btn-physics btn-outline" style="margin-top: 20px; width: 100%;" onclick="document.getElementById('privacyModal').style.display='none'">I Understand</button>
-        </div>
-    </div>
 
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script>
@@ -201,38 +176,7 @@
         });
 
         // Appwrite & Razorpay Integration
-        const baseCfg = window.SnapNexus || {};
-        const cfg = {
-            ENDPOINT: baseCfg.ENDPOINT || 'https://cloud.appwrite.io/v1',
-            PROJECT_ID: baseCfg.PROJECT_ID || 'default',
-            DATABASE_ID: baseCfg.DATABASE_ID || 'default',
-            COLLECTION_ID: baseCfg.COLLECTION_ID || 'default'
-        };
-
-        // Record Page Visit Anonymously
-        document.addEventListener('DOMContentLoaded', () => {
-            try {
-                if (!sessionStorage.getItem('visited') && cfg.PROJECT_ID !== 'default') {
-                    const tempClient = new Appwrite.Client().setEndpoint(cfg.ENDPOINT).setProject(cfg.PROJECT_ID);
-                    const tempDB = new Appwrite.Databases(tempClient);
-                    tempDB.createDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, Appwrite.ID.unique(), {
-                        eventId: 'visit_' + Date.now(),
-                        status: 'visit',
-                        eventName: 'Page Visit',
-                        hostEmail: 'anonymous',
-                        tier: 'none'
-                    }).then(() => {
-                        sessionStorage.setItem('visited', 'true');
-                    }).catch(e => { console.log('Telemetry skipped'); });
-                }
-            } catch(e) {}
-        });
-
-        function showPrivacyPolicy(e) {
-            e.preventDefault();
-            document.getElementById('privacyModal').style.display = 'flex';
-        }
-        
+        const cfg = window.SnapNexus;
         const client = new Appwrite.Client().setEndpoint(cfg.ENDPOINT).setProject(cfg.PROJECT_ID);
         const account = new Appwrite.Account(client);
         const databases = new Appwrite.Databases(client);
@@ -241,7 +185,6 @@
         let currentTier = 'starter';
 
         document.addEventListener('DOMContentLoaded', async () => {
-            if (cfg.PROJECT_ID === 'default') return;
             try {
                 currentUser = await account.get();
                 document.getElementById('navLoginBtn').innerText = 'Dashboard';
@@ -286,10 +229,6 @@
 
             const planDetails = planMap[planId];
             if (!planDetails) return;
-
-            if (!confirm("By proceeding with this payment, you agree to our Privacy Policy and Terms of Service.")) {
-                return;
-            }
 
             const options = {
                 key: 'rzp_test_Sf5GBrljv03Pmk',
