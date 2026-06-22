@@ -111,7 +111,7 @@
         .sticky-header { position: fixed; top: 0; left: 0; width: 100%; z-index: 1000; padding: 20px 40px; transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1); background: rgba(2, 6, 23, 0.65); backdrop-filter: blur(18px); border-bottom: 1px solid rgba(255,255,255,0.08); }
         .sticky-header.shrink { padding: 12px 40px; background: rgba(2, 6, 23, 0.85); }
         .header-container { max-width: 1280px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
-        .logo { display: flex; align-items: center; gap: 14px; }
+        .logo { display: flex; align-items: center; gap: 14px; text-decoration: none; }
         .logo-img { width: 40px; height: 40px; border-radius: 10px; object-fit: cover; box-shadow: 0 0 15px rgba(251, 191, 36, 0.3); background: #fff; }
         /* Brand wordmark — fixed font + treatment, regardless of theme */
         .logo-text { font-family: var(--font-brand); font-weight: 800; font-size: 1.5rem; background: linear-gradient(135deg, #fde047, #f59e0b, #d97706); -webkit-background-clip: text; background-clip: text; color: transparent; letter-spacing: -0.5px; }
@@ -182,6 +182,9 @@
         footer { margin-top: 100px; padding: 60px 32px 40px; border-top: 1px solid rgba(255,255,255,0.08); text-align: center; }
         .footer-links { display: flex; justify-content: center; gap: 32px; margin-bottom: 32px; flex-wrap: wrap; }
         .footer-links a { color: #94a3b8; text-decoration: none; font-weight: 600; transition: color 0.2s; cursor: pointer; }
+        footer p { color: var(--text-secondary); }
+        footer p a { color: var(--accent); font-weight: 600; text-decoration: underline; transition: color 0.2s; }
+        footer p a:hover { color: var(--accent-strong); }
 
         .tier-indicator { margin-top: auto; display: none; padding-top: 15px; text-align: center; font-size: 0.9rem; color: #10b981; font-weight: bold; }
         
@@ -195,7 +198,7 @@
 
     <header class="sticky-header" id="stickyHeader">
         <div class="header-container">
-            <div class="logo"><img src="SNAPN.png" alt="SnapNexus Logo" class="logo-img" onerror="this.style.display='none'"><span class="logo-text">SnapNexus</span></div>
+            <a class="logo" href="index.html" aria-label="SnapNexus Home"><img src="SNAPN.png" alt="SnapNexus Logo" class="logo-img" onerror="this.style.display='none'"><span class="logo-text">SnapNexus</span></a>
             <nav class="nav-links"><a href="#features">Features</a><a href="#pricing">Pricing</a><a href="login.html" id="navLoginBtn">Host Login</a><a href="dashboard.html" class="btn-physics btn-outline" style="padding: 8px 20px;">Dashboard</a></nav>
         </div>
     </header>
@@ -278,7 +281,7 @@
 
     <footer class="glass-deep">
         <div class="footer-links"><a href="#">Privacy Policy</a><a href="#">Terms of Service</a><a href="#">Security</a><a href="mailto:support@snapnexus.app">Contact Support</a></div>
-        <p>© 2026 SnapNexus. Engineered by Soni Tech Solutions.</p>
+        <p>© 2026 SnapNexus. A product by <a href="https://soni-tech-solutions.vercel.app/" target="_blank" rel="noopener">Soni Tech Solutions</a>.</p>
     </footer>
 
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
