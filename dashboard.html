@@ -49,14 +49,15 @@
             --radius-card: 30px;
         }
         [data-theme="corporate"] {
-            --bg-mesh-a: #0a0f1c; --bg-mesh-b: #0f172a; --bg-mesh-c: #1e293b; --bg-mesh-d: #334155;
-            --bg-solid: #0a0f1c;
-            --surface-bg: rgba(15, 23, 42, 0.9);
-            --surface-border: rgba(148, 163, 184, 0.25);
-            --text-primary: #e8edf5;
-            --text-secondary: #94a3b8;
-            --accent: #2563eb;
-            --accent-soft: rgba(37, 99, 235, 0.3);
+            --bg-mesh-a: #000000; --bg-mesh-b: #ffc400; --bg-mesh-c: #ff5e00; --bg-mesh-d: #22d3ee;
+            --bg-solid: #020203;
+            --surface-bg: rgba(255, 255, 255, 0.05);
+            --surface-border: rgba(255, 255, 255, 0.14);
+            --text-primary: #ffffff;
+            --text-secondary: #d4d4d8;
+            --accent: #ffc83d;
+            --accent-strong: #ff7a1a;
+            --accent-soft: rgba(255, 200, 61, 0.35);
             --font-heading: 'Inter', sans-serif;
             --font-body: 'Inter', sans-serif;
             --radius-card: 14px;
@@ -79,6 +80,39 @@
 
         .liquid-mesh { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -3; background: radial-gradient(circle at 20% 30%, var(--bg-mesh-a), var(--bg-mesh-b) 30%, var(--bg-mesh-c) 65%, var(--bg-mesh-d)); background-size: 200% 200%; animation: liquidShift 16s ease infinite alternate; transition: background 0.6s ease; }
         @keyframes liquidShift { 0% { background-position: 0% 0%; } 50% { background-position: 100% 100%; } 100% { background-position: 0% 50%; } }
+
+        /* Corporate theme: Aurora Mesh Gradient — single organic blob (cream/gold/amber core, blue rim wrap, grain) */
+        [data-theme="corporate"] .liquid-mesh {
+            background:
+                radial-gradient(ellipse 60% 50% at 18% 15%, rgba(10, 69, 112, 0.55), transparent 60%),
+                radial-gradient(ellipse 50% 45% at 8% 92%, rgba(10, 69, 112, 0.35), transparent 60%),
+                #020203;
+            animation: none;
+        }
+        [data-theme="corporate"] .liquid-mesh::before {
+            content: '';
+            position: absolute;
+            top: 6%; left: -10%;
+            width: 78%; height: 80%;
+            background: radial-gradient(ellipse 70% 65% at 40% 58%, #f3fa7a 0%, #e9d34a 16%, #d9a01f 32%, #b16d02 50%, #7a4400 66%, transparent 82%);
+            border-radius: 38% 62% 58% 42% / 52% 46% 54% 48%;
+            filter: blur(45px);
+            animation: corporateBlobMorph 26s ease-in-out infinite alternate;
+        }
+        [data-theme="corporate"] .liquid-mesh::after {
+            content: '';
+            position: absolute; inset: 0;
+            background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48ZmlsdGVyIGlkPSJuIj48ZmVUdXJidWxlbmNlIHR5cGU9ImZyYWN0YWxOb2lzZSIgYmFzZUZyZXF1ZW5jeT0iMC44NSIgbnVtT2N0YXZlcz0iMyIgc3RpdGNoVGlsZXM9InN0aXRjaCIvPjxmZUNvbG9yTWF0cml4IHR5cGU9Im1hdHJpeCIgdmFsdWVzPSIwIDAgMCAwIDAgIDAgMCAwIDAgMCAgMCAwIDAgMCAwICAwIDAgMCAwLjEyIDAiLz48L2ZpbHRlcj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWx0ZXI9InVybCglMjNuKSIvPjwvc3ZnPg==");
+            background-size: 220px 220px;
+            background-repeat: repeat;
+            mix-blend-mode: overlay;
+            opacity: 0.55;
+        }
+        @keyframes corporateBlobMorph {
+            0%   { border-radius: 38% 62% 58% 42% / 52% 46% 54% 48%; transform: rotate(-4deg) scale(1); }
+            50%  { border-radius: 48% 52% 45% 55% / 45% 55% 48% 52%; transform: rotate(2deg) scale(1.04); }
+            100% { border-radius: 42% 58% 50% 50% / 50% 48% 52% 50%; transform: rotate(-6deg) scale(1); }
+        }
 
         .container { max-width: 900px; margin: 40px auto; background: var(--surface-bg); backdrop-filter: blur(16px); border: 1px solid var(--surface-border); border-radius: var(--radius-card); padding: 40px; position: relative; z-index: 10; transition: background 0.4s ease, border-color 0.4s ease, border-radius 0.4s ease; }
         h1 { font-family: var(--font-heading); font-size: 2.5rem; margin-bottom: 10px; }
@@ -157,7 +191,7 @@
                 <div class="theme-swatch-label"><i data-lucide="check-circle" class="theme-swatch-check"></i> Wedding</div>
             </div>
             <div class="theme-swatch" data-theme="corporate">
-                <div class="theme-swatch-preview" style="background: linear-gradient(135deg, #0a0f1c, #1e293b, #2563eb);"></div>
+                <div class="theme-swatch-preview" style="background: radial-gradient(ellipse 70% 65% at 30% 55%, #f3fa7a 0%, #d9a01f 30%, #b16d02 55%, transparent 80%), radial-gradient(ellipse 60% 50% at 15% 10%, rgba(10,69,112,0.7), transparent 65%), #020203;"></div>
                 <div class="theme-swatch-label"><i data-lucide="check-circle" class="theme-swatch-check"></i> Corporate</div>
             </div>
             <div class="theme-swatch" data-theme="party">
