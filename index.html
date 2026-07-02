@@ -147,7 +147,8 @@
         .hero-float-tile::after { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent); }
 
         .hero-badge { display: inline-flex; align-items: center; gap: 8px; background: var(--accent-soft); border: 1px solid var(--surface-border-soft); padding: 8px 20px; border-radius: 50px; font-size: 0.9rem; font-weight: 700; color: var(--accent); margin-bottom: 24px; transition: background 0.4s ease, color 0.4s ease; }
-        .hero h1 { font-size: clamp(2.8rem, 7vw, 4.8rem); font-weight: 800; line-height: 1.1; letter-spacing: -0.03em; background: linear-gradient(135deg, var(--text-primary), var(--text-secondary), var(--accent)); -webkit-background-clip: text; background-clip: text; color: transparent; margin: 0 0 24px; transition: background 0.4s ease; }
+        .hero h1 { font-family: var(--font-brand); font-size: clamp(2.8rem, 7vw, 4.8rem); font-weight: 800; line-height: 1.1; letter-spacing: -0.03em; background: linear-gradient(135deg, var(--text-primary), var(--text-secondary), var(--accent)); -webkit-background-clip: text; background-clip: text; color: transparent; margin: 0 0 24px; transition: background 0.4s ease; animation: h1SlideUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.35s both; }
+        @keyframes h1SlideUp { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: translateY(0); } }
         .hero-sub { font-size: 1.25rem; max-width: 680px; margin: 0 auto 40px; color: var(--text-secondary); font-weight: 500; }
         .hero-cta { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; }
 
@@ -581,23 +582,6 @@
 
             // Badge
             tl.to('.hero-badge', { opacity: 1, y: 0, duration: 0.6, ease: 'back.out(1.4)' }, 0.2);
-
-            // H1 word-by-word reveal — h1 itself stays opacity:1 always;
-            // words hide via overflow:hidden on the wrapper span.
-            const h1 = document.getElementById('heroH1');
-            try {
-                const lines = h1.innerHTML.split('<br>');
-                h1.innerHTML = lines.map(line =>
-                    line.trim().split(' ').map(w =>
-                        `<span class="h1-word" style="display:inline-block; overflow:hidden; vertical-align:bottom;"><span style="display:inline-block; transform:translateY(110%)">${w}&nbsp;</span></span>`
-                    ).join('')
-                ).join('<br>');
-                tl.to('.h1-word > span', {
-                    y: '0%', duration: 0.65, ease: 'power3.out', stagger: 0.06
-                }, 0.4);
-            } catch(e) {
-                gsap.from(h1, { opacity: 0.3, y: 10, duration: 0.8, ease: 'power2.out', delay: 0.4 });
-            }
 
             // Hero h1 parallax
             gsap.to('#heroH1', {
