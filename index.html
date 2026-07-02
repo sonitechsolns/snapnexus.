@@ -582,10 +582,10 @@
             // Badge
             tl.to('.hero-badge', { opacity: 1, y: 0, duration: 0.6, ease: 'back.out(1.4)' }, 0.2);
 
-            // H1 word-by-word reveal with fallback
+            // H1 word-by-word reveal — h1 itself stays opacity:1 always;
+            // words hide via overflow:hidden on the wrapper span.
             const h1 = document.getElementById('heroH1');
             try {
-                gsap.set(h1, { opacity: 0 });
                 const lines = h1.innerHTML.split('<br>');
                 h1.innerHTML = lines.map(line =>
                     line.trim().split(' ').map(w =>
@@ -593,11 +593,10 @@
                     ).join('')
                 ).join('<br>');
                 tl.to('.h1-word > span', {
-                    y: '0%', duration: 0.65, ease: 'power3.out', stagger: 0.06,
-                    onStart: () => gsap.set(h1, { opacity: 1 })
+                    y: '0%', duration: 0.65, ease: 'power3.out', stagger: 0.06
                 }, 0.4);
             } catch(e) {
-                gsap.fromTo(h1, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out', delay: 0.4 });
+                gsap.from(h1, { opacity: 0.3, y: 10, duration: 0.8, ease: 'power2.out', delay: 0.4 });
             }
 
             // Hero h1 parallax
