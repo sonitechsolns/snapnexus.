@@ -383,18 +383,18 @@
                     <div class="mockup-live-label">📸 Photos Live</div>
                     <div class="mockup-row">
                         <span style="font-size:0.72rem;color:rgba(255,255,255,0.45);min-width:48px;">Views</span>
-                        <div class="mockup-bar-track"><div class="mockup-bar-fill blue" data-width="82"></div></div>
-                        <span style="font-size:0.72rem;color:rgba(255,255,255,0.45);min-width:28px;">82%</span>
+                        <div class="mockup-bar-track"><div class="mockup-bar-fill blue" data-width="60"></div></div>
+                        <span style="font-size:0.72rem;color:rgba(255,255,255,0.45);min-width:28px;">—</span>
                     </div>
                     <div class="mockup-row">
                         <span style="font-size:0.72rem;color:rgba(255,255,255,0.45);min-width:48px;">Uploads</span>
-                        <div class="mockup-bar-track"><div class="mockup-bar-fill green" data-width="65"></div></div>
-                        <span style="font-size:0.72rem;color:rgba(255,255,255,0.45);min-width:28px;">65%</span>
+                        <div class="mockup-bar-track"><div class="mockup-bar-fill green" data-width="60"></div></div>
+                        <span style="font-size:0.72rem;color:rgba(255,255,255,0.45);min-width:28px;">—</span>
                     </div>
                     <div class="mockup-row">
                         <span style="font-size:0.72rem;color:rgba(255,255,255,0.45);min-width:48px;">Rating</span>
-                        <div class="mockup-bar-track"><div class="mockup-bar-fill gold" data-width="94"></div></div>
-                        <span style="font-size:0.72rem;color:rgba(255,255,255,0.45);min-width:28px;">94%</span>
+                        <div class="mockup-bar-track"><div class="mockup-bar-fill gold" data-width="60"></div></div>
+                        <span style="font-size:0.72rem;color:rgba(255,255,255,0.45);min-width:28px;">—</span>
                     </div>
                     <div class="sparkline" id="sparkline"></div>
                     <div class="mockup-grid">
@@ -490,7 +490,7 @@
     <div class="mobile-sticky-cta"><button onclick="handlePlan('vip')" class="btn-physics btn-gold"><i data-lucide="zap"></i> Upgrade to VIP ₹2999</button></div>
 
     <footer class="glass-deep">
-        <div class="footer-links"><a href="#">Privacy Policy</a><a href="#">Terms of Service</a><a href="#">Security</a><a href="mailto:support@snapnexus.app">Contact Support</a></div>
+        <div class="footer-links"><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms of Service</a><a href="security.html">Security</a><a href="mailto:sooperfast.net@yahoo.com">Contact Support</a><a href="https://soni-tech-solutions.vercel.app" target="_blank" rel="noopener">Report Issue</a></div>
         <p>© 2026 SnapNexus. A product by <a href="https://soni-tech-solutions.vercel.app/" target="_blank" rel="noopener">Soni Tech Solutions</a>.</p>
     </footer>
 
@@ -916,6 +916,22 @@
                 currentTier = (prefs && prefs.tier) ? prefs.tier : 'starter';
                 const ind = document.getElementById(`ind-${currentTier}`);
                 if (ind) ind.style.display = 'block';
+            } catch(e) {}
+
+            // Record Page Visit Anonymously
+            try {
+                if (!sessionStorage.getItem('visited') && cfg.PROJECT_ID !== 'default') {
+                    const visitEmail = (currentUser && currentUser.email) ? currentUser.email : 'anonymous';
+                    databases.createDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, Appwrite.ID.unique(), {
+                        eventId: 'visit_' + Date.now(),
+                        status: 'visit',
+                        eventName: 'Page Visit',
+                        hostEmail: visitEmail,
+                        tier: 'none'
+                    }).then(() => {
+                        sessionStorage.setItem('visited', 'true');
+                    }).catch(e => { console.log('Telemetry skipped'); });
+                }
             } catch(e) {}
         });
 
