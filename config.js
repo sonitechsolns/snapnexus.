@@ -5,8 +5,6 @@ const SnapNexus = {
     BUCKET_ID: '69d8f2b800397ad57e50',
     DATABASE_ID: '69d8f0b0003c6d1e4d93',
     COLLECTION_ID: 'EventsTable',
-    GROUPS_COLLECTION_ID: 'groups',
-    UPLOADS_COLLECTION_ID: 'uploads',
     
     // Helper: build absolute URL for internal links
     resolveUrl: function(relativePath) {
