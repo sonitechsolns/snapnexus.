@@ -145,7 +145,28 @@
         </button>
         <p class="status-msg" id="statusMsg">Tap to send a photo or video</p>
         <p class="hint-msg">Up to 5 files · Videos max 15s &amp; 15MB</p>
-        <input type="file" id="fileInput" accept="image/*,video/mp4,video/quicktime" multiple>
+        <div style="display: flex; gap: 10px; margin-top: 15px; justify-content: center;">
+            <button id="btnPublicGallery" style="padding: 10px 20px; border-radius: 20px; border: 1px solid var(--accent); background: var(--surface-bg); color: var(--accent); font-weight: bold; cursor: pointer; transition: 0.2s;">🌍 Public Gallery</button>
+            <button id="btnCreateGroup" style="padding: 10px 20px; border-radius: 20px; border: 1px solid var(--accent); background: transparent; color: var(--accent); font-weight: bold; cursor: pointer; transition: 0.2s;">🔒 Join / Create Group</button>
+        </div>
+        <div id="miniGallery" style="display: none; margin-top: 20px; width: 100%; border-top: 1px solid var(--surface-border); padding-top: 20px;">
+            <h3 style="font-size: 1rem; margin-bottom: 10px; color: var(--text-secondary);">Group Gallery</h3>
+            <div id="miniGalleryGrid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;"></div>
+        </div>
+        <input type="file" id="fileInput" accept="image/jpeg, image/png, image/heic, video/mp4, video/quicktime" multiple>
+    </div>
+
+    <!-- Private Group Modal -->
+    <div id="groupModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(8px);">
+        <div style="background: var(--surface-bg); border: 1px solid var(--surface-border); border-radius: 24px; padding: 40px; width: 90%; max-width: 400px; text-align: center;">
+            <h2 style="font-family: var(--font-heading); margin-bottom: 20px;">Private Group</h2>
+            <input type="text" id="groupNameInput" placeholder="Group Name (e.g. Groom's Squad)" style="width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 12px; border: 1px solid var(--surface-border); background: rgba(0,0,0,0.2); color: white;">
+            <input type="password" id="groupPasscodeInput" placeholder="Passcode" style="width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 12px; border: 1px solid var(--surface-border); background: rgba(0,0,0,0.2); color: white;">
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button id="joinGroupBtn" style="padding: 10px 20px; border-radius: 12px; background: var(--accent); color: white; border: none; font-weight: bold; cursor: pointer;">Join / Create</button>
+                <button id="closeGroupModalBtn" style="padding: 10px 20px; border-radius: 12px; background: transparent; color: white; border: 1px solid var(--surface-border); cursor: pointer;">Cancel</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -238,6 +259,144 @@
             const uploadBtn = document.getElementById('uploadBtn');
             const fileInput = document.getElementById('fileInput');
 
+            let currentVisibilityTarget = 'PUBLIC';
+            let activeGroupSession = null;
+
+            // Group Logic Initialization
+            const btnPublicGallery = document.getElementById('btnPublicGallery');
+            const btnCreateGroup = document.getElementById('btnCreateGroup');
+            const groupModal = document.getElementById('groupModal');
+            const closeGroupModalBtn = document.getElementById('closeGroupModalBtn');
+            const joinGroupBtn = document.getElementById('joinGroupBtn');
+            const groupNameInput = document.getElementById('groupNameInput');
+            const groupPasscodeInput = document.getElementById('groupPasscodeInput');
+            
+            async function hashPasscode(passcode) {
+                const encoder = new TextEncoder();
+                const data = encoder.encode(passcode);
+                const hash = await crypto.subtle.digest('SHA-256', data);
+                return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+            }
+            
+            async function renderMiniGallery() {
+                const miniGallery = document.getElementById('miniGallery');
+                const miniGalleryGrid = document.getElementById('miniGalleryGrid');
+                
+                miniGallery.style.display = 'block';
+                const galleryTitle = document.querySelector('#miniGallery h3');
+                if (currentVisibilityTarget === 'PUBLIC') {
+                    if (galleryTitle) galleryTitle.innerText = 'Public Gallery';
+                } else {
+                    if (galleryTitle) galleryTitle.innerText = 'Group Gallery';
+                }
+
+                try {
+                    const queries = [
+                        Appwrite.Query.equal('event_id', eventId),
+                        Appwrite.Query.orderDesc('$createdAt'),
+                        Appwrite.Query.limit(9)
+                    ];
+                    
+                    if (currentVisibilityTarget === 'PUBLIC') {
+                        queries.push(Appwrite.Query.isNull('group_id'));
+                    } else {
+                        queries.push(Appwrite.Query.equal('group_id', activeGroupSession));
+                    }
+
+                    const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.UPLOADS_COLLECTION_ID, queries);
+                    if (res.documents.length === 0) {
+                        miniGalleryGrid.innerHTML = '<p style="grid-column: 1/-1; color: var(--text-secondary); font-size: 0.8rem;">No photos yet.</p>';
+                        return;
+                    }
+                    miniGalleryGrid.innerHTML = res.documents.map(doc => {
+                        return `<div style="aspect-ratio: 1; border-radius: 8px; overflow: hidden; background: #000;">
+                                    <img src="${doc.file_url}" style="width: 100%; height: 100%; object-fit: cover;">
+                                </div>`;
+                    }).join('');
+                } catch (e) {
+                    miniGalleryGrid.innerHTML = '<p style="grid-column: 1/-1; color: #ef4444; font-size: 0.8rem;">Error loading gallery.</p>';
+                }
+            }
+
+            btnPublicGallery.addEventListener('click', () => {
+                currentVisibilityTarget = 'PUBLIC';
+                activeGroupSession = null;
+                sessionStorage.removeItem('activeGroupSession');
+                sessionStorage.removeItem('activeGroupName');
+                btnCreateGroup.innerText = '🔒 Join / Create Group';
+                groupModal.style.display = 'none';
+                showToast('Switched to Public', 'success');
+                renderMiniGallery();
+            });
+
+            btnCreateGroup.addEventListener('click', () => {
+                groupModal.style.display = 'flex';
+            });
+
+            closeGroupModalBtn.addEventListener('click', () => { groupModal.style.display = 'none'; });
+
+            joinGroupBtn.addEventListener('click', async () => {
+                const groupName = groupNameInput.value.trim();
+                const passcode = groupPasscodeInput.value.trim();
+                if (!groupName || !passcode) return showToast('Please enter both group name and passcode.', 'error');
+                
+                joinGroupBtn.innerText = 'Joining...';
+                joinGroupBtn.disabled = true;
+
+                try {
+                    const hashed = await hashPasscode(passcode);
+                    let res = await databases.listDocuments(cfg.DATABASE_ID, cfg.GROUPS_COLLECTION_ID, [
+                        Appwrite.Query.equal('event_id', eventId),
+                        Appwrite.Query.equal('group_name', groupName)
+                    ]);
+                    
+                    let groupId;
+                    if (res.documents.length > 0) {
+                        const group = res.documents[0];
+                        if (group.passcode !== hashed) throw new Error("Invalid passcode");
+                        groupId = group.$id;
+                    } else {
+                        const newGroup = await databases.createDocument(cfg.DATABASE_ID, cfg.GROUPS_COLLECTION_ID, Appwrite.ID.unique(), {
+                            event_id: eventId,
+                            group_name: groupName,
+                            passcode: hashed,
+                            created_by_token: 'anonymous_' + Math.random().toString(36).substr(2, 9)
+                        });
+                        groupId = newGroup.$id;
+                        showToast('Created new private group!', 'success');
+                    }
+                    
+                    currentVisibilityTarget = groupId;
+                    activeGroupSession = groupId;
+                    sessionStorage.setItem('activeGroupSession', groupId);
+                    sessionStorage.setItem('activeGroupName', groupName);
+                    
+                    btnCreateGroup.innerText = `🔒 ${groupName}`;
+                    groupModal.style.display = 'none';
+                    showToast(`Joined group ${groupName}`, 'success');
+                    renderMiniGallery();
+                } catch (err) {
+                    showToast(err.message || 'Error joining group', 'error');
+                } finally {
+                    joinGroupBtn.innerText = 'Join / Create';
+                    joinGroupBtn.disabled = false;
+                    groupPasscodeInput.value = '';
+                }
+            });
+
+            const savedSession = sessionStorage.getItem('activeGroupSession');
+            const savedGroupName = sessionStorage.getItem('activeGroupName');
+            if (savedSession && savedGroupName) {
+                currentVisibilityTarget = savedSession;
+                activeGroupSession = savedSession;
+                btnCreateGroup.innerText = `🔒 ${savedGroupName}`;
+                renderMiniGallery();
+            }
+            
+            setInterval(() => {
+                if (currentVisibilityTarget !== 'PUBLIC') renderMiniGallery();
+            }, 5000);
+
             if (!isDemo) {
                 try {
                     const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [ Appwrite.Query.equal('eventId', eventId) ]);
@@ -263,6 +422,7 @@
                 let sent = 0;
 
                 for (let i = 0; i < files.length; i++) {
+                    await new Promise(r => setTimeout(r, 100)); // iOS multi-upload delay
                     const file = files[i];
                     statusMsg.innerText = `Checking ${i + 1}/${files.length}...`;
                     const kind = await validateFile(file);
@@ -286,7 +446,17 @@
                         const safeName = `${eventId}_${Date.now()}_${i}_${file.name.replace(/[^a-zA-Z0-9.]/g, '')}`;
                         const safeFile = new File([uploadBlob], safeName, { type: mimeType });
 
-                        await storage.createFile(cfg.BUCKET_ID, Appwrite.ID.unique(), safeFile);
+                        const uploadedFile = await storage.createFile(cfg.BUCKET_ID, Appwrite.ID.unique(), safeFile);
+                        const fileUrl = storage.getFileView(cfg.BUCKET_ID, uploadedFile.$id).href;
+                        
+                        await databases.createDocument(cfg.DATABASE_ID, cfg.UPLOADS_COLLECTION_ID, Appwrite.ID.unique(), {
+                            file_id: uploadedFile.$id,
+                            event_id: eventId,
+                            group_id: activeGroupSession,
+                            is_public_wall_allowed: currentVisibilityTarget === 'PUBLIC',
+                            file_url: fileUrl
+                        });
+                        
                         sent++;
                     } catch (err) {
                         console.error("Compression/Upload Error:", err);
