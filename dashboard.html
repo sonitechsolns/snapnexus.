@@ -160,6 +160,7 @@
     </style>
 </head>
 <body>
+    <div class="toast-container" id="toastContainer" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 10px; align-items: center; width: 90%; max-width: 380px; pointer-events: none;"></div>
     <div class="liquid-mesh"></div>
     <div class="container" id="mainContainer">
         <a href="login.html" style="color: #94a3b8; text-decoration: none; margin-bottom: 20px; display: inline-block;">&larr; Back to Events</a>
@@ -279,6 +280,23 @@
 
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
+
+            function showToast(message, type = 'info') {
+                const container = document.getElementById('toastContainer');
+                if (!container) return alert(message);
+                const toast = document.createElement('div');
+                toast.style.cssText = `background: var(--surface-bg); border: 1px solid var(--surface-border); color: var(--text-primary); padding: 12px 18px; border-radius: 14px; font-family: var(--font-body); font-weight: 600; font-size: 0.9rem; box-shadow: 0 10px 30px rgba(0,0,0,0.35); backdrop-filter: blur(14px); opacity: 0; transform: translateY(-16px); transition: opacity 0.3s ease, transform 0.3s ease; display: flex; align-items: center; gap: 8px; width: 100%; text-align: left;`;
+                if (type === 'error') toast.style.borderColor = '#ef4444';
+                if (type === 'success') toast.style.borderColor = '#10b981';
+                const icon = type === 'error' ? '⚠️' : (type === 'success' ? '✅' : 'ℹ️');
+                toast.innerHTML = `<span style="flex-shrink:0; font-size:1.1rem;">${icon}</span><span>${message}</span>`;
+                container.appendChild(toast);
+                requestAnimationFrame(() => { toast.style.opacity = '1'; toast.style.transform = 'translateY(0)'; });
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    setTimeout(() => toast.remove(), 300);
+                }, 4000);
+            }
             
             let userPrefs = null;
             try { 
@@ -512,6 +530,25 @@
                 const hostGallery = document.getElementById('hostGallery');
                 hostGalleryContainer.style.display = 'block';
 
+                hostGallery.addEventListener('click', async (e) => {
+                    const btn = e.target.closest('.pin-btn');
+                    if (!btn || btn.disabled || btn.innerText.includes('Pinned')) return;
+                    
+                    const docId = btn.dataset.id;
+                    btn.disabled = true;
+                    btn.innerText = 'Pinning...';
+                    try {
+                        await databases.updateDocument(cfg.DATABASE_ID, cfg.UPLOADS_COLLECTION_ID, docId, { is_pinned: true });
+                        btn.innerText = 'Pinned ✅';
+                        btn.style.background = 'rgba(16, 185, 129, 0.8)';
+                        showToast('Photo pinned to TV!', 'success');
+                    } catch (err) {
+                        btn.disabled = false;
+                        btn.innerText = '📌 Pin to TV';
+                        showToast('Failed to pin photo: ' + err.message, 'error');
+                    }
+                });
+
                 const fetchAndRenderGallery = async () => {
                     try {
                         const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.UPLOADS_COLLECTION_ID, [
@@ -529,6 +566,7 @@
                             return `<div style="border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); aspect-ratio: 1; background: #000; position: relative;">
                                         ${media}
                                         ${!f.is_public_wall_allowed ? `<div style="position:absolute; top:4px; right:4px; background:rgba(239, 68, 68, 0.8); color:white; font-size:10px; padding:2px 6px; border-radius:4px; font-weight:bold;">PRIVATE</div>` : ''}
+                                        ${(currentEvent.tier === 'vip') ? `<button class="pin-btn" data-id="${f.$id}" style="position:absolute; bottom:4px; right:4px; background:${f.is_pinned ? 'rgba(16, 185, 129, 0.8)' : 'rgba(0,0,0,0.7)'}; border:none; color:white; font-size:10px; padding:4px 8px; border-radius:4px; cursor:pointer; z-index:10; transition:0.2s;">${f.is_pinned ? 'Pinned ✅' : '📌 Pin to TV'}</button>` : ''}
                                     </div>`;
                         }).join('');
                         if (res.documents.length === 0) {
