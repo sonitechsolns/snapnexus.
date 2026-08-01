@@ -536,13 +536,22 @@
                         const uploadedFile = await storage.createFile(cfg.BUCKET_ID, Appwrite.ID.unique(), safeFile);
                         const fileUrl = storage.getFileView(cfg.BUCKET_ID, uploadedFile.$id).href;
                         
-                        await databases.createDocument(cfg.DATABASE_ID, cfg.UPLOADS_COLLECTION_ID, Appwrite.ID.unique(), {
+                        // Clean payload construction to bypass strict Appwrite text/null constraint validation
+                        let uploadPayload = {
                             file_id: uploadedFile.$id,
                             event_id: eventId,
-                            group_id: activeGroupSession,
-                            is_public_wall_allowed: currentVisibilityTarget === 'PUBLIC',
                             file_url: fileUrl
-                        });
+                        };
+
+                        // Explicitly handle visibility evaluation strictly inside JavaScript before hitting DB type checks
+                        uploadPayload.is_public_wall_allowed = (currentVisibilityTarget === 'PUBLIC');
+
+                        // Do NOT pass a literal null value to group_id. Only assign if an active group session context exists.
+                        if (activeGroupSession) {
+                            uploadPayload.group_id = String(activeGroupSession);
+                        }
+
+                        await databases.createDocument(cfg.DATABASE_ID, cfg.UPLOADS_COLLECTION_ID, Appwrite.ID.unique(), uploadPayload);
                         
                         sent++;
                     } catch (err) {
