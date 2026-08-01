@@ -348,7 +348,7 @@
                         for (let i = 0; i < res.documents.length; i++) {
                             const doc = res.documents[i];
                             if (!doc.file_url) continue;
-                            const response = await fetch(doc.file_url);
+                            const response = await fetch(doc.file_url + '&nocache=' + Date.now(), { mode: 'cors', cache: 'no-store' });
                             const blob = await response.blob();
                             let ext = ".jpg";
                             if (blob.type.includes("png")) ext = ".png";
@@ -393,9 +393,6 @@
 
             btnPublicGallery.addEventListener('click', () => {
                 currentVisibilityTarget = 'PUBLIC';
-                activeGroupSession = null;
-                sessionStorage.removeItem('activeGroupSession');
-                sessionStorage.removeItem('activeGroupName');
                 
                 setSegmentActive(true);
                 groupModal.style.display = 'none';
@@ -404,8 +401,14 @@
             });
 
             btnCreateGroup.addEventListener('click', () => {
+                if (!activeGroupSession && sessionStorage.getItem('activeGroupSession')) {
+                    activeGroupSession = sessionStorage.getItem('activeGroupSession');
+                }
                 if (activeGroupSession) {
+                    currentVisibilityTarget = activeGroupSession;
                     setSegmentActive(false);
+                    const groupName = sessionStorage.getItem('activeGroupName') || 'Group';
+                    showToast(`Switched to ${groupName}`, 'success');
                     renderMiniGallery();
                 } else {
                     groupModal.style.display = 'flex';
