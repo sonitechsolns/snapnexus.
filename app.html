@@ -6,6 +6,7 @@
         posthog.init('phc_qTBMwhJu6UwxVHTpDkL2dr2ryQDBF776uQG573GjYbbj',{api_host:'https://us.i.posthog.com', defaults:'2026-01-30'})
     </script>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="/config.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
@@ -151,7 +152,10 @@
             <button id="btnCreateGroup" class="segment-btn" style="flex: 1; padding: 10px 0; background: transparent; border: none; color: var(--text-secondary); font-weight: bold; font-size: 0.95rem; cursor: pointer; position: relative; z-index: 1; transition: color 0.3s;">🔒 Private Group</button>
         </div>
         <div id="miniGallery" style="display: none; margin-top: 20px; width: 100%; border-top: 1px solid var(--surface-border); padding-top: 20px;">
-            <h3 style="font-size: 1rem; margin-bottom: 10px; color: var(--text-secondary);">Group Gallery</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h3 style="font-size: 1rem; color: var(--text-secondary); margin: 0;">Group Gallery</h3>
+                <button id="btnDownloadZip" style="padding: 6px 12px; border-radius: 8px; border: none; background: var(--accent); color: white; font-weight: bold; font-size: 0.8rem; cursor: pointer;">📥 Download All</button>
+            </div>
             <div id="miniGalleryGrid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;"></div>
         </div>
         <input type="file" id="fileInput" accept="image/jpeg, image/png, image/heic, video/mp4, video/quicktime" multiple>
@@ -294,7 +298,6 @@
                 try {
                     const queries = [
                         Appwrite.Query.equal('event_id', eventId),
-                        Appwrite.Query.orderDesc('$createdAt'),
                         Appwrite.Query.limit(9)
                     ];
                     
@@ -305,6 +308,7 @@
                     }
 
                     const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.UPLOADS_COLLECTION_ID, queries);
+                    res.documents.sort((a, b) => new Date(b.$createdAt) - new Date(a.$createdAt));
                     if (res.documents.length === 0) {
                         miniGalleryGrid.innerHTML = '<p style="grid-column: 1/-1; color: var(--text-secondary); font-size: 0.8rem;">No photos yet.</p>';
                         return;
@@ -317,6 +321,60 @@
                 } catch (e) {
                     miniGalleryGrid.innerHTML = '<p style="grid-column: 1/-1; color: #ef4444; font-size: 0.8rem;">Error loading gallery.</p>';
                 }
+            }
+
+            const btnDownloadZip = document.getElementById('btnDownloadZip');
+            if (btnDownloadZip) {
+                btnDownloadZip.addEventListener('click', async () => {
+                    btnDownloadZip.innerHTML = 'Zipping... ⏳';
+                    btnDownloadZip.disabled = true;
+                    try {
+                        const queries = [
+                            Appwrite.Query.equal('event_id', eventId),
+                            Appwrite.Query.limit(100)
+                        ];
+                        if (currentVisibilityTarget === 'PUBLIC') {
+                            queries.push(Appwrite.Query.isNull('group_id'));
+                        } else {
+                            queries.push(Appwrite.Query.equal('group_id', activeGroupSession));
+                        }
+                        const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.UPLOADS_COLLECTION_ID, queries);
+                        res.documents.sort((a, b) => new Date(b.$createdAt) - new Date(a.$createdAt));
+                        if (!res.documents || res.documents.length === 0) {
+                            showToast('No photos found to download.', 'info');
+                            return;
+                        }
+                        const zip = new JSZip();
+                        for (let i = 0; i < res.documents.length; i++) {
+                            const doc = res.documents[i];
+                            if (!doc.file_url) continue;
+                            const response = await fetch(doc.file_url);
+                            const blob = await response.blob();
+                            let ext = ".jpg";
+                            if (blob.type.includes("png")) ext = ".png";
+                            else if (blob.type.includes("mp4")) ext = ".mp4";
+                            else if (blob.type.includes("quicktime") || blob.type.includes("mov")) ext = ".mov";
+                            else if (blob.type.includes("heic")) ext = ".heic";
+                            zip.file(`snap_${i + 1}${ext}`, blob);
+                        }
+                        const content = await zip.generateAsync({ type: "blob" });
+                        const url = URL.createObjectURL(content);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = "SnapNexus_Gallery.zip";
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        showToast('Gallery ZIP downloaded!', 'success');
+                    } catch (err) {
+                        console.error('ZIP Error:', err);
+                        showToast('Failed to download ZIP: ' + (err.message || 'Network error'), 'error');
+                    } finally {
+                        btnDownloadZip.innerHTML = '📥 Download All';
+                        btnDownloadZip.disabled = false;
+                    }
+                });
             }
 
             const segmentThumb = document.getElementById('segmentThumb');

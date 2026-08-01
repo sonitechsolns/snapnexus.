@@ -553,9 +553,9 @@
                     try {
                         const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.UPLOADS_COLLECTION_ID, [
                             Appwrite.Query.equal('event_id', currentEvent.eventId),
-                            Appwrite.Query.orderDesc('$createdAt'),
                             Appwrite.Query.limit(50)
                         ]);
+                        res.documents.sort((a, b) => new Date(b.$createdAt) - new Date(a.$createdAt));
                         hostGallery.innerHTML = res.documents.map(f => {
                             const url = f.file_url;
                             if (!url) return '';
