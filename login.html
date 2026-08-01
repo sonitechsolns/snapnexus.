@@ -6,7 +6,6 @@
         posthog.init('phc_qTBMwhJu6UwxVHTpDkL2dr2ryQDBF776uQG573GjYbbj',{api_host:'https://us.i.posthog.com', defaults:'2026-01-30'})
     </script>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <script src="/config.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -538,40 +537,8 @@
                     const urlParams = new URLSearchParams(window.location.search);
                     const p = urlParams.get('plan');
                     if (p && planMap[p]) {
-                        if (!confirm("By proceeding with this payment, you agree to our Privacy Policy and Terms of Service.")) {
-                            window.history.replaceState({}, document.title, 'login.html');
-                            return;
-                        }
-                        const planDetails = planMap[p];
-                        const sendReceiptEmail = (email, planName, amount) => {
-                            console.log(`Sending receipt email to ${email} via sooperfast.net@yahoo.com...`);
-                            alert(`Verification complete! Receipt for ${planName} (₹${amount}) was mailed to ${email} securely from sooperfast.net@yahoo.com.`);
-                        };
-                        const options = {
-                            key: 'rzp_test_Sf5GBrljv03Pmk',
-                            amount: planDetails.amount * 100,
-                            currency: 'INR',
-                            name: 'SnapNexus',
-                            description: `Upgrade to ${planDetails.name}`,
-                            handler: async function (response) {
-                                const subExpiry = Date.now() + 30 * 24 * 60 * 60 * 1000;
-                                await account.updatePrefs({ tier: p, subExpiry: subExpiry });
-                                try {
-                                    const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [
-                                        Appwrite.Query.equal('hostEmail', currentUser.email),
-                                        Appwrite.Query.equal('status', 'active')
-                                    ]);
-                                    for (let doc of res.documents) {
-                                        await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, doc.$id, { tier: p });
-                                    }
-                                } catch(e) { console.error('Failed to sync events', e); }
-                                sendReceiptEmail(currentUser.email, planDetails.name, planDetails.amount);
-                                alert(`Payment Successful! You are now on the ${planDetails.name}.`);
-                                window.location.href = 'login.html';
-                            },
-                            modal: { ondismiss: function() { window.history.replaceState({}, document.title, 'login.html'); } }
-                        };
-                        new window.Razorpay(options).open();
+                        alert("Please upgrade from your Host Dashboard.");
+                        window.history.replaceState({}, document.title, 'login.html');
                     } else if (p) {
                         window.history.replaceState({}, document.title, 'login.html');
                     }

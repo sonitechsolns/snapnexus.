@@ -29,7 +29,6 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
     <script src="/config.js"></script>
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -940,37 +939,8 @@
             if (planId === 'starter') { window.location.href = `login.html`; return; }
             if (currentTier === planId) { alert('You are already on this plan!'); window.location.href = `login.html`; return; }
 
-            const planMap = {
-                'pro': { amount: 499, name: 'Pro Plan' },
-                'premium': { amount: 999, name: 'Premium Plan' },
-                'vip': { amount: 2999, name: 'VIP Plan' }
-            };
-            const planDetails = planMap[planId];
-            if (!planDetails) return;
-
-            const options = {
-                key: 'rzp_test_Sf5GBrljv03Pmk',
-                amount: planDetails.amount * 100,
-                currency: 'INR',
-                name: 'SnapNexus',
-                description: `Upgrade to ${planDetails.name}`,
-                handler: async function (response) {
-                    const subExpiry = Date.now() + 30 * 24 * 60 * 60 * 1000;
-                    await account.updatePrefs({ tier: planId, subExpiry: subExpiry });
-                    try {
-                        const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [
-                            Appwrite.Query.equal('hostEmail', currentUser.email),
-                            Appwrite.Query.equal('status', 'active')
-                        ]);
-                        for (let doc of res.documents) {
-                            await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, doc.$id, { tier: planId });
-                        }
-                    } catch(e) { console.error('Failed to sync events', e); }
-                    alert(`Payment Successful! You are now on the ${planDetails.name}.`);
-                    window.location.href = 'login.html';
-                }
-            };
-            new window.Razorpay(options).open();
+            alert("Please upgrade from your Host Dashboard.");
+            window.location.href = 'login.html';
         }
     </script>
 </body>

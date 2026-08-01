@@ -6,7 +6,6 @@
         posthog.init('phc_qTBMwhJu6UwxVHTpDkL2dr2ryQDBF776uQG573GjYbbj',{api_host:'https://us.i.posthog.com', defaults:'2026-01-30'})
     </script>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <script src="/config.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -145,18 +144,6 @@
 
         @keyframes spin { 100% { transform: rotate(360deg); } }
         .lucide-spin { animation: spin 1s linear infinite; }
-        
-        /* Receipt Popup */
-        #receiptPopup { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(8px); }
-        .receipt-card { background: white; color: black; border-radius: 12px; padding: 40px; width: 90%; max-width: 400px; text-align: center; }
-        .receipt-card h2 { font-family: 'Syne'; margin-bottom: 20px; font-size: 1.8rem; }
-        
-        @media print {
-            body * { visibility: hidden; }
-            #receiptPopup, #receiptPopup * { visibility: visible; }
-            #receiptPopup { position: absolute; left: 0; top: 0; background: white; color: black; }
-            .no-print { display: none !important; }
-        }
     </style>
 </head>
 <body>
@@ -252,23 +239,6 @@
                     <h3 style="color: #fbbf24; margin-bottom: 8px;"><i data-lucide="crown" style="width: 18px; display: inline-block; vertical-align: middle;"></i> VIP Plan — ₹2999</h3>
                     <p style="color: #94a3b8; font-size: 0.95rem;">Ad-free, Unlimited Concurrent Events, Custom Logo</p>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Receipt Popup -->
-    <div id="receiptPopup">
-        <div class="receipt-card">
-            <h2>SnapNexus Receipt</h2>
-            <div style="text-align: left; margin-bottom: 20px; font-size: 1.1rem; line-height: 1.8;">
-                <p><strong>Date:</strong> <span id="rDate"></span></p>
-                <p><strong>Plan Name:</strong> <span id="rPlan"></span></p>
-                <p><strong>Amount Paid:</strong> <span id="rAmount"></span></p>
-                <p><strong>Transaction ID:</strong> <span id="rTxn"></span></p>
-            </div>
-            <div style="display: flex; gap: 10px; justify-content: center;" class="no-print">
-                <button class="btn btn-blue" onclick="window.print()" style="padding: 10px 20px;"><i data-lucide="printer"></i> Print</button>
-                <button class="btn btn-dark" id="closeReceiptBtn" style="padding: 10px 20px;">Continue</button>
             </div>
         </div>
     </div>
@@ -460,46 +430,23 @@
                     closeModalBtn.addEventListener('click', () => { upgradeModal.style.display = 'none'; });
 
                     const handleCheckout = (amount, planName, tierId) => {
-                        if (!confirm("By proceeding with this payment, you agree to our Privacy Policy and Terms of Service.")) {
-                            return;
-                        }
-
-                        // Mock Email Logic
-                        const sendReceiptEmail = (planName, amount) => {
-                            console.log(`Sending receipt email via sooperfast.net@yahoo.com...`);
-                            setTimeout(() => {
-                                alert(`Receipt for ${planName} (₹${amount}) was mailed securely from sooperfast.net@yahoo.com.`);
-                            }, 500);
-                        };
-
-                        const options = {
-                            key: 'rzp_test_Sf5GBrljv03Pmk',
-                            amount: amount * 100,
-                            currency: 'INR', 
-                            name: 'SnapNexus', 
-                            description: `Upgrade to ${planName}`,
-                            handler: async function (response) {
-                                // 5. VIP Subscription Engine updates
-                                const subExpiry = Date.now() + 30 * 24 * 60 * 60 * 1000; // 30 days
-                                await databases.updateDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, currentEvent.$id, { tier: tierId });
-                                await account.updatePrefs({ tier: tierId, subExpiry: subExpiry });
-                                
-                                upgradeModal.style.display = 'none';
-                                
-                                // Show Receipt
-                                document.getElementById('rDate').innerText = new Date().toLocaleString();
-                                document.getElementById('rPlan').innerText = planName;
-                                document.getElementById('rAmount').innerText = "₹" + amount;
-                                document.getElementById('rTxn').innerText = response.razorpay_payment_id || "TXN_" + Math.random().toString(36).substr(2,9).toUpperCase();
-                                
-                                sendReceiptEmail(planName, amount);
-
-                                const popup = document.getElementById('receiptPopup');
-                                popup.style.display = 'flex';
-                            }
-                        };
-                        upgradeModal.style.display = 'none';
-                        new window.Razorpay(options).open();
+                        const modalInner = document.querySelector('#upgradeModal > div');
+                        modalInner.innerHTML = `
+                            <button id="closeModalBtn" style="position: absolute; top: 20px; right: 20px; background: transparent; border: none; color: #fff; cursor: pointer;"><i data-lucide="x"></i></button>
+                            <h2 style="font-family: 'Syne'; font-size: 1.8rem; margin-bottom: 10px; text-align: center; color: var(--accent);">Upgrade to ${planName}</h2>
+                            <p style="text-align: center; color: var(--text-secondary); margin-bottom: 20px;">Scan to pay <strong>₹${amount}</strong> securely via any UPI app.</p>
+                            
+                            <div style="background: white; padding: 16px; border-radius: 16px; width: fit-content; margin: 0 auto 20px;">
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=mibhalivya1427@okicici&pn=SnapNexus&am=${amount}&cu=INR" alt="UPI QR Code" style="width: 200px; height: 200px; border-radius: 8px;">
+                            </div>
+                            
+                            <div style="display: flex; flex-direction: column; gap: 12px; align-items: center;">
+                                <a href="upi://pay?pa=mibhalivya1427@okicici&pn=SnapNexus&am=${amount}&cu=INR" style="background: #10b981; color: white; padding: 12px 24px; border-radius: 12px; text-decoration: none; font-weight: bold; width: 100%; text-align: center; display: block;">Open UPI App (Mobile)</a>
+                                <p style="font-size: 0.85rem; color: #94a3b8; text-align: center; margin-top: 10px;">After payment, please send a screenshot to <strong>sooperfast.net@yahoo.com</strong> to manually activate your plan.</p>
+                            </div>
+                        `;
+                        lucide.createIcons();
+                        document.getElementById('closeModalBtn').addEventListener('click', () => { window.location.reload(); });
                     };
 
                     if (currentEvent.tier === 'premium') {
@@ -514,10 +461,6 @@
                     }
                     selectVipBtn.addEventListener('click', () => handleCheckout(2999, 'VIP Plan', 'vip'));
                 }
-                
-                document.getElementById('closeReceiptBtn').addEventListener('click', () => {
-                    window.location.reload();
-                });
 
                 document.getElementById('endEventBtn').addEventListener('click', async () => {
                     if(confirm("End event? Guests can no longer upload.")) {
