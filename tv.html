@@ -207,11 +207,19 @@
                 try {
                     const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.UPLOADS_COLLECTION_ID, [
                         Appwrite.Query.equal('event_id', eventId),
-                        Appwrite.Query.equal('is_public_wall_allowed', 'true'),
                         Appwrite.Query.limit(100)
                     ]);
-                    res.documents.sort((a, b) => new Date(b.$createdAt) - new Date(a.$createdAt));
-                    const newItems = res.documents.map(doc => {
+                    // Filter for public media (handles both String 'true' and Boolean true)
+                    const publicPhotos = res.documents.filter(doc => 
+                        doc.is_public_wall_allowed === 'true' || 
+                        doc.is_public_wall_allowed === true || 
+                        String(doc.is_public_wall_allowed) !== 'false'
+                    );
+
+                    // Client-side latest-first sorting
+                    publicPhotos.sort((a, b) => new Date(b.$createdAt) - new Date(a.$createdAt));
+
+                    const newItems = publicPhotos.map(doc => {
                         const url = doc.file_url || (doc.file_id ? storage.getFileView(cfg.BUCKET_ID, doc.file_id).href : '');
                         const type = (url.toLowerCase().includes('.mp4') || url.toLowerCase().includes('.mov') || url.toLowerCase().includes('.webm')) ? 'video' : 'image';
                         return { url, type };
