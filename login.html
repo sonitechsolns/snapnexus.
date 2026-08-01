@@ -543,14 +543,6 @@
                             return;
                         }
                         const planDetails = planMap[p];
-                        const mockOtp = Math.floor(100000 + Math.random() * 900000).toString();
-                        alert(`[OTP SYSTEM] An OTP has been sent to ${currentUser.email} for verification.\n\nFor this demo, your OTP is: ${mockOtp}`);
-                        const userOtp = prompt(`Enter the 6-digit OTP sent to ${currentUser.email} to proceed to payment:`);
-                        if (userOtp !== mockOtp) {
-                            alert('Invalid OTP. Verification failed.');
-                            window.history.replaceState({}, document.title, 'login.html');
-                            return;
-                        }
                         const sendReceiptEmail = (email, planName, amount) => {
                             console.log(`Sending receipt email to ${email} via sooperfast.net@yahoo.com...`);
                             alert(`Verification complete! Receipt for ${planName} (₹${amount}) was mailed to ${email} securely from sooperfast.net@yahoo.com.`);

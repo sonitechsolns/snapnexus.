@@ -464,15 +464,6 @@
                             return;
                         }
 
-                        // OTP Verification Simulation
-                        const mockOtp = Math.floor(100000 + Math.random() * 900000).toString();
-                        alert(`[OTP SYSTEM] An OTP has been sent to your email for verification.\n\nFor this demo, your OTP is: ${mockOtp}`);
-                        const userOtp = prompt(`Enter the 6-digit OTP sent to your email to proceed to payment:`);
-                        if (userOtp !== mockOtp) {
-                            alert('Invalid OTP. Verification failed.');
-                            return;
-                        }
-
                         // Mock Email Logic
                         const sendReceiptEmail = (planName, amount) => {
                             console.log(`Sending receipt email via sooperfast.net@yahoo.com...`);
