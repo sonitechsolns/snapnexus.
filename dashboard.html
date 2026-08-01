@@ -216,6 +216,16 @@
         </div>
         
         <div id="hostGalleryContainer" style="margin-top: 40px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 40px; display: none;">
+            <!-- Active Private Groups Card -->
+            <div id="activeGroupsCard" style="background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 25px; margin-bottom: 35px; backdrop-filter: blur(10px);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="font-family: 'Syne'; margin: 0; font-size: 1.3rem; color: #fff;">Active Private Groups <span id="groupCountBadge" style="font-size: 0.85rem; background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 4px 10px; border-radius: 12px; margin-left: 8px;">0 Groups</span></h3>
+                </div>
+                <div id="groupsList" style="display: flex; flex-wrap: wrap; gap: 10px;">
+                    <p style="color: #94a3b8; font-size: 0.9rem;">Loading groups...</p>
+                </div>
+            </div>
+
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2 style="font-family: 'Syne'; margin: 0; font-size: 1.8rem;">Live Gallery</h2>
                 <button class="btn btn-dark" id="refreshGalleryBtn" style="padding: 10px 15px; font-size: 0.9rem;"><i data-lucide="refresh-cw"></i> Refresh</button>
@@ -553,6 +563,7 @@
                     try {
                         const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.UPLOADS_COLLECTION_ID, [
                             Appwrite.Query.equal('event_id', currentEvent.eventId),
+                            Appwrite.Query.equal('is_public_wall_allowed', 'true'),
                             Appwrite.Query.limit(50)
                         ]);
                         res.documents.sort((a, b) => new Date(b.$createdAt) - new Date(a.$createdAt));
@@ -565,7 +576,6 @@
                                 : `<img src="${url}" style="width: 100%; height: 100%; object-fit: cover;">`;
                             return `<div style="border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); aspect-ratio: 1; background: #000; position: relative;">
                                         ${media}
-                                        ${!f.is_public_wall_allowed ? `<div style="position:absolute; top:4px; right:4px; background:rgba(239, 68, 68, 0.8); color:white; font-size:10px; padding:2px 6px; border-radius:4px; font-weight:bold;">PRIVATE</div>` : ''}
                                         ${(currentEvent.tier === 'vip') ? `<button class="pin-btn" data-id="${f.$id}" style="position:absolute; bottom:4px; right:4px; background:${f.is_pinned ? 'rgba(16, 185, 129, 0.8)' : 'rgba(0,0,0,0.7)'}; border:none; color:white; font-size:10px; padding:4px 8px; border-radius:4px; cursor:pointer; z-index:10; transition:0.2s;">${f.is_pinned ? 'Pinned ✅' : '📌 Pin to TV'}</button>` : ''}
                                     </div>`;
                         }).join('');
@@ -575,14 +585,40 @@
                     } catch (err) { console.error('Gallery fetch error:', err.message, err); }
                 };
 
+                const fetchAndRenderGroups = async () => {
+                    try {
+                        const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.GROUPS_COLLECTION_ID, [
+                            Appwrite.Query.equal('event_id', currentEvent.eventId),
+                            Appwrite.Query.limit(100)
+                        ]);
+                        const badge = document.getElementById('groupCountBadge');
+                        const list = document.getElementById('groupsList');
+                        if (badge) badge.innerText = `${res.documents.length} Group${res.documents.length !== 1 ? 's' : ''}`;
+                        if (list) {
+                            if (res.documents.length === 0) {
+                                list.innerHTML = '<p style="color: #94a3b8; font-size: 0.9rem;">No active private groups created yet.</p>';
+                            } else {
+                                list.innerHTML = res.documents.map(g => `
+                                    <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px; padding: 10px 18px; display: flex; align-items: center; gap: 8px; color: #fff; font-weight: 600;">
+                                        <span style="color: #60a5fa;">🔒</span> ${g.group_name || 'Unnamed Group'}
+                                    </div>
+                                `).join('');
+                            }
+                        }
+                    } catch (err) { console.error('Groups fetch error:', err.message, err); }
+                };
+
                 document.getElementById('refreshGalleryBtn').addEventListener('click', () => {
                     const icon = document.querySelector('#refreshGalleryBtn i');
                     icon.classList.add('lucide-spin');
                     fetchAndRenderGallery().finally(() => { setTimeout(() => icon.classList.remove('lucide-spin'), 500); });
+                    fetchAndRenderGroups();
                 });
 
                 fetchAndRenderGallery();
+                fetchAndRenderGroups();
                 setInterval(fetchAndRenderGallery, 15000);
+                setInterval(fetchAndRenderGroups, 15000);
 
             } catch (err) { 
                 alert("Event not found or failed to load. Redirecting to Login.");
