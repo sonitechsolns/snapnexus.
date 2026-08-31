@@ -11,7 +11,7 @@
     <meta name="description" content="Guests scan, snap, and see photos on the big screen instantly. Premium plans for weddings & events.">
     <link rel="icon" type="image/png" href="/favicon.png">
     <meta property="og:image" content="https://snapnexus.in/SNAPN.png">
-    <link rel="preload" as="image" href="/SNAPN.png">
+    <link rel="preload" as="image" href="/SNAPN-logo.webp">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Urbanist:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,600&family=Playfair+Display:wght@600;700&family=Lora:ital,wght@0,500;1,500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -24,11 +24,11 @@
             } catch (e) {}
         })();
     </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
-    <script src="/config.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
+    <script src="https://unpkg.com/lucide@latest" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0" defer></script>
+    <script src="/config.js" defer></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -255,6 +255,19 @@
         /* ---- Responsive ---- */
         @media (max-width: 1024px) { .pricing-grid { grid-template-columns: repeat(2, 1fr); gap: 24px; } }
         @media (max-width: 768px) { .sticky-header { padding: 16px 20px; } .nav-links { display: none; } .pricing-grid { grid-template-columns: 1fr; } .mobile-sticky-cta { display: block; } .hero { padding-top: 150px; } .container { padding: 0 20px; } .dashboard-preview { padding: 40px 24px; } .stats-bar { gap: 0; } .stat-item { border-right: none; border-bottom: 1px solid var(--surface-border-soft); } .stat-item:last-child { border-bottom: none; } }
+
+        /* ---- Mobile / reduced-motion perf mode ---- */
+        @media (max-width: 768px), (prefers-reduced-motion: reduce) {
+            .liquid-mesh { animation: none; }
+            [data-theme="corporate"] .liquid-mesh::before { animation: none; }
+            #hero-canvas { display: none; }
+            .hero-float-tile { display: none; }
+            .event-ticker { animation: none; }
+            .glass-deep, .glass-card, .sticky-header, .mobile-sticky-cta, .dashboard-preview { backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
+        }
     </style>
 </head>
 <body>
@@ -268,7 +281,7 @@
 
     <header class="sticky-header" id="stickyHeader">
         <div class="header-container">
-            <a class="logo" href="index.html" aria-label="SnapNexus Home"><img src="SNAPN.png" alt="SnapNexus Logo" class="logo-img" onerror="this.style.display='none'"><span class="logo-text">SnapNexus</span></a>
+            <a class="logo" href="index.html" aria-label="SnapNexus Home"><picture><source srcset="SNAPN-logo.webp" type="image/webp"><img src="SNAPN-logo.png" alt="SnapNexus Logo" class="logo-img" width="40" height="40" fetchpriority="high" onerror="this.style.display='none'"></picture><span class="logo-text">SnapNexus</span></a>
             <nav class="nav-links"><a href="#features">Features</a><a href="#pricing">Pricing</a><a href="login.html" id="navLoginBtn">Host Login</a><a href="dashboard.html" class="btn-physics btn-outline" style="padding: 8px 20px;">Dashboard</a></nav>
         </div>
     </header>
@@ -493,9 +506,13 @@
         <p>© 2026 SnapNexus. A product by <a href="https://soni-tech-solutions.vercel.app/" target="_blank" rel="noopener">Soni Tech Solutions</a>.</p>
     </footer>
 
-    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-    <script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js" defer></script>
+    <script defer>
+      document.addEventListener('DOMContentLoaded', function () {
         // ── Init ──────────────────────────────────────────────────────────
+        const isPerfMode = window.matchMedia('(max-width: 768px)').matches ||
+            window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
         lucide.createIcons();
         AOS.init({ duration: 900, once: true, offset: 50 });
         gsap.registerPlugin(ScrollTrigger);
@@ -509,6 +526,7 @@
 
         // ── Canvas particle field ─────────────────────────────────────────
         (function () {
+            if (isPerfMode) return; // skip particle field on mobile / reduced-motion
             const canvas = document.getElementById('hero-canvas');
             const ctx = canvas.getContext('2d');
             let W, H, particles = [];
@@ -562,31 +580,35 @@
             // JS-owned initial states — elements stay visible if JS fails (no CSS opacity:0)
             gsap.set(['.hero-badge', '.hero-sub', '.hero-cta'], { opacity: 0, y: 24 });
 
-            // Floating tiles drift in
+            // Floating tiles drift in (skipped on mobile / reduced-motion — tiles are hidden there)
             const tiles = ['#ft1','#ft2','#ft3','#ft4','#ft5','#ft6'];
-            tl.to(tiles, { opacity: 0.55, duration: 1.2, ease: 'power2.out', stagger: 0.1 }, 0);
+            if (!isPerfMode) {
+                tl.to(tiles, { opacity: 0.55, duration: 1.2, ease: 'power2.out', stagger: 0.1 }, 0);
 
-            // Float animation loops (y + rotation only — orbital uses x + rotationY)
-            tiles.forEach((id, i) => {
-                gsap.to(id, {
-                    y: `${(i % 2 === 0 ? -1 : 1) * (14 + i * 3)}px`,
-                    rotation: (i % 2 === 0 ? 1 : -1) * (2 + i),
-                    duration: 3.5 + i * 0.4,
-                    ease: 'sine.inOut',
-                    yoyo: true,
-                    repeat: -1,
-                    delay: i * 0.3
+                // Float animation loops (y + rotation only — orbital uses x + rotationY)
+                tiles.forEach((id, i) => {
+                    gsap.to(id, {
+                        y: `${(i % 2 === 0 ? -1 : 1) * (14 + i * 3)}px`,
+                        rotation: (i % 2 === 0 ? 1 : -1) * (2 + i),
+                        duration: 3.5 + i * 0.4,
+                        ease: 'sine.inOut',
+                        yoyo: true,
+                        repeat: -1,
+                        delay: i * 0.3
+                    });
                 });
-            });
+            }
 
             // Badge
             tl.to('.hero-badge', { opacity: 1, y: 0, duration: 0.6, ease: 'back.out(1.4)' }, 0.2);
 
-            // Hero h1 parallax
-            gsap.to('#heroH1', {
-                y: -60, ease: 'none',
-                scrollTrigger: { trigger: '#heroSection', start: 'top top', end: 'bottom top', scrub: true }
-            });
+            // Hero h1 parallax (desktop only — avoids extra scroll-linked work on mobile)
+            if (!isPerfMode) {
+                gsap.to('#heroH1', {
+                    y: -60, ease: 'none',
+                    scrollTrigger: { trigger: '#heroSection', start: 'top top', end: 'bottom top', scrub: true }
+                });
+            }
 
             // Sub + CTAs
             tl.to('.hero-sub', { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }, 0.85);
@@ -595,6 +617,7 @@
 
         // ── Orbital tile scroll-driven 3D motion ─────────────────────────
         (function() {
+            if (isPerfMode) return; // tiles are hidden on mobile / reduced-motion
             const tileIds = ['#ft1','#ft2','#ft3','#ft4','#ft5','#ft6'];
             tileIds.forEach((id, i) => {
                 const el = document.querySelector(id);
@@ -897,6 +920,7 @@
             const demoId = "demo_" + Math.random().toString(36).substring(2, 8);
             window.location.href = `tv.html?event=${demoId}&isDemo=true`;
         }
+        window.launchDemo = launchDemo;
 
         // ── Appwrite & Razorpay ───────────────────────────────────────────
         const cfg = window.SnapNexus;
@@ -942,6 +966,8 @@
             alert("Please upgrade from your Host Dashboard.");
             window.location.href = 'login.html';
         }
+        window.handlePlan = handlePlan;
+      }); // end DOMContentLoaded
     </script>
 </body>
 </html>
