@@ -1,234 +1,245 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script>
-        !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey getNextSurveyStep identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty createPersonProfile opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing debug".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
-        posthog.init('phc_qTBMwhJu6UwxVHTpDkL2dr2ryQDBF776uQG573GjYbbj',{api_host:'https://us.i.posthog.com', defaults:'2026-01-30'})
-    </script>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Terms of Service — SnapNexus</title>
-    <meta name="description" content="SnapNexus Terms of Service — plan limits, watermarks, and host/guest responsibilities.">
-    <link rel="icon" type="image/png" href="/favicon.png">
-    <meta property="og:image" content="https://snapnexus.in/SNAPN.png">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Urbanist:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,600&family=Playfair+Display:wght@600;700&family=Lora:ital,wght@0,500;1,500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <script>
-        (function () {
-            try {
-                var t = localStorage.getItem('snapnexus_theme_preview') || 'default';
-                document.documentElement.setAttribute('data-theme', t);
-            } catch (e) {}
-        })();
-    </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#050b18">
+<title>Terms of Service · SnapNexus</title>
+<meta name="description" content="The terms for hosting and joining SnapNexus live photo walls.">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="canonical" href="https://snapnexus.in/terms.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+/* SnapNexus design system — shared by every page.
+   Brand colours come from the current logo (amber wordmark on deep blue).
+   To re-brand later, change the tokens in :root only. Guest/TV pages override
+   the same tokens from the event's theme at runtime. */
+:root{
+  --bg:#050b18; --bg-2:#081328; --bg-3:#0c1a36;
+  --surface:rgba(16,30,60,.52); --surface-solid:#0d1a33; --surface-hi:rgba(28,48,92,.6);
+  --line:rgba(150,180,255,.10); --line-2:rgba(150,180,255,.20);
+  --text:#f2f5fb; --muted:#9dabc6; --dim:#6a7894;
+  --accent:#f5b301; --accent-2:#ffd34d; --accent-rgb:245,179,1; --on-accent:#1b1303;
+  --blue:#2f6fe4; --blue-rgb:47,111,228;
+  --ok:#10b981; --warn:#f59e0b; --danger:#f43f5e;
+  --radius:22px; --radius-sm:14px;
+  --font:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --head:'Syne','Inter',sans-serif;
+  --shadow:0 24px 70px rgba(0,0,0,.45);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-family:var(--font);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body.sn-bg{background:
+  radial-gradient(900px 600px at 12% -10%,rgba(var(--blue-rgb),.28),transparent 60%),
+  radial-gradient(700px 500px at 100% 0%,rgba(var(--blue-rgb),.16),transparent 60%),
+  radial-gradient(800px 500px at 50% 120%,rgba(var(--accent-rgb),.07),transparent 60%),
+  var(--bg);background-attachment:fixed}
+img,video{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3,h4{font-family:var(--head);line-height:1.1;letter-spacing:-.02em;margin:0}
+p{margin:0}
+.i{width:1.2em;height:1.2em;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.2em}
+.wrap{width:100%;max-width:1180px;margin:0 auto;padding:0 20px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.muted{color:var(--muted)} .dim{color:var(--dim)}
+.accent{color:var(--accent)}
+.row{display:flex;align-items:center;gap:12px}
+.row.wrap-ok{flex-wrap:wrap}
+.spacer{flex:1}
+.stack{display:flex;flex-direction:column;gap:16px}
+[hidden]{display:none!important}
 
-        /* ---------- Theme tokens ---------- */
-        :root { --font-brand: 'Syne', sans-serif; }
-        :root,
-        [data-theme="default"] {
-            --bg-mesh-a: #020617; --bg-mesh-b: #1e3a8a; --bg-mesh-c: #3b82f6; --bg-mesh-d: #4f46e5;
-            --bg-solid: #020617;
-            --surface-bg: rgba(20, 30, 55, 0.45);
-            --surface-border: rgba(255, 255, 255, 0.2);
-            --surface-border-soft: rgba(255, 255, 255, 0.08);
-            --text-primary: #ffffff;
-            --text-secondary: #cbd5e1;
-            --accent: #3b82f6;
-            --accent-strong: #4f46e5;
-            --accent-soft: rgba(59, 130, 246, 0.15);
-            --font-heading: 'Syne', sans-serif;
-            --font-body: 'Urbanist', system-ui, sans-serif;
-            --radius-card: 32px;
-        }
-        [data-theme="wedding"] {
-            --bg-mesh-a: #fff7f3; --bg-mesh-b: #fde2e7; --bg-mesh-c: #f6c9d0; --bg-mesh-d: #e9c9a8;
-            --bg-solid: #fdf6f2;
-            --surface-bg: rgba(255, 255, 255, 0.55);
-            --surface-border: rgba(196, 154, 108, 0.45);
-            --surface-border-soft: rgba(196, 154, 108, 0.25);
-            --text-primary: #5c3a3a;
-            --text-secondary: #8a6a64;
-            --accent: #c9a063;
-            --accent-strong: #a9824f;
-            --accent-soft: rgba(201, 160, 99, 0.18);
-            --font-heading: 'Playfair Display', serif;
-            --font-body: 'Lora', serif;
-            --radius-card: 36px;
-        }
-        [data-theme="corporate"] {
-            --bg-mesh-a: #000000; --bg-mesh-b: #ffc400; --bg-mesh-c: #ff5e00; --bg-mesh-d: #22d3ee;
-            --bg-solid: #020203;
-            --surface-bg: rgba(255, 255, 255, 0.05);
-            --surface-border: rgba(255, 255, 255, 0.16);
-            --surface-border-soft: rgba(255, 255, 255, 0.08);
-            --text-primary: #ffffff;
-            --text-secondary: #d4d4d8;
-            --accent: #ffc83d;
-            --accent-strong: #ff7a1a;
-            --accent-soft: rgba(255, 200, 61, 0.18);
-            --font-heading: 'Inter', sans-serif;
-            --font-body: 'Inter', sans-serif;
-            --radius-card: 16px;
-        }
-        [data-theme="party"] {
-            --bg-mesh-a: #070110; --bg-mesh-b: #1a0530; --bg-mesh-c: #5b0fb5; --bg-mesh-d: #ff00c8;
-            --bg-solid: #070110;
-            --surface-bg: rgba(20, 4, 32, 0.5);
-            --surface-border: rgba(255, 0, 200, 0.4);
-            --surface-border-soft: rgba(255, 0, 200, 0.2);
-            --text-primary: #f5f3ff;
-            --text-secondary: #c4b5fd;
-            --accent: #00f0ff;
-            --accent-strong: #ff00c8;
-            --accent-soft: rgba(0, 240, 255, 0.18);
-            --font-heading: 'Urbanist', sans-serif;
-            --font-body: 'Urbanist', system-ui, sans-serif;
-            --radius-card: 24px;
-        }
+/* logo */
+.logo{display:inline-flex;align-items:center}
+.logo img{height:22px;width:auto}
+.logo.lg img{height:30px}
 
-        body { font-family: var(--font-body); background: var(--bg-solid); color: var(--text-primary); overflow-x: hidden; line-height: 1.5; transition: background 0.4s ease, color 0.4s ease; }
-        h1, h2, h3, .price, .step-number { font-family: var(--font-heading); }
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 22px;border-radius:999px;font-weight:600;font-size:.95rem;border:1px solid transparent;background:none;cursor:pointer;transition:transform .2s,box-shadow .2s,background .2s,border-color .2s,opacity .2s;white-space:nowrap;text-align:center;line-height:1.2}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important;box-shadow:none!important}
+.btn-primary{background:linear-gradient(180deg,var(--accent-2),var(--accent));color:var(--on-accent);box-shadow:0 0 24px rgba(var(--accent-rgb),.22)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 10px 30px rgba(var(--accent-rgb),.38)}
+.btn-ghost{background:rgba(255,255,255,.04);border-color:var(--line-2);color:var(--text)}
+.btn-ghost:hover{background:rgba(255,255,255,.08)}
+.btn-blue{background:var(--blue);color:#fff}
+.btn-blue:hover{filter:brightness(1.1)}
+.btn-danger{background:rgba(244,63,94,.1);border-color:rgba(244,63,94,.35);color:#fda4b4}
+.btn-danger:hover{background:rgba(244,63,94,.18)}
+.btn-sm{padding:8px 14px;font-size:.85rem}
+.btn-lg{padding:16px 28px;font-size:1.05rem}
+.btn-block{width:100%}
+.btn-icon{width:40px;height:40px;padding:0;border-radius:12px}
+.btn:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 
-        /* ---- Backgrounds ---- */
-        .liquid-mesh { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -3; background: radial-gradient(circle at 20% 30%, var(--bg-mesh-a), var(--bg-mesh-b) 30%, var(--bg-mesh-c) 65%, var(--bg-mesh-d)); background-size: 200% 200%; animation: liquidShift 16s ease infinite alternate; transition: background 0.6s ease; }
-        @keyframes liquidShift { 0% { background-position: 0% 0%; } 50% { background-position: 100% 100%; } 100% { background-position: 0% 50%; } }
-        [data-theme="corporate"] .liquid-mesh { background: radial-gradient(ellipse 60% 50% at 18% 15%, rgba(10, 69, 112, 0.55), transparent 60%), radial-gradient(ellipse 50% 45% at 8% 92%, rgba(10, 69, 112, 0.35), transparent 60%), #020203; animation: none; }
-        [data-theme="corporate"] .liquid-mesh::before { content: ''; position: absolute; top: 6%; left: -10%; width: 78%; height: 80%; background: radial-gradient(ellipse 70% 65% at 40% 58%, #f3fa7a 0%, #e9d34a 16%, #d9a01f 32%, #b16d02 50%, #7a4400 66%, transparent 82%); border-radius: 38% 62% 58% 42% / 52% 46% 54% 48%; filter: blur(45px); animation: corporateBlobMorph 26s ease-in-out infinite alternate; }
-        @keyframes corporateBlobMorph { 0% { border-radius: 38% 62% 58% 42% / 52% 46% 54% 48%; transform: rotate(-4deg) scale(1); } 50% { border-radius: 48% 52% 45% 55% / 45% 55% 48% 52%; transform: rotate(2deg) scale(1.04); } 100% { border-radius: 42% 58% 50% 50% / 50% 48% 52% 50%; transform: rotate(-6deg) scale(1); } }
-        .noise-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -2; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E"); opacity: 0.4; }
+/* cards */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.card-pad{padding:24px}
+.card-h{display:flex;align-items:center;gap:10px;margin-bottom:6px;font-family:var(--head);font-size:1.15rem;font-weight:700}
+.card-h .i{color:var(--accent)}
+.card-sub{color:var(--muted);font-size:.9rem;margin-bottom:18px}
 
-        /* ---- Glass utilities ---- */
-        .glass-deep { background: var(--surface-bg); backdrop-filter: blur(24px); border: 1px solid var(--surface-border-soft); transition: background 0.4s ease, border-color 0.4s ease; }
-        .glass-card { background: var(--surface-bg); backdrop-filter: blur(12px); border: 1px solid var(--surface-border); border-radius: var(--radius-card); transition: transform 0.25s ease, box-shadow 0.3s, background 0.4s ease, border-color 0.4s ease, border-radius 0.4s ease; }
+/* forms */
+.field{display:flex;flex-direction:column;gap:7px}
+.label{font-size:.85rem;font-weight:600;color:var(--muted)}
+.input,.select,.textarea{width:100%;background:rgba(3,8,20,.55);border:1px solid var(--line-2);border-radius:var(--radius-sm);padding:13px 15px;outline:none;transition:border-color .2s,box-shadow .2s;color:var(--text)}
+.input::placeholder{color:var(--dim)}
+.input:focus,.select:focus,.textarea:focus{border-color:rgba(var(--accent-rgb),.7);box-shadow:0 0 0 3px rgba(var(--accent-rgb),.14)}
+.select{appearance:none;-webkit-appearance:none;cursor:pointer;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 20px) 55%,calc(100% - 15px) 55%;background-size:5px 5px;background-repeat:no-repeat;padding-right:40px}
+.select option{background:var(--surface-solid)}
+.input-wrap{position:relative}
+.input-wrap .btn-icon{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:36px;height:36px;color:var(--muted)}
+input[type=color]{-webkit-appearance:none;appearance:none;border:0;width:34px;height:34px;padding:0;border-radius:50%;background:none;cursor:pointer}
+input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+input[type=color]::-webkit-color-swatch{border:2px solid rgba(255,255,255,.3);border-radius:50%}
+input[type=color]::-moz-color-swatch{border:2px solid rgba(255,255,255,.3);border-radius:50%}
 
-        /* ---- Header ---- */
-        .sticky-header { position: fixed; top: 0; left: 0; width: 100%; z-index: 1000; padding: 20px 40px; transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1); background: rgba(2, 6, 23, 0.65); backdrop-filter: blur(18px); border-bottom: 1px solid rgba(255,255,255,0.08); }
-        .sticky-header.shrink { padding: 12px 40px; background: rgba(2, 6, 23, 0.85); }
-        .header-container { max-width: 1280px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
-        .logo { display: flex; align-items: center; gap: 14px; text-decoration: none; }
-        .logo-img { width: 40px; height: 40px; border-radius: 10px; object-fit: cover; box-shadow: 0 0 15px rgba(251, 191, 36, 0.3); background: #fff; }
-        .logo-text { font-family: var(--font-brand); font-weight: 800; font-size: 1.5rem; background: linear-gradient(135deg, #fde047, #f59e0b, #d97706); -webkit-background-clip: text; background-clip: text; color: transparent; letter-spacing: -0.5px; }
-        .nav-links { display: flex; align-items: center; gap: 32px; }
-        .nav-links a { color: #e2e8f0; text-decoration: none; font-weight: 600; transition: 0.2s; }
-        .nav-links a:hover { color: #60a5fa; }
+/* badges */
+.badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--line-2);color:var(--muted);background:rgba(255,255,255,.03);white-space:nowrap}
+.badge .dot{width:7px;height:7px;border-radius:50%;background:currentColor}
+.badge.live{color:#34d399;border-color:rgba(16,185,129,.35);background:rgba(16,185,129,.08)}
+.badge.ended{color:#fb7185;border-color:rgba(244,63,94,.35);background:rgba(244,63,94,.08)}
+.badge.trial{color:#93c5fd;border-color:rgba(59,130,246,.35);background:rgba(59,130,246,.08)}
+.badge.single{color:var(--accent-2);border-color:rgba(var(--accent-rgb),.4);background:rgba(var(--accent-rgb),.08)}
+.badge.pro{color:var(--on-accent);border-color:transparent;background:linear-gradient(180deg,var(--accent-2),var(--accent))}
+.badge.warn{color:#fcd34d;border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.08)}
+.badge.pulse .dot{animation:snPulse 1.6s infinite}
+@keyframes snPulse{50%{opacity:.3}}
 
-        /* ---- Buttons ---- */
-        .btn-physics { display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 12px 28px; font-weight: 800; font-size: 1rem; font-family: var(--font-body); border-radius: 60px; border: none; cursor: none; transition: box-shadow 0.2s, background 0.2s, filter 0.2s; background: linear-gradient(105deg, var(--accent), var(--accent-strong)); color: white; box-shadow: 0 8px 20px var(--accent-soft); text-decoration: none; will-change: transform; }
-        .btn-physics:hover { filter: brightness(1.1); box-shadow: 0 14px 32px var(--accent-soft); }
-        .btn-physics:active { filter: brightness(0.95); }
-        .btn-outline { background: rgba(255,255,255,0.08); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.3); box-shadow: none; }
-        .btn-outline:hover { background: rgba(255,255,255,0.15); }
+/* top bar (host pages) */
+.topbar{position:sticky;top:0;z-index:40;background:rgba(5,11,24,.72);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+.topbar .wrap{height:64px;display:flex;align-items:center;gap:14px}
+.topbar .who{font-size:.85rem;color:var(--muted);max-width:40vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:600px){.topbar .who{display:none}}
 
-        /* ---- Layout ---- */
-        .container { max-width: 1280px; margin: 0 auto; padding: 0 32px; }
+/* segmented control */
+.seg{display:flex;padding:4px;border-radius:999px;background:rgba(0,0,0,.25);background:color-mix(in srgb,var(--text) 6%,transparent);border:1px solid var(--line-2);position:relative}
+.seg button{flex:1;white-space:nowrap;border:0;background:none;padding:10px 14px;border-radius:999px;font-weight:600;font-size:.9rem;cursor:pointer;color:var(--muted);display:inline-flex;align-items:center;justify-content:center;gap:7px;position:relative;z-index:1;transition:color .2s}
+.seg button[aria-pressed=true]{color:var(--on-accent);background:var(--accent)}
 
-        /* ---- Section titles ---- */
-        .section-title { text-align: center; font-size: 2.6rem; font-weight: 800; margin: 100px 0 48px; color: var(--text-primary); }
+/* toasts */
+.toasts{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;flex-direction:column;gap:8px;width:min(440px,calc(100vw - 32px));pointer-events:none}
+.toast{pointer-events:auto;display:flex;align-items:flex-start;gap:10px;padding:13px 16px;border-radius:14px;background:rgba(10,20,40,.94);border:1px solid var(--line-2);box-shadow:var(--shadow);font-size:.92rem;font-weight:500;color:#fff;opacity:0;transform:translateY(-10px);transition:opacity .25s,transform .25s}
+.toast.show{opacity:1;transform:none}
+.toast .i{margin-top:1px}
+.toast.ok .i{color:#34d399} .toast.err .i{color:#fb7185} .toast.info .i{color:#93c5fd}
 
-        /* ---- Legal content ---- */
-        .legal-content { padding: 48px; margin-bottom: 80px; }
-        .legal-content p { color: var(--text-secondary); margin-bottom: 16px; }
-        .legal-content ul { margin: 0 0 24px 20px; color: var(--text-secondary); }
-        .legal-content li { margin-bottom: 12px; line-height: 1.6; }
-        .legal-content a { color: var(--accent); font-weight: 600; text-decoration: underline; }
+/* modal */
+.modal{position:fixed;inset:0;z-index:900;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(2,5,12,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);opacity:0;pointer-events:none;transition:opacity .2s}
+.modal.open{opacity:1;pointer-events:auto}
+.modal-box{width:100%;max-width:460px;max-height:calc(100vh - 32px);overflow:auto;background:var(--surface-solid);border:1px solid var(--line-2);border-radius:24px;padding:26px;box-shadow:var(--shadow);transform:translateY(12px) scale(.98);transition:transform .25s}
+.modal.open .modal-box{transform:none}
+.modal-box.wide{max-width:640px}
+.modal-head{display:flex;align-items:flex-start;gap:12px;margin-bottom:6px}
+.modal-head h3{font-size:1.35rem;flex:1}
+.modal-head .btn-icon{margin:-8px -8px 0 0;color:var(--muted)}
 
-        /* ---- Footer ---- */
-        footer { margin-top: 100px; padding: 60px 32px 40px; border-top: 1px solid rgba(255,255,255,0.08); text-align: center; }
-        .footer-links { display: flex; justify-content: center; gap: 32px; margin-bottom: 32px; flex-wrap: wrap; }
-        .footer-links a { color: #94a3b8; text-decoration: none; font-weight: 600; transition: color 0.2s; cursor: none; }
-        footer p { color: var(--text-secondary); }
-        footer p a { color: var(--accent); font-weight: 600; text-decoration: underline; transition: color 0.2s; }
-        footer p a:hover { color: var(--accent-strong); }
+/* misc */
+.spin{animation:snSpin 1s linear infinite}
+@keyframes snSpin{to{transform:rotate(360deg)}}
+.empty{padding:36px 16px;text-align:center;color:var(--muted);font-size:.95rem}
+.empty .i{width:32px;height:32px;color:var(--dim);margin:0 auto 10px;display:block}
+.skel{background:linear-gradient(90deg,rgba(255,255,255,.04),rgba(255,255,255,.09),rgba(255,255,255,.04));background-size:200% 100%;animation:snSkel 1.2s infinite}
+@keyframes snSkel{to{background-position:-200% 0}}
+.divider{height:1px;background:var(--line);margin:18px 0}
+.kbd{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85em;background:rgba(255,255,255,.06);border:1px solid var(--line-2);padding:2px 7px;border-radius:7px}
+.notice{display:flex;gap:10px;padding:13px 15px;border-radius:14px;font-size:.9rem;border:1px solid var(--line-2);background:rgba(255,255,255,.03)}
+.notice .i{flex:none;margin-top:2px}
+.notice.warn{border-color:rgba(245,158,11,.35);background:rgba(245,158,11,.07);color:#fde68a}
+.notice.err{border-color:rgba(244,63,94,.35);background:rgba(244,63,94,.07);color:#fecdd3}
+.notice.ok{border-color:rgba(16,185,129,.35);background:rgba(16,185,129,.07);color:#a7f3d0}
+.notice.info{border-color:rgba(var(--blue-rgb),.4);background:rgba(var(--blue-rgb),.08);color:#bfdbfe}
+.mock-flag{position:fixed;left:12px;bottom:12px;z-index:2000;background:#f43f5e;color:#fff;font-size:.7rem;font-weight:800;letter-spacing:.1em;padding:5px 10px;border-radius:99px;text-transform:uppercase;opacity:.9;text-decoration:none}
+.foot-mini{padding:28px 0 36px;color:var(--dim);font-size:.82rem;text-align:center}
+.foot-mini a{color:var(--muted)} .foot-mini a:hover{color:#fff}
 
-        /* ---- Custom cursor ---- */
-        #cursor-dot, #cursor-ring { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 9999; border-radius: 50%; transform: translate(-50%, -50%); }
-        #cursor-dot { width: 8px; height: 8px; background: var(--accent); transition: background 0.3s, transform 0.1s; }
-        #cursor-ring { width: 36px; height: 36px; border: 2px solid var(--accent); opacity: 0.6; transition: border-color 0.3s, transform 0.15s ease, opacity 0.3s, width 0.3s, height 0.3s; }
-        #cursor-ring.hovered { width: 52px; height: 52px; opacity: 0.9; border-color: var(--accent); background: var(--accent-soft); }
-        #cursor-ring.clicking { transform: translate(-50%, -50%) scale(0.8); opacity: 1; }
-        @media (pointer: coarse) { #cursor-dot, #cursor-ring { display: none; } body { cursor: auto; } .btn-physics, .footer-links a { cursor: pointer; } }
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+}
 
-        /* ---- Responsive ---- */
-        @media (max-width: 768px) { .sticky-header { padding: 16px 20px; } .nav-links { display: none; } .container { padding: 0 20px; } .legal-content { padding: 32px 24px; } }
-    </style>
+</style>
+<script>
+/* PostHog analytics (same project as the previous site). Skipped in test mode. */
+(function(){
+  try {
+    var q = new URLSearchParams(location.search).get('mock');
+    if (q === '1' || localStorage.getItem('sn_mock') === '1' || location.protocol === 'file:') return;
+  } catch (e) {}
+  !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey getNextSurveyStep identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty createPersonProfile opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing debug".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+  posthog.init('phc_qTBMwhJu6UwxVHTpDkL2dr2ryQDBF776uQG573GjYbbj',{api_host:'https://us.i.posthog.com', defaults:'2026-01-30'})
+})();
+
+</script>
+<style>
+  .legal{max-width:760px;margin:0 auto;padding:48px 20px 20px}
+  .legal h1{font-size:clamp(2rem,5vw,2.8rem);margin-bottom:8px}
+  .legal .upd{color:var(--dim);font-size:.9rem;margin-bottom:28px}
+  .legal .lead{font-size:1.1rem;color:var(--muted);margin-bottom:30px}
+  .legal h2{font-size:1.3rem;margin:34px 0 12px}
+  .legal p,.legal li{color:#cfd7e6;line-height:1.7}
+  .legal p{margin-bottom:12px}
+  .legal ul{padding-left:1.2em;margin:0 0 12px}
+  .legal li{margin-bottom:8px}
+  .legal a{color:var(--accent);text-decoration:underline;text-underline-offset:3px}
+  .legal strong{color:#fff}
+  .toc{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+  .toc a{text-decoration:none;color:var(--muted);border:1px solid var(--line-2);border-radius:99px;padding:6px 14px;font-size:.85rem}
+  .toc a.on{color:var(--on-accent);background:var(--accent);border-color:transparent}
+  footer{border-top:1px solid var(--line);margin-top:50px}
+</style>
 </head>
-<body>
-    <!-- Custom cursor -->
-    <div id="cursor-dot"></div>
-    <div id="cursor-ring"></div>
+<body class="sn-bg">
+<header class="topbar"><div class="wrap">
+  <a class="logo" href="index.html" aria-label="SnapNexus home"><img src="logo.png" alt="SnapNexus"></a>
+  <span class="spacer"></span>
+  <a class="btn btn-ghost btn-sm" href="index.html#pricing">Pricing</a>
+  <a class="btn btn-primary btn-sm" href="login.html">Host login</a>
+</div></header>
+<main class="legal">
+  <nav class="toc" aria-label="Policies"><a href="privacy.html">Privacy Policy</a><a href="terms.html" class="on">Terms of Service</a><a href="security.html">Security</a></nav>
+  <h1>Terms of Service</h1>
+  <p class="upd">Last updated 25 September 2026</p>
 
-    <div class="liquid-mesh"></div>
-    <div class="noise-overlay"></div>
+  <p class="lead">By creating an event on SnapNexus, or by uploading to one, you agree to these terms. They're written to be read, so please do.</p>
+  <h2>Plans</h2>
+  <ul>
+    <li><strong>Free Trial:</strong> one event per account, live for 1 hour from when it's created. Free trial walls show ads.</li>
+    <li><strong>Single Event (₹49):</strong> one event with no time limit and no ads. Photos can be downloaded for 30 days.</li>
+    <li><strong>Pro Creator (₹999 per 30 days):</strong> unlimited events while your plan is active, no ads, your own logo on the wall and priority support.</li>
+  </ul>
+  <p>We may change prices or plans in future. Changes never affect a plan you've already paid for.</p>
+  <h2>Payments</h2>
+  <ul>
+    <li>Payments are made by UPI directly to SnapNexus. After you pay, you submit your UPI reference number and we switch your plan on once the payment is confirmed. This is usually within a few hours.</li>
+    <li>If a payment doesn't arrive or doesn't match, we'll contact you by email before switching anything on.</li>
+    <li>If something went wrong with a payment or your event, email <a href="mailto:sooperfast.net@yahoo.com">sooperfast.net@yahoo.com</a> and we'll work it out with you.</li>
+  </ul>
+  <h2>Hosts</h2>
+  <ul>
+    <li>You're responsible for your event wall, including moderating what appears on it. You can hide or delete any upload from your dashboard.</li>
+    <li>Only share your event's QR code with people you're happy to have posting to it.</li>
+    <li>Keep your login details safe. You're responsible for activity on your account.</li>
+  </ul>
+  <h2>Guests</h2>
+  <ul>
+    <li>Only upload photos and videos you took or have the right to share.</li>
+    <li>Don't upload anything illegal, hateful, sexually explicit, violent, or that invades someone's privacy.</li>
+    <li>By uploading, you allow the event host to display your upload on the wall and download it.</li>
+  </ul>
+  <h2>Our responsibilities</h2>
+  <ul>
+    <li>We work hard to keep SnapNexus running smoothly, but we can't promise it will never be interrupted. Don't rely on it as the only copy of important photos. Download them after your event.</li>
+    <li>SnapNexus isn't responsible for what guests upload. We may remove content or suspend events that break these terms.</li>
+  </ul>
+  <h2>Changes</h2>
+  <p>If we update these terms, we'll change the date at the top of this page. Using SnapNexus after a change means you accept the updated terms.</p>
+  <h2>Contact</h2>
+  <p>Questions about these terms? Email <a href="mailto:sooperfast.net@yahoo.com">sooperfast.net@yahoo.com</a>.</p>
 
-    <header class="sticky-header" id="stickyHeader">
-        <div class="header-container">
-            <a class="logo" href="index.html" aria-label="SnapNexus Home"><img src="SNAPN.png" alt="SnapNexus Logo" class="logo-img" onerror="this.style.display='none'"><span class="logo-text">SnapNexus</span></a>
-            <nav class="nav-links"><a href="index.html#features">Features</a><a href="index.html#pricing">Pricing</a><a href="login.html" id="navLoginBtn">Host Login</a><a href="dashboard.html" class="btn-physics btn-outline" style="padding: 8px 20px;">Dashboard</a></nav>
-        </div>
-    </header>
-
-    <main class="container" style="padding-top: 160px;">
-        <h2 class="section-title" style="margin-top: 0;">Terms of <span style="color:#60a5fa;">Service</span></h2>
-        <div class="glass-card legal-content">
-            <p>By using SnapNexus to host or join an event photo wall, you agree to the following terms.</p>
-            <ul>
-                <li>The Free tier includes watermarked photos, a 50 photo limit, and partner ads on the wall.</li>
-                <li>Paid plans remove watermarks and ads and increase photo limits.</li>
-                <li>SnapNexus is not responsible for inappropriate photos uploaded by guests.</li>
-                <li>The host is responsible for moderating their event wall.</li>
-            </ul>
-            <p>Questions about these terms? Contact us at <a href="mailto:sooperfast.net@yahoo.com">sooperfast.net@yahoo.com</a>.</p>
-        </div>
-    </main>
-
-    <footer class="glass-deep">
-        <div class="footer-links"><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms of Service</a><a href="security.html">Security</a><a href="mailto:sooperfast.net@yahoo.com">Contact Support</a><a href="https://soni-tech-solutions.vercel.app" target="_blank" rel="noopener">Report Issue</a></div>
-        <p>© 2026 SnapNexus. A product by <a href="https://soni-tech-solutions.vercel.app/" target="_blank" rel="noopener">Soni Tech Solutions</a>.</p>
-    </footer>
-
-    <script>
-        gsap.registerPlugin(ScrollTrigger);
-
-        const header = document.getElementById('stickyHeader');
-        ScrollTrigger.create({
-            trigger: document.body, start: "top top", end: "+=100",
-            onUpdate: (self) => header.classList.toggle('shrink', self.progress > 0)
-        });
-
-        // ── Custom Cursor ─────────────────────────────────────────────────
-        (function () {
-            if (window.matchMedia('(pointer: coarse)').matches) return;
-            document.body.style.cursor = 'none';
-            const dot = document.getElementById('cursor-dot');
-            const ring = document.getElementById('cursor-ring');
-            let mx = -200, my = -200, rx = -200, ry = -200;
-
-            document.addEventListener('mousemove', e => {
-                mx = e.clientX; my = e.clientY;
-                gsap.set(dot, { x: mx, y: my });
-            });
-
-            (function lerpRing() {
-                rx += (mx - rx) * 0.12;
-                ry += (my - ry) * 0.12;
-                gsap.set(ring, { x: rx, y: ry });
-                requestAnimationFrame(lerpRing);
-            })();
-
-            const hoverEls = document.querySelectorAll('.btn-physics, .glass-card, .footer-links a, .nav-links a, .legal-content a');
-            hoverEls.forEach(el => {
-                el.addEventListener('mouseenter', () => ring.classList.add('hovered'));
-                el.addEventListener('mouseleave', () => ring.classList.remove('hovered'));
-            });
-
-            document.addEventListener('mousedown', () => ring.classList.add('clicking'));
-            document.addEventListener('mouseup', () => ring.classList.remove('clicking'));
-        })();
-    </script>
+</main>
+<footer><p class="foot-mini">© 2026 SnapNexus · A product by <a href="https://soni-tech-solutions.vercel.app/" target="_blank" rel="noopener">Soni Tech Solutions</a> · <a href="mailto:sooperfast.net@yahoo.com">sooperfast.net@yahoo.com</a></p></footer>
 </body>
 </html>

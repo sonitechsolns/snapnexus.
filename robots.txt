@@ -1,11 +1,10 @@
 User-agent: *
-Allow: /index.html
-Allow: /login.html
-Allow: /SNAPN.png
-Allow: /favicon.png
+Allow: /
 Disallow: /app.html
 Disallow: /dashboard.html
 Disallow: /tv.html
 Disallow: /tv_2.html
+Disallow: /vip_dashboard.html
+Disallow: /admin.html
 
 Sitemap: https://snapnexus.in/sitemap.xml

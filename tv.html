@@ -1,281 +1,3456 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script>
-        !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey getNextSurveyStep identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty createPersonProfile opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing debug".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
-        posthog.init('phc_qTBMwhJu6UwxVHTpDkL2dr2ryQDBF776uQG573GjYbbj',{api_host:'https://us.i.posthog.com', defaults:'2026-01-30'})
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
-    <script src="/config.js"></script>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SnapNexus | Live TV</title>
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Urbanist:wght@400;600;800&family=Playfair+Display:wght@600;700&family=Lora:ital,wght@0,500;1,500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        * { margin:0; padding:0; box-sizing:border-box; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#061022">
+<meta name="robots" content="noindex">
+<title>Live Wall · SnapNexus</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+/* SnapNexus design system — shared by every page.
+   Brand colours come from the current logo (amber wordmark on deep blue).
+   To re-brand later, change the tokens in :root only. Guest/TV pages override
+   the same tokens from the event's theme at runtime. */
+:root{
+  --bg:#050b18; --bg-2:#081328; --bg-3:#0c1a36;
+  --surface:rgba(16,30,60,.52); --surface-solid:#0d1a33; --surface-hi:rgba(28,48,92,.6);
+  --line:rgba(150,180,255,.10); --line-2:rgba(150,180,255,.20);
+  --text:#f2f5fb; --muted:#9dabc6; --dim:#6a7894;
+  --accent:#f5b301; --accent-2:#ffd34d; --accent-rgb:245,179,1; --on-accent:#1b1303;
+  --blue:#2f6fe4; --blue-rgb:47,111,228;
+  --ok:#10b981; --warn:#f59e0b; --danger:#f43f5e;
+  --radius:22px; --radius-sm:14px;
+  --font:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --head:'Syne','Inter',sans-serif;
+  --shadow:0 24px 70px rgba(0,0,0,.45);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-family:var(--font);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body.sn-bg{background:
+  radial-gradient(900px 600px at 12% -10%,rgba(var(--blue-rgb),.28),transparent 60%),
+  radial-gradient(700px 500px at 100% 0%,rgba(var(--blue-rgb),.16),transparent 60%),
+  radial-gradient(800px 500px at 50% 120%,rgba(var(--accent-rgb),.07),transparent 60%),
+  var(--bg);background-attachment:fixed}
+img,video{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3,h4{font-family:var(--head);line-height:1.1;letter-spacing:-.02em;margin:0}
+p{margin:0}
+.i{width:1.2em;height:1.2em;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.2em}
+.wrap{width:100%;max-width:1180px;margin:0 auto;padding:0 20px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.muted{color:var(--muted)} .dim{color:var(--dim)}
+.accent{color:var(--accent)}
+.row{display:flex;align-items:center;gap:12px}
+.row.wrap-ok{flex-wrap:wrap}
+.spacer{flex:1}
+.stack{display:flex;flex-direction:column;gap:16px}
+[hidden]{display:none!important}
 
-        /* ---------- Theme tokens ---------- */
-        :root {
-            /* Brand font is fixed — never overridden by a theme block. */
-            --font-brand: 'Syne', sans-serif;
+/* logo */
+.logo{display:inline-flex;align-items:center}
+.logo img{height:22px;width:auto}
+.logo.lg img{height:30px}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 22px;border-radius:999px;font-weight:600;font-size:.95rem;border:1px solid transparent;background:none;cursor:pointer;transition:transform .2s,box-shadow .2s,background .2s,border-color .2s,opacity .2s;white-space:nowrap;text-align:center;line-height:1.2}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important;box-shadow:none!important}
+.btn-primary{background:linear-gradient(180deg,var(--accent-2),var(--accent));color:var(--on-accent);box-shadow:0 0 24px rgba(var(--accent-rgb),.22)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 10px 30px rgba(var(--accent-rgb),.38)}
+.btn-ghost{background:rgba(255,255,255,.04);border-color:var(--line-2);color:var(--text)}
+.btn-ghost:hover{background:rgba(255,255,255,.08)}
+.btn-blue{background:var(--blue);color:#fff}
+.btn-blue:hover{filter:brightness(1.1)}
+.btn-danger{background:rgba(244,63,94,.1);border-color:rgba(244,63,94,.35);color:#fda4b4}
+.btn-danger:hover{background:rgba(244,63,94,.18)}
+.btn-sm{padding:8px 14px;font-size:.85rem}
+.btn-lg{padding:16px 28px;font-size:1.05rem}
+.btn-block{width:100%}
+.btn-icon{width:40px;height:40px;padding:0;border-radius:12px}
+.btn:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+
+/* cards */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.card-pad{padding:24px}
+.card-h{display:flex;align-items:center;gap:10px;margin-bottom:6px;font-family:var(--head);font-size:1.15rem;font-weight:700}
+.card-h .i{color:var(--accent)}
+.card-sub{color:var(--muted);font-size:.9rem;margin-bottom:18px}
+
+/* forms */
+.field{display:flex;flex-direction:column;gap:7px}
+.label{font-size:.85rem;font-weight:600;color:var(--muted)}
+.input,.select,.textarea{width:100%;background:rgba(3,8,20,.55);border:1px solid var(--line-2);border-radius:var(--radius-sm);padding:13px 15px;outline:none;transition:border-color .2s,box-shadow .2s;color:var(--text)}
+.input::placeholder{color:var(--dim)}
+.input:focus,.select:focus,.textarea:focus{border-color:rgba(var(--accent-rgb),.7);box-shadow:0 0 0 3px rgba(var(--accent-rgb),.14)}
+.select{appearance:none;-webkit-appearance:none;cursor:pointer;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 20px) 55%,calc(100% - 15px) 55%;background-size:5px 5px;background-repeat:no-repeat;padding-right:40px}
+.select option{background:var(--surface-solid)}
+.input-wrap{position:relative}
+.input-wrap .btn-icon{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:36px;height:36px;color:var(--muted)}
+input[type=color]{-webkit-appearance:none;appearance:none;border:0;width:34px;height:34px;padding:0;border-radius:50%;background:none;cursor:pointer}
+input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+input[type=color]::-webkit-color-swatch{border:2px solid rgba(255,255,255,.3);border-radius:50%}
+input[type=color]::-moz-color-swatch{border:2px solid rgba(255,255,255,.3);border-radius:50%}
+
+/* badges */
+.badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--line-2);color:var(--muted);background:rgba(255,255,255,.03);white-space:nowrap}
+.badge .dot{width:7px;height:7px;border-radius:50%;background:currentColor}
+.badge.live{color:#34d399;border-color:rgba(16,185,129,.35);background:rgba(16,185,129,.08)}
+.badge.ended{color:#fb7185;border-color:rgba(244,63,94,.35);background:rgba(244,63,94,.08)}
+.badge.trial{color:#93c5fd;border-color:rgba(59,130,246,.35);background:rgba(59,130,246,.08)}
+.badge.single{color:var(--accent-2);border-color:rgba(var(--accent-rgb),.4);background:rgba(var(--accent-rgb),.08)}
+.badge.pro{color:var(--on-accent);border-color:transparent;background:linear-gradient(180deg,var(--accent-2),var(--accent))}
+.badge.warn{color:#fcd34d;border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.08)}
+.badge.pulse .dot{animation:snPulse 1.6s infinite}
+@keyframes snPulse{50%{opacity:.3}}
+
+/* top bar (host pages) */
+.topbar{position:sticky;top:0;z-index:40;background:rgba(5,11,24,.72);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+.topbar .wrap{height:64px;display:flex;align-items:center;gap:14px}
+.topbar .who{font-size:.85rem;color:var(--muted);max-width:40vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:600px){.topbar .who{display:none}}
+
+/* segmented control */
+.seg{display:flex;padding:4px;border-radius:999px;background:rgba(0,0,0,.25);background:color-mix(in srgb,var(--text) 6%,transparent);border:1px solid var(--line-2);position:relative}
+.seg button{flex:1;white-space:nowrap;border:0;background:none;padding:10px 14px;border-radius:999px;font-weight:600;font-size:.9rem;cursor:pointer;color:var(--muted);display:inline-flex;align-items:center;justify-content:center;gap:7px;position:relative;z-index:1;transition:color .2s}
+.seg button[aria-pressed=true]{color:var(--on-accent);background:var(--accent)}
+
+/* toasts */
+.toasts{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;flex-direction:column;gap:8px;width:min(440px,calc(100vw - 32px));pointer-events:none}
+.toast{pointer-events:auto;display:flex;align-items:flex-start;gap:10px;padding:13px 16px;border-radius:14px;background:rgba(10,20,40,.94);border:1px solid var(--line-2);box-shadow:var(--shadow);font-size:.92rem;font-weight:500;color:#fff;opacity:0;transform:translateY(-10px);transition:opacity .25s,transform .25s}
+.toast.show{opacity:1;transform:none}
+.toast .i{margin-top:1px}
+.toast.ok .i{color:#34d399} .toast.err .i{color:#fb7185} .toast.info .i{color:#93c5fd}
+
+/* modal */
+.modal{position:fixed;inset:0;z-index:900;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(2,5,12,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);opacity:0;pointer-events:none;transition:opacity .2s}
+.modal.open{opacity:1;pointer-events:auto}
+.modal-box{width:100%;max-width:460px;max-height:calc(100vh - 32px);overflow:auto;background:var(--surface-solid);border:1px solid var(--line-2);border-radius:24px;padding:26px;box-shadow:var(--shadow);transform:translateY(12px) scale(.98);transition:transform .25s}
+.modal.open .modal-box{transform:none}
+.modal-box.wide{max-width:640px}
+.modal-head{display:flex;align-items:flex-start;gap:12px;margin-bottom:6px}
+.modal-head h3{font-size:1.35rem;flex:1}
+.modal-head .btn-icon{margin:-8px -8px 0 0;color:var(--muted)}
+
+/* misc */
+.spin{animation:snSpin 1s linear infinite}
+@keyframes snSpin{to{transform:rotate(360deg)}}
+.empty{padding:36px 16px;text-align:center;color:var(--muted);font-size:.95rem}
+.empty .i{width:32px;height:32px;color:var(--dim);margin:0 auto 10px;display:block}
+.skel{background:linear-gradient(90deg,rgba(255,255,255,.04),rgba(255,255,255,.09),rgba(255,255,255,.04));background-size:200% 100%;animation:snSkel 1.2s infinite}
+@keyframes snSkel{to{background-position:-200% 0}}
+.divider{height:1px;background:var(--line);margin:18px 0}
+.kbd{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85em;background:rgba(255,255,255,.06);border:1px solid var(--line-2);padding:2px 7px;border-radius:7px}
+.notice{display:flex;gap:10px;padding:13px 15px;border-radius:14px;font-size:.9rem;border:1px solid var(--line-2);background:rgba(255,255,255,.03)}
+.notice .i{flex:none;margin-top:2px}
+.notice.warn{border-color:rgba(245,158,11,.35);background:rgba(245,158,11,.07);color:#fde68a}
+.notice.err{border-color:rgba(244,63,94,.35);background:rgba(244,63,94,.07);color:#fecdd3}
+.notice.ok{border-color:rgba(16,185,129,.35);background:rgba(16,185,129,.07);color:#a7f3d0}
+.notice.info{border-color:rgba(var(--blue-rgb),.4);background:rgba(var(--blue-rgb),.08);color:#bfdbfe}
+.mock-flag{position:fixed;left:12px;bottom:12px;z-index:2000;background:#f43f5e;color:#fff;font-size:.7rem;font-weight:800;letter-spacing:.1em;padding:5px 10px;border-radius:99px;text-transform:uppercase;opacity:.9;text-decoration:none}
+.foot-mini{padding:28px 0 36px;color:var(--dim);font-size:.82rem;text-align:center}
+.foot-mini a{color:var(--muted)} .foot-mini a:hover{color:#fff}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+}
+
+</style>
+<script>
+/* PostHog analytics (same project as the previous site). Skipped in test mode. */
+(function(){
+  try {
+    var q = new URLSearchParams(location.search).get('mock');
+    if (q === '1' || localStorage.getItem('sn_mock') === '1' || location.protocol === 'file:') return;
+  } catch (e) {}
+  !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey getNextSurveyStep identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty createPersonProfile opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing debug".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+  posthog.init('phc_qTBMwhJu6UwxVHTpDkL2dr2ryQDBF776uQG573GjYbbj',{api_host:'https://us.i.posthog.com', defaults:'2026-01-30'})
+})();
+
+</script>
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
+<script>
+//---------------------------------------------------------------------
+//
+// QR Code Generator for JavaScript
+//
+// Copyright (c) 2009 Kazuhiko Arase
+//
+// URL: http://www.d-project.com/
+//
+// Licensed under the MIT license:
+//  http://www.opensource.org/licenses/mit-license.php
+//
+// The word 'QR Code' is registered trademark of
+// DENSO WAVE INCORPORATED
+//  http://www.denso-wave.com/qrcode/faqpatent-e.html
+//
+//---------------------------------------------------------------------
+
+var qrcode = function() {
+
+  //---------------------------------------------------------------------
+  // qrcode
+  //---------------------------------------------------------------------
+
+  /**
+   * qrcode
+   * @param typeNumber 1 to 40
+   * @param errorCorrectionLevel 'L','M','Q','H'
+   */
+  var qrcode = function(typeNumber, errorCorrectionLevel) {
+
+    var PAD0 = 0xEC;
+    var PAD1 = 0x11;
+
+    var _typeNumber = typeNumber;
+    var _errorCorrectionLevel = QRErrorCorrectionLevel[errorCorrectionLevel];
+    var _modules = null;
+    var _moduleCount = 0;
+    var _dataCache = null;
+    var _dataList = [];
+
+    var _this = {};
+
+    var makeImpl = function(test, maskPattern) {
+
+      _moduleCount = _typeNumber * 4 + 17;
+      _modules = function(moduleCount) {
+        var modules = new Array(moduleCount);
+        for (var row = 0; row < moduleCount; row += 1) {
+          modules[row] = new Array(moduleCount);
+          for (var col = 0; col < moduleCount; col += 1) {
+            modules[row][col] = null;
+          }
         }
-        :root,
-        [data-theme="default"] {
-            --bg-mesh-a: #020617; --bg-mesh-b: #1e3a8a; --bg-mesh-c: #3b82f6; --bg-mesh-d: #4f46e5;
-            --bg-solid: #020617;
-            --surface-bg: rgba(0,0,0,0.5);
-            --surface-border: rgba(255,255,255,0.1);
-            --text-primary: #ffffff;
-            --text-secondary: #94a3b8;
-            --accent: #3b82f6;
-            --accent-strong: #fbbf24;
-            --accent-soft: rgba(59, 130, 246, 0.35);
-            --font-heading: 'Syne', sans-serif;
-            --font-body: 'Urbanist', sans-serif;
+        return modules;
+      }(_moduleCount);
+
+      setupPositionProbePattern(0, 0);
+      setupPositionProbePattern(_moduleCount - 7, 0);
+      setupPositionProbePattern(0, _moduleCount - 7);
+      setupPositionAdjustPattern();
+      setupTimingPattern();
+      setupTypeInfo(test, maskPattern);
+
+      if (_typeNumber >= 7) {
+        setupTypeNumber(test);
+      }
+
+      if (_dataCache == null) {
+        _dataCache = createData(_typeNumber, _errorCorrectionLevel, _dataList);
+      }
+
+      mapData(_dataCache, maskPattern);
+    };
+
+    var setupPositionProbePattern = function(row, col) {
+
+      for (var r = -1; r <= 7; r += 1) {
+
+        if (row + r <= -1 || _moduleCount <= row + r) continue;
+
+        for (var c = -1; c <= 7; c += 1) {
+
+          if (col + c <= -1 || _moduleCount <= col + c) continue;
+
+          if ( (0 <= r && r <= 6 && (c == 0 || c == 6) )
+              || (0 <= c && c <= 6 && (r == 0 || r == 6) )
+              || (2 <= r && r <= 4 && 2 <= c && c <= 4) ) {
+            _modules[row + r][col + c] = true;
+          } else {
+            _modules[row + r][col + c] = false;
+          }
         }
-        [data-theme="wedding"] {
-            --bg-mesh-a: #fff7f3; --bg-mesh-b: #fde2e7; --bg-mesh-c: #f6c9d0; --bg-mesh-d: #e9c9a8;
-            --bg-solid: #fdf6f2;
-            --surface-bg: rgba(255,255,255,0.55);
-            --surface-border: rgba(196, 154, 108, 0.4);
-            --text-primary: #5c3a3a;
-            --text-secondary: #8a6a64;
-            --accent: #c9a063;
-            --accent-strong: #a9824f;
-            --accent-soft: rgba(201, 160, 99, 0.35);
-            --font-heading: 'Playfair Display', serif;
-            --font-body: 'Lora', serif;
+      }
+    };
+
+    var getBestMaskPattern = function() {
+
+      var minLostPoint = 0;
+      var pattern = 0;
+
+      for (var i = 0; i < 8; i += 1) {
+
+        makeImpl(true, i);
+
+        var lostPoint = QRUtil.getLostPoint(_this);
+
+        if (i == 0 || minLostPoint > lostPoint) {
+          minLostPoint = lostPoint;
+          pattern = i;
         }
-        [data-theme="corporate"] {
-            --bg-mesh-a: #000000; --bg-mesh-b: #ffc400; --bg-mesh-c: #ff5e00; --bg-mesh-d: #22d3ee;
-            --bg-solid: #020203;
-            --surface-bg: rgba(255, 255, 255, 0.05);
-            --surface-border: rgba(255, 255, 255, 0.14);
-            --text-primary: #ffffff;
-            --text-secondary: #d4d4d8;
-            --accent: #ffc83d;
-            --accent-strong: #ff7a1a;
-            --accent-soft: rgba(255, 200, 61, 0.35);
-            --font-heading: 'Inter', sans-serif;
-            --font-body: 'Inter', sans-serif;
+      }
+
+      return pattern;
+    };
+
+    var setupTimingPattern = function() {
+
+      for (var r = 8; r < _moduleCount - 8; r += 1) {
+        if (_modules[r][6] != null) {
+          continue;
         }
-        [data-theme="party"] {
-            --bg-mesh-a: #070110; --bg-mesh-b: #1a0530; --bg-mesh-c: #5b0fb5; --bg-mesh-d: #ff00c8;
-            --bg-solid: #070110;
-            --surface-bg: rgba(20, 4, 32, 0.55);
-            --surface-border: rgba(255, 0, 200, 0.4);
-            --text-primary: #f5f3ff;
-            --text-secondary: #c4b5fd;
-            --accent: #00f0ff;
-            --accent-strong: #ff00c8;
-            --accent-soft: rgba(0, 240, 255, 0.45);
-            --font-heading: 'Urbanist', sans-serif;
-            --font-body: 'Urbanist', sans-serif;
+        _modules[r][6] = (r % 2 == 0);
+      }
+
+      for (var c = 8; c < _moduleCount - 8; c += 1) {
+        if (_modules[6][c] != null) {
+          continue;
+        }
+        _modules[6][c] = (c % 2 == 0);
+      }
+    };
+
+    var setupPositionAdjustPattern = function() {
+
+      var pos = QRUtil.getPatternPosition(_typeNumber);
+
+      for (var i = 0; i < pos.length; i += 1) {
+
+        for (var j = 0; j < pos.length; j += 1) {
+
+          var row = pos[i];
+          var col = pos[j];
+
+          if (_modules[row][col] != null) {
+            continue;
+          }
+
+          for (var r = -2; r <= 2; r += 1) {
+
+            for (var c = -2; c <= 2; c += 1) {
+
+              if (r == -2 || r == 2 || c == -2 || c == 2
+                  || (r == 0 && c == 0) ) {
+                _modules[row + r][col + c] = true;
+              } else {
+                _modules[row + r][col + c] = false;
+              }
+            }
+          }
+        }
+      }
+    };
+
+    var setupTypeNumber = function(test) {
+
+      var bits = QRUtil.getBCHTypeNumber(_typeNumber);
+
+      for (var i = 0; i < 18; i += 1) {
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+        _modules[Math.floor(i / 3)][i % 3 + _moduleCount - 8 - 3] = mod;
+      }
+
+      for (var i = 0; i < 18; i += 1) {
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+        _modules[i % 3 + _moduleCount - 8 - 3][Math.floor(i / 3)] = mod;
+      }
+    };
+
+    var setupTypeInfo = function(test, maskPattern) {
+
+      var data = (_errorCorrectionLevel << 3) | maskPattern;
+      var bits = QRUtil.getBCHTypeInfo(data);
+
+      // vertical
+      for (var i = 0; i < 15; i += 1) {
+
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+
+        if (i < 6) {
+          _modules[i][8] = mod;
+        } else if (i < 8) {
+          _modules[i + 1][8] = mod;
+        } else {
+          _modules[_moduleCount - 15 + i][8] = mod;
+        }
+      }
+
+      // horizontal
+      for (var i = 0; i < 15; i += 1) {
+
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+
+        if (i < 8) {
+          _modules[8][_moduleCount - i - 1] = mod;
+        } else if (i < 9) {
+          _modules[8][15 - i - 1 + 1] = mod;
+        } else {
+          _modules[8][15 - i - 1] = mod;
+        }
+      }
+
+      // fixed module
+      _modules[_moduleCount - 8][8] = (!test);
+    };
+
+    var mapData = function(data, maskPattern) {
+
+      var inc = -1;
+      var row = _moduleCount - 1;
+      var bitIndex = 7;
+      var byteIndex = 0;
+      var maskFunc = QRUtil.getMaskFunction(maskPattern);
+
+      for (var col = _moduleCount - 1; col > 0; col -= 2) {
+
+        if (col == 6) col -= 1;
+
+        while (true) {
+
+          for (var c = 0; c < 2; c += 1) {
+
+            if (_modules[row][col - c] == null) {
+
+              var dark = false;
+
+              if (byteIndex < data.length) {
+                dark = ( ( (data[byteIndex] >>> bitIndex) & 1) == 1);
+              }
+
+              var mask = maskFunc(row, col - c);
+
+              if (mask) {
+                dark = !dark;
+              }
+
+              _modules[row][col - c] = dark;
+              bitIndex -= 1;
+
+              if (bitIndex == -1) {
+                byteIndex += 1;
+                bitIndex = 7;
+              }
+            }
+          }
+
+          row += inc;
+
+          if (row < 0 || _moduleCount <= row) {
+            row -= inc;
+            inc = -inc;
+            break;
+          }
+        }
+      }
+    };
+
+    var createBytes = function(buffer, rsBlocks) {
+
+      var offset = 0;
+
+      var maxDcCount = 0;
+      var maxEcCount = 0;
+
+      var dcdata = new Array(rsBlocks.length);
+      var ecdata = new Array(rsBlocks.length);
+
+      for (var r = 0; r < rsBlocks.length; r += 1) {
+
+        var dcCount = rsBlocks[r].dataCount;
+        var ecCount = rsBlocks[r].totalCount - dcCount;
+
+        maxDcCount = Math.max(maxDcCount, dcCount);
+        maxEcCount = Math.max(maxEcCount, ecCount);
+
+        dcdata[r] = new Array(dcCount);
+
+        for (var i = 0; i < dcdata[r].length; i += 1) {
+          dcdata[r][i] = 0xff & buffer.getBuffer()[i + offset];
+        }
+        offset += dcCount;
+
+        var rsPoly = QRUtil.getErrorCorrectPolynomial(ecCount);
+        var rawPoly = qrPolynomial(dcdata[r], rsPoly.getLength() - 1);
+
+        var modPoly = rawPoly.mod(rsPoly);
+        ecdata[r] = new Array(rsPoly.getLength() - 1);
+        for (var i = 0; i < ecdata[r].length; i += 1) {
+          var modIndex = i + modPoly.getLength() - ecdata[r].length;
+          ecdata[r][i] = (modIndex >= 0)? modPoly.getAt(modIndex) : 0;
+        }
+      }
+
+      var totalCodeCount = 0;
+      for (var i = 0; i < rsBlocks.length; i += 1) {
+        totalCodeCount += rsBlocks[i].totalCount;
+      }
+
+      var data = new Array(totalCodeCount);
+      var index = 0;
+
+      for (var i = 0; i < maxDcCount; i += 1) {
+        for (var r = 0; r < rsBlocks.length; r += 1) {
+          if (i < dcdata[r].length) {
+            data[index] = dcdata[r][i];
+            index += 1;
+          }
+        }
+      }
+
+      for (var i = 0; i < maxEcCount; i += 1) {
+        for (var r = 0; r < rsBlocks.length; r += 1) {
+          if (i < ecdata[r].length) {
+            data[index] = ecdata[r][i];
+            index += 1;
+          }
+        }
+      }
+
+      return data;
+    };
+
+    var createData = function(typeNumber, errorCorrectionLevel, dataList) {
+
+      var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, errorCorrectionLevel);
+
+      var buffer = qrBitBuffer();
+
+      for (var i = 0; i < dataList.length; i += 1) {
+        var data = dataList[i];
+        buffer.put(data.getMode(), 4);
+        buffer.put(data.getLength(), QRUtil.getLengthInBits(data.getMode(), typeNumber) );
+        data.write(buffer);
+      }
+
+      // calc num max data.
+      var totalDataCount = 0;
+      for (var i = 0; i < rsBlocks.length; i += 1) {
+        totalDataCount += rsBlocks[i].dataCount;
+      }
+
+      if (buffer.getLengthInBits() > totalDataCount * 8) {
+        throw 'code length overflow. ('
+          + buffer.getLengthInBits()
+          + '>'
+          + totalDataCount * 8
+          + ')';
+      }
+
+      // end code
+      if (buffer.getLengthInBits() + 4 <= totalDataCount * 8) {
+        buffer.put(0, 4);
+      }
+
+      // padding
+      while (buffer.getLengthInBits() % 8 != 0) {
+        buffer.putBit(false);
+      }
+
+      // padding
+      while (true) {
+
+        if (buffer.getLengthInBits() >= totalDataCount * 8) {
+          break;
+        }
+        buffer.put(PAD0, 8);
+
+        if (buffer.getLengthInBits() >= totalDataCount * 8) {
+          break;
+        }
+        buffer.put(PAD1, 8);
+      }
+
+      return createBytes(buffer, rsBlocks);
+    };
+
+    _this.addData = function(data, mode) {
+
+      mode = mode || 'Byte';
+
+      var newData = null;
+
+      switch(mode) {
+      case 'Numeric' :
+        newData = qrNumber(data);
+        break;
+      case 'Alphanumeric' :
+        newData = qrAlphaNum(data);
+        break;
+      case 'Byte' :
+        newData = qr8BitByte(data);
+        break;
+      case 'Kanji' :
+        newData = qrKanji(data);
+        break;
+      default :
+        throw 'mode:' + mode;
+      }
+
+      _dataList.push(newData);
+      _dataCache = null;
+    };
+
+    _this.isDark = function(row, col) {
+      if (row < 0 || _moduleCount <= row || col < 0 || _moduleCount <= col) {
+        throw row + ',' + col;
+      }
+      return _modules[row][col];
+    };
+
+    _this.getModuleCount = function() {
+      return _moduleCount;
+    };
+
+    _this.make = function() {
+      if (_typeNumber < 1) {
+        var typeNumber = 1;
+
+        for (; typeNumber < 40; typeNumber++) {
+          var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, _errorCorrectionLevel);
+          var buffer = qrBitBuffer();
+
+          for (var i = 0; i < _dataList.length; i++) {
+            var data = _dataList[i];
+            buffer.put(data.getMode(), 4);
+            buffer.put(data.getLength(), QRUtil.getLengthInBits(data.getMode(), typeNumber) );
+            data.write(buffer);
+          }
+
+          var totalDataCount = 0;
+          for (var i = 0; i < rsBlocks.length; i++) {
+            totalDataCount += rsBlocks[i].dataCount;
+          }
+
+          if (buffer.getLengthInBits() <= totalDataCount * 8) {
+            break;
+          }
         }
 
-        body { font-family: var(--font-body); background: var(--bg-solid); color: var(--text-primary); overflow:hidden; height:100vh; width:100vw; transition: background 0.4s ease, color 0.4s ease; }
+        _typeNumber = typeNumber;
+      }
 
-        .liquid-mesh { position:fixed; top:0; left:0; width:100%; height:100%; z-index:-3; background:radial-gradient(circle at 20% 30%, var(--bg-mesh-a), var(--bg-mesh-b) 30%, var(--bg-mesh-c) 65%, var(--bg-mesh-d)); background-size:200% 200%; animation: meshAnim 15s ease infinite alternate; transition: background 0.6s ease; }
-        @keyframes meshAnim { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
+      makeImpl(false, getBestMaskPattern() );
+    };
 
-        /* Corporate theme: Aurora Mesh Gradient — single organic blob (cream/gold/amber core, blue rim wrap, grain) */
-        [data-theme="corporate"] .liquid-mesh {
-            background:
-                radial-gradient(ellipse 60% 50% at 18% 15%, rgba(10, 69, 112, 0.55), transparent 60%),
-                radial-gradient(ellipse 50% 45% at 8% 92%, rgba(10, 69, 112, 0.35), transparent 60%),
-                #020203;
-            animation: none;
+    _this.createTableTag = function(cellSize, margin) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var qrHtml = '';
+
+      qrHtml += '<table style="';
+      qrHtml += ' border-width: 0px; border-style: none;';
+      qrHtml += ' border-collapse: collapse;';
+      qrHtml += ' padding: 0px; margin: ' + margin + 'px;';
+      qrHtml += '">';
+      qrHtml += '<tbody>';
+
+      for (var r = 0; r < _this.getModuleCount(); r += 1) {
+
+        qrHtml += '<tr>';
+
+        for (var c = 0; c < _this.getModuleCount(); c += 1) {
+          qrHtml += '<td style="';
+          qrHtml += ' border-width: 0px; border-style: none;';
+          qrHtml += ' border-collapse: collapse;';
+          qrHtml += ' padding: 0px; margin: 0px;';
+          qrHtml += ' width: ' + cellSize + 'px;';
+          qrHtml += ' height: ' + cellSize + 'px;';
+          qrHtml += ' background-color: ';
+          qrHtml += _this.isDark(r, c)? '#000000' : '#ffffff';
+          qrHtml += ';';
+          qrHtml += '"/>';
         }
-        [data-theme="corporate"] .liquid-mesh::before {
-            content: '';
-            position: absolute;
-            top: 6%; left: -10%;
-            width: 78%; height: 80%;
-            background: radial-gradient(ellipse 70% 65% at 40% 58%, #f3fa7a 0%, #e9d34a 16%, #d9a01f 32%, #b16d02 50%, #7a4400 66%, transparent 82%);
-            border-radius: 38% 62% 58% 42% / 52% 46% 54% 48%;
-            filter: blur(45px);
-            animation: corporateBlobMorph 26s ease-in-out infinite alternate;
+
+        qrHtml += '</tr>';
+      }
+
+      qrHtml += '</tbody>';
+      qrHtml += '</table>';
+
+      return qrHtml;
+    };
+
+    _this.createSvgTag = function(cellSize, margin, alt, title) {
+
+      var opts = {};
+      if (typeof arguments[0] == 'object') {
+        // Called by options.
+        opts = arguments[0];
+        // overwrite cellSize and margin.
+        cellSize = opts.cellSize;
+        margin = opts.margin;
+        alt = opts.alt;
+        title = opts.title;
+      }
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      // Compose alt property surrogate
+      alt = (typeof alt === 'string') ? {text: alt} : alt || {};
+      alt.text = alt.text || null;
+      alt.id = (alt.text) ? alt.id || 'qrcode-description' : null;
+
+      // Compose title property surrogate
+      title = (typeof title === 'string') ? {text: title} : title || {};
+      title.text = title.text || null;
+      title.id = (title.text) ? title.id || 'qrcode-title' : null;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var c, mc, r, mr, qrSvg='', rect;
+
+      rect = 'l' + cellSize + ',0 0,' + cellSize +
+        ' -' + cellSize + ',0 0,-' + cellSize + 'z ';
+
+      qrSvg += '<svg version="1.1" xmlns="http://www.w3.org/2000/svg"';
+      qrSvg += !opts.scalable ? ' width="' + size + 'px" height="' + size + 'px"' : '';
+      qrSvg += ' viewBox="0 0 ' + size + ' ' + size + '" ';
+      qrSvg += ' preserveAspectRatio="xMinYMin meet"';
+      qrSvg += (title.text || alt.text) ? ' role="img" aria-labelledby="' +
+          escapeXml([title.id, alt.id].join(' ').trim() ) + '"' : '';
+      qrSvg += '>';
+      qrSvg += (title.text) ? '<title id="' + escapeXml(title.id) + '">' +
+          escapeXml(title.text) + '</title>' : '';
+      qrSvg += (alt.text) ? '<description id="' + escapeXml(alt.id) + '">' +
+          escapeXml(alt.text) + '</description>' : '';
+      qrSvg += '<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>';
+      qrSvg += '<path d="';
+
+      for (r = 0; r < _this.getModuleCount(); r += 1) {
+        mr = r * cellSize + margin;
+        for (c = 0; c < _this.getModuleCount(); c += 1) {
+          if (_this.isDark(r, c) ) {
+            mc = c*cellSize+margin;
+            qrSvg += 'M' + mc + ',' + mr + rect;
+          }
         }
-        [data-theme="corporate"] .liquid-mesh::after {
-            content: '';
-            position: absolute; inset: 0;
-            background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48ZmlsdGVyIGlkPSJuIj48ZmVUdXJidWxlbmNlIHR5cGU9ImZyYWN0YWxOb2lzZSIgYmFzZUZyZXF1ZW5jeT0iMC44NSIgbnVtT2N0YXZlcz0iMyIgc3RpdGNoVGlsZXM9InN0aXRjaCIvPjxmZUNvbG9yTWF0cml4IHR5cGU9Im1hdHJpeCIgdmFsdWVzPSIwIDAgMCAwIDAgIDAgMCAwIDAgMCAgMCAwIDAgMCAwICAwIDAgMCAwLjEyIDAiLz48L2ZpbHRlcj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWx0ZXI9InVybCglMjNuKSIvPjwvc3ZnPg==");
-            background-size: 220px 220px;
-            background-repeat: repeat;
-            mix-blend-mode: overlay;
-            opacity: 0.55;
+      }
+
+      qrSvg += '" stroke="transparent" fill="black"/>';
+      qrSvg += '</svg>';
+
+      return qrSvg;
+    };
+
+    _this.createDataURL = function(cellSize, margin) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      return createDataURL(size, size, function(x, y) {
+        if (min <= x && x < max && min <= y && y < max) {
+          var c = Math.floor( (x - min) / cellSize);
+          var r = Math.floor( (y - min) / cellSize);
+          return _this.isDark(r, c)? 0 : 1;
+        } else {
+          return 1;
         }
-        @keyframes corporateBlobMorph {
-            0%   { border-radius: 38% 62% 58% 42% / 52% 46% 54% 48%; transform: rotate(-4deg) scale(1); }
-            50%  { border-radius: 48% 52% 45% 55% / 45% 55% 48% 52%; transform: rotate(2deg) scale(1.04); }
-            100% { border-radius: 42% 58% 50% 50% / 50% 48% 52% 50%; transform: rotate(-6deg) scale(1); }
+      } );
+    };
+
+    _this.createImgTag = function(cellSize, margin, alt) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+
+      var img = '';
+      img += '<img';
+      img += '\u0020src="';
+      img += _this.createDataURL(cellSize, margin);
+      img += '"';
+      img += '\u0020width="';
+      img += size;
+      img += '"';
+      img += '\u0020height="';
+      img += size;
+      img += '"';
+      if (alt) {
+        img += '\u0020alt="';
+        img += escapeXml(alt);
+        img += '"';
+      }
+      img += '/>';
+
+      return img;
+    };
+
+    var escapeXml = function(s) {
+      var escaped = '';
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charAt(i);
+        switch(c) {
+        case '<': escaped += '&lt;'; break;
+        case '>': escaped += '&gt;'; break;
+        case '&': escaped += '&amp;'; break;
+        case '"': escaped += '&quot;'; break;
+        default : escaped += c; break;
+        }
+      }
+      return escaped;
+    };
+
+    var _createHalfASCII = function(margin) {
+      var cellSize = 1;
+      margin = (typeof margin == 'undefined')? cellSize * 2 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      var y, x, r1, r2, p;
+
+      var blocks = {
+        '██': '█',
+        '█ ': '▀',
+        ' █': '▄',
+        '  ': ' '
+      };
+
+      var blocksLastLineNoMargin = {
+        '██': '▀',
+        '█ ': '▀',
+        ' █': ' ',
+        '  ': ' '
+      };
+
+      var ascii = '';
+      for (y = 0; y < size; y += 2) {
+        r1 = Math.floor((y - min) / cellSize);
+        r2 = Math.floor((y + 1 - min) / cellSize);
+        for (x = 0; x < size; x += 1) {
+          p = '█';
+
+          if (min <= x && x < max && min <= y && y < max && _this.isDark(r1, Math.floor((x - min) / cellSize))) {
+            p = ' ';
+          }
+
+          if (min <= x && x < max && min <= y+1 && y+1 < max && _this.isDark(r2, Math.floor((x - min) / cellSize))) {
+            p += ' ';
+          }
+          else {
+            p += '█';
+          }
+
+          // Output 2 characters per pixel, to create full square. 1 character per pixels gives only half width of square.
+          ascii += (margin < 1 && y+1 >= max) ? blocksLastLineNoMargin[p] : blocks[p];
         }
 
-        /* The Un-collapsible QR Sidebar */
-        .sidebar { position: absolute; left: 0; top: 0; width: 300px; height: 100vh; background: var(--surface-bg); backdrop-filter: blur(10px); padding: 40px 20px; display: flex; flex-direction: column; align-items: center; z-index: 10; border-right: 1px solid var(--surface-border); transition: background 0.4s ease, border-color 0.4s ease; }
-        .sidebar h1 { font-family: var(--font-heading); font-size: 2rem; margin-bottom: 20px; text-align: center; color: var(--text-primary); }
-        .qr-placeholder { width: 200px; height: 200px; background: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: black; font-weight: bold; margin-bottom: 20px; box-shadow: 0 0 25px var(--accent-soft); }
+        ascii += '\n';
+      }
 
-        .slideshow-container { position: absolute; left: 300px; width: calc(100vw - 300px); height: calc(100vh - 60px); display: flex; align-items: center; justify-content: center; }
-        .photo-layer { position: absolute; max-width: 85%; max-height: 85%; display: flex; align-items: center; justify-content: center; opacity: 0; transform: scale(0.95); transition: opacity 1s ease, transform 1s ease; }
-        .photo-layer.active { opacity: 1; transform: scale(1); }
-        .photo-layer img, .photo-layer video { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5), 0 0 40px var(--accent-soft); }
+      if (size % 2 && margin > 0) {
+        return ascii.substring(0, ascii.length - size - 1) + Array(size+1).join('▀');
+      }
 
-        /* The "Ad" Ribbon Header/Footer */
-        .ad-banner { position: absolute; bottom: 0; left: 300px; width: calc(100vw - 300px); height: 60px; background: var(--surface-bg); backdrop-filter: blur(10px); border-top: 1px solid var(--surface-border); display: flex; align-items: center; justify-content: center; overflow: hidden; z-index: 15; transition: background 0.4s ease, border-color 0.4s ease; }
-        .ad-text { position: absolute; font-size: 1.2rem; color: var(--accent-strong); font-weight: 700; font-family: var(--font-brand); transition: opacity 0.8s ease, transform 0.8s ease; opacity: 0; transform: translateY(20px); text-transform: uppercase; letter-spacing: 1px; }
-        .ad-text.active { opacity: 1; transform: translateY(0); }
-        .ad-text.exit { opacity: 0; transform: translateY(-20px); }
+      return ascii.substring(0, ascii.length-1);
+    };
 
-        .watermark { position: absolute; top: 30px; right: 40px; font-size: 1.2rem; color: var(--text-secondary); font-weight: 800; font-family: var(--font-brand); z-index: 10; text-shadow: 0 2px 10px black; }
-    </style>
+    _this.createASCII = function(cellSize, margin) {
+      cellSize = cellSize || 1;
+
+      if (cellSize < 2) {
+        return _createHalfASCII(margin);
+      }
+
+      cellSize -= 1;
+      margin = (typeof margin == 'undefined')? cellSize * 2 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      var y, x, r, p;
+
+      var white = Array(cellSize+1).join('██');
+      var black = Array(cellSize+1).join('  ');
+
+      var ascii = '';
+      var line = '';
+      for (y = 0; y < size; y += 1) {
+        r = Math.floor( (y - min) / cellSize);
+        line = '';
+        for (x = 0; x < size; x += 1) {
+          p = 1;
+
+          if (min <= x && x < max && min <= y && y < max && _this.isDark(r, Math.floor((x - min) / cellSize))) {
+            p = 0;
+          }
+
+          // Output 2 characters per pixel, to create full square. 1 character per pixels gives only half width of square.
+          line += p ? white : black;
+        }
+
+        for (r = 0; r < cellSize; r += 1) {
+          ascii += line + '\n';
+        }
+      }
+
+      return ascii.substring(0, ascii.length-1);
+    };
+
+    _this.renderTo2dContext = function(context, cellSize) {
+      cellSize = cellSize || 2;
+      var length = _this.getModuleCount();
+      for (var row = 0; row < length; row++) {
+        for (var col = 0; col < length; col++) {
+          context.fillStyle = _this.isDark(row, col) ? 'black' : 'white';
+          context.fillRect(row * cellSize, col * cellSize, cellSize, cellSize);
+        }
+      }
+    }
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrcode.stringToBytes
+  //---------------------------------------------------------------------
+
+  qrcode.stringToBytesFuncs = {
+    'default' : function(s) {
+      var bytes = [];
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charCodeAt(i);
+        bytes.push(c & 0xff);
+      }
+      return bytes;
+    }
+  };
+
+  qrcode.stringToBytes = qrcode.stringToBytesFuncs['default'];
+
+  //---------------------------------------------------------------------
+  // qrcode.createStringToBytes
+  //---------------------------------------------------------------------
+
+  /**
+   * @param unicodeData base64 string of byte array.
+   * [16bit Unicode],[16bit Bytes], ...
+   * @param numChars
+   */
+  qrcode.createStringToBytes = function(unicodeData, numChars) {
+
+    // create conversion map.
+
+    var unicodeMap = function() {
+
+      var bin = base64DecodeInputStream(unicodeData);
+      var read = function() {
+        var b = bin.read();
+        if (b == -1) throw 'eof';
+        return b;
+      };
+
+      var count = 0;
+      var unicodeMap = {};
+      while (true) {
+        var b0 = bin.read();
+        if (b0 == -1) break;
+        var b1 = read();
+        var b2 = read();
+        var b3 = read();
+        var k = String.fromCharCode( (b0 << 8) | b1);
+        var v = (b2 << 8) | b3;
+        unicodeMap[k] = v;
+        count += 1;
+      }
+      if (count != numChars) {
+        throw count + ' != ' + numChars;
+      }
+
+      return unicodeMap;
+    }();
+
+    var unknownChar = '?'.charCodeAt(0);
+
+    return function(s) {
+      var bytes = [];
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charCodeAt(i);
+        if (c < 128) {
+          bytes.push(c);
+        } else {
+          var b = unicodeMap[s.charAt(i)];
+          if (typeof b == 'number') {
+            if ( (b & 0xff) == b) {
+              // 1byte
+              bytes.push(b);
+            } else {
+              // 2bytes
+              bytes.push(b >>> 8);
+              bytes.push(b & 0xff);
+            }
+          } else {
+            bytes.push(unknownChar);
+          }
+        }
+      }
+      return bytes;
+    };
+  };
+
+  //---------------------------------------------------------------------
+  // QRMode
+  //---------------------------------------------------------------------
+
+  var QRMode = {
+    MODE_NUMBER :    1 << 0,
+    MODE_ALPHA_NUM : 1 << 1,
+    MODE_8BIT_BYTE : 1 << 2,
+    MODE_KANJI :     1 << 3
+  };
+
+  //---------------------------------------------------------------------
+  // QRErrorCorrectionLevel
+  //---------------------------------------------------------------------
+
+  var QRErrorCorrectionLevel = {
+    L : 1,
+    M : 0,
+    Q : 3,
+    H : 2
+  };
+
+  //---------------------------------------------------------------------
+  // QRMaskPattern
+  //---------------------------------------------------------------------
+
+  var QRMaskPattern = {
+    PATTERN000 : 0,
+    PATTERN001 : 1,
+    PATTERN010 : 2,
+    PATTERN011 : 3,
+    PATTERN100 : 4,
+    PATTERN101 : 5,
+    PATTERN110 : 6,
+    PATTERN111 : 7
+  };
+
+  //---------------------------------------------------------------------
+  // QRUtil
+  //---------------------------------------------------------------------
+
+  var QRUtil = function() {
+
+    var PATTERN_POSITION_TABLE = [
+      [],
+      [6, 18],
+      [6, 22],
+      [6, 26],
+      [6, 30],
+      [6, 34],
+      [6, 22, 38],
+      [6, 24, 42],
+      [6, 26, 46],
+      [6, 28, 50],
+      [6, 30, 54],
+      [6, 32, 58],
+      [6, 34, 62],
+      [6, 26, 46, 66],
+      [6, 26, 48, 70],
+      [6, 26, 50, 74],
+      [6, 30, 54, 78],
+      [6, 30, 56, 82],
+      [6, 30, 58, 86],
+      [6, 34, 62, 90],
+      [6, 28, 50, 72, 94],
+      [6, 26, 50, 74, 98],
+      [6, 30, 54, 78, 102],
+      [6, 28, 54, 80, 106],
+      [6, 32, 58, 84, 110],
+      [6, 30, 58, 86, 114],
+      [6, 34, 62, 90, 118],
+      [6, 26, 50, 74, 98, 122],
+      [6, 30, 54, 78, 102, 126],
+      [6, 26, 52, 78, 104, 130],
+      [6, 30, 56, 82, 108, 134],
+      [6, 34, 60, 86, 112, 138],
+      [6, 30, 58, 86, 114, 142],
+      [6, 34, 62, 90, 118, 146],
+      [6, 30, 54, 78, 102, 126, 150],
+      [6, 24, 50, 76, 102, 128, 154],
+      [6, 28, 54, 80, 106, 132, 158],
+      [6, 32, 58, 84, 110, 136, 162],
+      [6, 26, 54, 82, 110, 138, 166],
+      [6, 30, 58, 86, 114, 142, 170]
+    ];
+    var G15 = (1 << 10) | (1 << 8) | (1 << 5) | (1 << 4) | (1 << 2) | (1 << 1) | (1 << 0);
+    var G18 = (1 << 12) | (1 << 11) | (1 << 10) | (1 << 9) | (1 << 8) | (1 << 5) | (1 << 2) | (1 << 0);
+    var G15_MASK = (1 << 14) | (1 << 12) | (1 << 10) | (1 << 4) | (1 << 1);
+
+    var _this = {};
+
+    var getBCHDigit = function(data) {
+      var digit = 0;
+      while (data != 0) {
+        digit += 1;
+        data >>>= 1;
+      }
+      return digit;
+    };
+
+    _this.getBCHTypeInfo = function(data) {
+      var d = data << 10;
+      while (getBCHDigit(d) - getBCHDigit(G15) >= 0) {
+        d ^= (G15 << (getBCHDigit(d) - getBCHDigit(G15) ) );
+      }
+      return ( (data << 10) | d) ^ G15_MASK;
+    };
+
+    _this.getBCHTypeNumber = function(data) {
+      var d = data << 12;
+      while (getBCHDigit(d) - getBCHDigit(G18) >= 0) {
+        d ^= (G18 << (getBCHDigit(d) - getBCHDigit(G18) ) );
+      }
+      return (data << 12) | d;
+    };
+
+    _this.getPatternPosition = function(typeNumber) {
+      return PATTERN_POSITION_TABLE[typeNumber - 1];
+    };
+
+    _this.getMaskFunction = function(maskPattern) {
+
+      switch (maskPattern) {
+
+      case QRMaskPattern.PATTERN000 :
+        return function(i, j) { return (i + j) % 2 == 0; };
+      case QRMaskPattern.PATTERN001 :
+        return function(i, j) { return i % 2 == 0; };
+      case QRMaskPattern.PATTERN010 :
+        return function(i, j) { return j % 3 == 0; };
+      case QRMaskPattern.PATTERN011 :
+        return function(i, j) { return (i + j) % 3 == 0; };
+      case QRMaskPattern.PATTERN100 :
+        return function(i, j) { return (Math.floor(i / 2) + Math.floor(j / 3) ) % 2 == 0; };
+      case QRMaskPattern.PATTERN101 :
+        return function(i, j) { return (i * j) % 2 + (i * j) % 3 == 0; };
+      case QRMaskPattern.PATTERN110 :
+        return function(i, j) { return ( (i * j) % 2 + (i * j) % 3) % 2 == 0; };
+      case QRMaskPattern.PATTERN111 :
+        return function(i, j) { return ( (i * j) % 3 + (i + j) % 2) % 2 == 0; };
+
+      default :
+        throw 'bad maskPattern:' + maskPattern;
+      }
+    };
+
+    _this.getErrorCorrectPolynomial = function(errorCorrectLength) {
+      var a = qrPolynomial([1], 0);
+      for (var i = 0; i < errorCorrectLength; i += 1) {
+        a = a.multiply(qrPolynomial([1, QRMath.gexp(i)], 0) );
+      }
+      return a;
+    };
+
+    _this.getLengthInBits = function(mode, type) {
+
+      if (1 <= type && type < 10) {
+
+        // 1 - 9
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 10;
+        case QRMode.MODE_ALPHA_NUM : return 9;
+        case QRMode.MODE_8BIT_BYTE : return 8;
+        case QRMode.MODE_KANJI     : return 8;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else if (type < 27) {
+
+        // 10 - 26
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 12;
+        case QRMode.MODE_ALPHA_NUM : return 11;
+        case QRMode.MODE_8BIT_BYTE : return 16;
+        case QRMode.MODE_KANJI     : return 10;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else if (type < 41) {
+
+        // 27 - 40
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 14;
+        case QRMode.MODE_ALPHA_NUM : return 13;
+        case QRMode.MODE_8BIT_BYTE : return 16;
+        case QRMode.MODE_KANJI     : return 12;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else {
+        throw 'type:' + type;
+      }
+    };
+
+    _this.getLostPoint = function(qrcode) {
+
+      var moduleCount = qrcode.getModuleCount();
+
+      var lostPoint = 0;
+
+      // LEVEL1
+
+      for (var row = 0; row < moduleCount; row += 1) {
+        for (var col = 0; col < moduleCount; col += 1) {
+
+          var sameCount = 0;
+          var dark = qrcode.isDark(row, col);
+
+          for (var r = -1; r <= 1; r += 1) {
+
+            if (row + r < 0 || moduleCount <= row + r) {
+              continue;
+            }
+
+            for (var c = -1; c <= 1; c += 1) {
+
+              if (col + c < 0 || moduleCount <= col + c) {
+                continue;
+              }
+
+              if (r == 0 && c == 0) {
+                continue;
+              }
+
+              if (dark == qrcode.isDark(row + r, col + c) ) {
+                sameCount += 1;
+              }
+            }
+          }
+
+          if (sameCount > 5) {
+            lostPoint += (3 + sameCount - 5);
+          }
+        }
+      };
+
+      // LEVEL2
+
+      for (var row = 0; row < moduleCount - 1; row += 1) {
+        for (var col = 0; col < moduleCount - 1; col += 1) {
+          var count = 0;
+          if (qrcode.isDark(row, col) ) count += 1;
+          if (qrcode.isDark(row + 1, col) ) count += 1;
+          if (qrcode.isDark(row, col + 1) ) count += 1;
+          if (qrcode.isDark(row + 1, col + 1) ) count += 1;
+          if (count == 0 || count == 4) {
+            lostPoint += 3;
+          }
+        }
+      }
+
+      // LEVEL3
+
+      for (var row = 0; row < moduleCount; row += 1) {
+        for (var col = 0; col < moduleCount - 6; col += 1) {
+          if (qrcode.isDark(row, col)
+              && !qrcode.isDark(row, col + 1)
+              &&  qrcode.isDark(row, col + 2)
+              &&  qrcode.isDark(row, col + 3)
+              &&  qrcode.isDark(row, col + 4)
+              && !qrcode.isDark(row, col + 5)
+              &&  qrcode.isDark(row, col + 6) ) {
+            lostPoint += 40;
+          }
+        }
+      }
+
+      for (var col = 0; col < moduleCount; col += 1) {
+        for (var row = 0; row < moduleCount - 6; row += 1) {
+          if (qrcode.isDark(row, col)
+              && !qrcode.isDark(row + 1, col)
+              &&  qrcode.isDark(row + 2, col)
+              &&  qrcode.isDark(row + 3, col)
+              &&  qrcode.isDark(row + 4, col)
+              && !qrcode.isDark(row + 5, col)
+              &&  qrcode.isDark(row + 6, col) ) {
+            lostPoint += 40;
+          }
+        }
+      }
+
+      // LEVEL4
+
+      var darkCount = 0;
+
+      for (var col = 0; col < moduleCount; col += 1) {
+        for (var row = 0; row < moduleCount; row += 1) {
+          if (qrcode.isDark(row, col) ) {
+            darkCount += 1;
+          }
+        }
+      }
+
+      var ratio = Math.abs(100 * darkCount / moduleCount / moduleCount - 50) / 5;
+      lostPoint += ratio * 10;
+
+      return lostPoint;
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // QRMath
+  //---------------------------------------------------------------------
+
+  var QRMath = function() {
+
+    var EXP_TABLE = new Array(256);
+    var LOG_TABLE = new Array(256);
+
+    // initialize tables
+    for (var i = 0; i < 8; i += 1) {
+      EXP_TABLE[i] = 1 << i;
+    }
+    for (var i = 8; i < 256; i += 1) {
+      EXP_TABLE[i] = EXP_TABLE[i - 4]
+        ^ EXP_TABLE[i - 5]
+        ^ EXP_TABLE[i - 6]
+        ^ EXP_TABLE[i - 8];
+    }
+    for (var i = 0; i < 255; i += 1) {
+      LOG_TABLE[EXP_TABLE[i] ] = i;
+    }
+
+    var _this = {};
+
+    _this.glog = function(n) {
+
+      if (n < 1) {
+        throw 'glog(' + n + ')';
+      }
+
+      return LOG_TABLE[n];
+    };
+
+    _this.gexp = function(n) {
+
+      while (n < 0) {
+        n += 255;
+      }
+
+      while (n >= 256) {
+        n -= 255;
+      }
+
+      return EXP_TABLE[n];
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // qrPolynomial
+  //---------------------------------------------------------------------
+
+  function qrPolynomial(num, shift) {
+
+    if (typeof num.length == 'undefined') {
+      throw num.length + '/' + shift;
+    }
+
+    var _num = function() {
+      var offset = 0;
+      while (offset < num.length && num[offset] == 0) {
+        offset += 1;
+      }
+      var _num = new Array(num.length - offset + shift);
+      for (var i = 0; i < num.length - offset; i += 1) {
+        _num[i] = num[i + offset];
+      }
+      return _num;
+    }();
+
+    var _this = {};
+
+    _this.getAt = function(index) {
+      return _num[index];
+    };
+
+    _this.getLength = function() {
+      return _num.length;
+    };
+
+    _this.multiply = function(e) {
+
+      var num = new Array(_this.getLength() + e.getLength() - 1);
+
+      for (var i = 0; i < _this.getLength(); i += 1) {
+        for (var j = 0; j < e.getLength(); j += 1) {
+          num[i + j] ^= QRMath.gexp(QRMath.glog(_this.getAt(i) ) + QRMath.glog(e.getAt(j) ) );
+        }
+      }
+
+      return qrPolynomial(num, 0);
+    };
+
+    _this.mod = function(e) {
+
+      if (_this.getLength() - e.getLength() < 0) {
+        return _this;
+      }
+
+      var ratio = QRMath.glog(_this.getAt(0) ) - QRMath.glog(e.getAt(0) );
+
+      var num = new Array(_this.getLength() );
+      for (var i = 0; i < _this.getLength(); i += 1) {
+        num[i] = _this.getAt(i);
+      }
+
+      for (var i = 0; i < e.getLength(); i += 1) {
+        num[i] ^= QRMath.gexp(QRMath.glog(e.getAt(i) ) + ratio);
+      }
+
+      // recursive call
+      return qrPolynomial(num, 0).mod(e);
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // QRRSBlock
+  //---------------------------------------------------------------------
+
+  var QRRSBlock = function() {
+
+    var RS_BLOCK_TABLE = [
+
+      // L
+      // M
+      // Q
+      // H
+
+      // 1
+      [1, 26, 19],
+      [1, 26, 16],
+      [1, 26, 13],
+      [1, 26, 9],
+
+      // 2
+      [1, 44, 34],
+      [1, 44, 28],
+      [1, 44, 22],
+      [1, 44, 16],
+
+      // 3
+      [1, 70, 55],
+      [1, 70, 44],
+      [2, 35, 17],
+      [2, 35, 13],
+
+      // 4
+      [1, 100, 80],
+      [2, 50, 32],
+      [2, 50, 24],
+      [4, 25, 9],
+
+      // 5
+      [1, 134, 108],
+      [2, 67, 43],
+      [2, 33, 15, 2, 34, 16],
+      [2, 33, 11, 2, 34, 12],
+
+      // 6
+      [2, 86, 68],
+      [4, 43, 27],
+      [4, 43, 19],
+      [4, 43, 15],
+
+      // 7
+      [2, 98, 78],
+      [4, 49, 31],
+      [2, 32, 14, 4, 33, 15],
+      [4, 39, 13, 1, 40, 14],
+
+      // 8
+      [2, 121, 97],
+      [2, 60, 38, 2, 61, 39],
+      [4, 40, 18, 2, 41, 19],
+      [4, 40, 14, 2, 41, 15],
+
+      // 9
+      [2, 146, 116],
+      [3, 58, 36, 2, 59, 37],
+      [4, 36, 16, 4, 37, 17],
+      [4, 36, 12, 4, 37, 13],
+
+      // 10
+      [2, 86, 68, 2, 87, 69],
+      [4, 69, 43, 1, 70, 44],
+      [6, 43, 19, 2, 44, 20],
+      [6, 43, 15, 2, 44, 16],
+
+      // 11
+      [4, 101, 81],
+      [1, 80, 50, 4, 81, 51],
+      [4, 50, 22, 4, 51, 23],
+      [3, 36, 12, 8, 37, 13],
+
+      // 12
+      [2, 116, 92, 2, 117, 93],
+      [6, 58, 36, 2, 59, 37],
+      [4, 46, 20, 6, 47, 21],
+      [7, 42, 14, 4, 43, 15],
+
+      // 13
+      [4, 133, 107],
+      [8, 59, 37, 1, 60, 38],
+      [8, 44, 20, 4, 45, 21],
+      [12, 33, 11, 4, 34, 12],
+
+      // 14
+      [3, 145, 115, 1, 146, 116],
+      [4, 64, 40, 5, 65, 41],
+      [11, 36, 16, 5, 37, 17],
+      [11, 36, 12, 5, 37, 13],
+
+      // 15
+      [5, 109, 87, 1, 110, 88],
+      [5, 65, 41, 5, 66, 42],
+      [5, 54, 24, 7, 55, 25],
+      [11, 36, 12, 7, 37, 13],
+
+      // 16
+      [5, 122, 98, 1, 123, 99],
+      [7, 73, 45, 3, 74, 46],
+      [15, 43, 19, 2, 44, 20],
+      [3, 45, 15, 13, 46, 16],
+
+      // 17
+      [1, 135, 107, 5, 136, 108],
+      [10, 74, 46, 1, 75, 47],
+      [1, 50, 22, 15, 51, 23],
+      [2, 42, 14, 17, 43, 15],
+
+      // 18
+      [5, 150, 120, 1, 151, 121],
+      [9, 69, 43, 4, 70, 44],
+      [17, 50, 22, 1, 51, 23],
+      [2, 42, 14, 19, 43, 15],
+
+      // 19
+      [3, 141, 113, 4, 142, 114],
+      [3, 70, 44, 11, 71, 45],
+      [17, 47, 21, 4, 48, 22],
+      [9, 39, 13, 16, 40, 14],
+
+      // 20
+      [3, 135, 107, 5, 136, 108],
+      [3, 67, 41, 13, 68, 42],
+      [15, 54, 24, 5, 55, 25],
+      [15, 43, 15, 10, 44, 16],
+
+      // 21
+      [4, 144, 116, 4, 145, 117],
+      [17, 68, 42],
+      [17, 50, 22, 6, 51, 23],
+      [19, 46, 16, 6, 47, 17],
+
+      // 22
+      [2, 139, 111, 7, 140, 112],
+      [17, 74, 46],
+      [7, 54, 24, 16, 55, 25],
+      [34, 37, 13],
+
+      // 23
+      [4, 151, 121, 5, 152, 122],
+      [4, 75, 47, 14, 76, 48],
+      [11, 54, 24, 14, 55, 25],
+      [16, 45, 15, 14, 46, 16],
+
+      // 24
+      [6, 147, 117, 4, 148, 118],
+      [6, 73, 45, 14, 74, 46],
+      [11, 54, 24, 16, 55, 25],
+      [30, 46, 16, 2, 47, 17],
+
+      // 25
+      [8, 132, 106, 4, 133, 107],
+      [8, 75, 47, 13, 76, 48],
+      [7, 54, 24, 22, 55, 25],
+      [22, 45, 15, 13, 46, 16],
+
+      // 26
+      [10, 142, 114, 2, 143, 115],
+      [19, 74, 46, 4, 75, 47],
+      [28, 50, 22, 6, 51, 23],
+      [33, 46, 16, 4, 47, 17],
+
+      // 27
+      [8, 152, 122, 4, 153, 123],
+      [22, 73, 45, 3, 74, 46],
+      [8, 53, 23, 26, 54, 24],
+      [12, 45, 15, 28, 46, 16],
+
+      // 28
+      [3, 147, 117, 10, 148, 118],
+      [3, 73, 45, 23, 74, 46],
+      [4, 54, 24, 31, 55, 25],
+      [11, 45, 15, 31, 46, 16],
+
+      // 29
+      [7, 146, 116, 7, 147, 117],
+      [21, 73, 45, 7, 74, 46],
+      [1, 53, 23, 37, 54, 24],
+      [19, 45, 15, 26, 46, 16],
+
+      // 30
+      [5, 145, 115, 10, 146, 116],
+      [19, 75, 47, 10, 76, 48],
+      [15, 54, 24, 25, 55, 25],
+      [23, 45, 15, 25, 46, 16],
+
+      // 31
+      [13, 145, 115, 3, 146, 116],
+      [2, 74, 46, 29, 75, 47],
+      [42, 54, 24, 1, 55, 25],
+      [23, 45, 15, 28, 46, 16],
+
+      // 32
+      [17, 145, 115],
+      [10, 74, 46, 23, 75, 47],
+      [10, 54, 24, 35, 55, 25],
+      [19, 45, 15, 35, 46, 16],
+
+      // 33
+      [17, 145, 115, 1, 146, 116],
+      [14, 74, 46, 21, 75, 47],
+      [29, 54, 24, 19, 55, 25],
+      [11, 45, 15, 46, 46, 16],
+
+      // 34
+      [13, 145, 115, 6, 146, 116],
+      [14, 74, 46, 23, 75, 47],
+      [44, 54, 24, 7, 55, 25],
+      [59, 46, 16, 1, 47, 17],
+
+      // 35
+      [12, 151, 121, 7, 152, 122],
+      [12, 75, 47, 26, 76, 48],
+      [39, 54, 24, 14, 55, 25],
+      [22, 45, 15, 41, 46, 16],
+
+      // 36
+      [6, 151, 121, 14, 152, 122],
+      [6, 75, 47, 34, 76, 48],
+      [46, 54, 24, 10, 55, 25],
+      [2, 45, 15, 64, 46, 16],
+
+      // 37
+      [17, 152, 122, 4, 153, 123],
+      [29, 74, 46, 14, 75, 47],
+      [49, 54, 24, 10, 55, 25],
+      [24, 45, 15, 46, 46, 16],
+
+      // 38
+      [4, 152, 122, 18, 153, 123],
+      [13, 74, 46, 32, 75, 47],
+      [48, 54, 24, 14, 55, 25],
+      [42, 45, 15, 32, 46, 16],
+
+      // 39
+      [20, 147, 117, 4, 148, 118],
+      [40, 75, 47, 7, 76, 48],
+      [43, 54, 24, 22, 55, 25],
+      [10, 45, 15, 67, 46, 16],
+
+      // 40
+      [19, 148, 118, 6, 149, 119],
+      [18, 75, 47, 31, 76, 48],
+      [34, 54, 24, 34, 55, 25],
+      [20, 45, 15, 61, 46, 16]
+    ];
+
+    var qrRSBlock = function(totalCount, dataCount) {
+      var _this = {};
+      _this.totalCount = totalCount;
+      _this.dataCount = dataCount;
+      return _this;
+    };
+
+    var _this = {};
+
+    var getRsBlockTable = function(typeNumber, errorCorrectionLevel) {
+
+      switch(errorCorrectionLevel) {
+      case QRErrorCorrectionLevel.L :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 0];
+      case QRErrorCorrectionLevel.M :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 1];
+      case QRErrorCorrectionLevel.Q :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 2];
+      case QRErrorCorrectionLevel.H :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 3];
+      default :
+        return undefined;
+      }
+    };
+
+    _this.getRSBlocks = function(typeNumber, errorCorrectionLevel) {
+
+      var rsBlock = getRsBlockTable(typeNumber, errorCorrectionLevel);
+
+      if (typeof rsBlock == 'undefined') {
+        throw 'bad rs block @ typeNumber:' + typeNumber +
+            '/errorCorrectionLevel:' + errorCorrectionLevel;
+      }
+
+      var length = rsBlock.length / 3;
+
+      var list = [];
+
+      for (var i = 0; i < length; i += 1) {
+
+        var count = rsBlock[i * 3 + 0];
+        var totalCount = rsBlock[i * 3 + 1];
+        var dataCount = rsBlock[i * 3 + 2];
+
+        for (var j = 0; j < count; j += 1) {
+          list.push(qrRSBlock(totalCount, dataCount) );
+        }
+      }
+
+      return list;
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // qrBitBuffer
+  //---------------------------------------------------------------------
+
+  var qrBitBuffer = function() {
+
+    var _buffer = [];
+    var _length = 0;
+
+    var _this = {};
+
+    _this.getBuffer = function() {
+      return _buffer;
+    };
+
+    _this.getAt = function(index) {
+      var bufIndex = Math.floor(index / 8);
+      return ( (_buffer[bufIndex] >>> (7 - index % 8) ) & 1) == 1;
+    };
+
+    _this.put = function(num, length) {
+      for (var i = 0; i < length; i += 1) {
+        _this.putBit( ( (num >>> (length - i - 1) ) & 1) == 1);
+      }
+    };
+
+    _this.getLengthInBits = function() {
+      return _length;
+    };
+
+    _this.putBit = function(bit) {
+
+      var bufIndex = Math.floor(_length / 8);
+      if (_buffer.length <= bufIndex) {
+        _buffer.push(0);
+      }
+
+      if (bit) {
+        _buffer[bufIndex] |= (0x80 >>> (_length % 8) );
+      }
+
+      _length += 1;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrNumber
+  //---------------------------------------------------------------------
+
+  var qrNumber = function(data) {
+
+    var _mode = QRMode.MODE_NUMBER;
+    var _data = data;
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _data.length;
+    };
+
+    _this.write = function(buffer) {
+
+      var data = _data;
+
+      var i = 0;
+
+      while (i + 2 < data.length) {
+        buffer.put(strToNum(data.substring(i, i + 3) ), 10);
+        i += 3;
+      }
+
+      if (i < data.length) {
+        if (data.length - i == 1) {
+          buffer.put(strToNum(data.substring(i, i + 1) ), 4);
+        } else if (data.length - i == 2) {
+          buffer.put(strToNum(data.substring(i, i + 2) ), 7);
+        }
+      }
+    };
+
+    var strToNum = function(s) {
+      var num = 0;
+      for (var i = 0; i < s.length; i += 1) {
+        num = num * 10 + chatToNum(s.charAt(i) );
+      }
+      return num;
+    };
+
+    var chatToNum = function(c) {
+      if ('0' <= c && c <= '9') {
+        return c.charCodeAt(0) - '0'.charCodeAt(0);
+      }
+      throw 'illegal char :' + c;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrAlphaNum
+  //---------------------------------------------------------------------
+
+  var qrAlphaNum = function(data) {
+
+    var _mode = QRMode.MODE_ALPHA_NUM;
+    var _data = data;
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _data.length;
+    };
+
+    _this.write = function(buffer) {
+
+      var s = _data;
+
+      var i = 0;
+
+      while (i + 1 < s.length) {
+        buffer.put(
+          getCode(s.charAt(i) ) * 45 +
+          getCode(s.charAt(i + 1) ), 11);
+        i += 2;
+      }
+
+      if (i < s.length) {
+        buffer.put(getCode(s.charAt(i) ), 6);
+      }
+    };
+
+    var getCode = function(c) {
+
+      if ('0' <= c && c <= '9') {
+        return c.charCodeAt(0) - '0'.charCodeAt(0);
+      } else if ('A' <= c && c <= 'Z') {
+        return c.charCodeAt(0) - 'A'.charCodeAt(0) + 10;
+      } else {
+        switch (c) {
+        case ' ' : return 36;
+        case '$' : return 37;
+        case '%' : return 38;
+        case '*' : return 39;
+        case '+' : return 40;
+        case '-' : return 41;
+        case '.' : return 42;
+        case '/' : return 43;
+        case ':' : return 44;
+        default :
+          throw 'illegal char :' + c;
+        }
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qr8BitByte
+  //---------------------------------------------------------------------
+
+  var qr8BitByte = function(data) {
+
+    var _mode = QRMode.MODE_8BIT_BYTE;
+    var _data = data;
+    var _bytes = qrcode.stringToBytes(data);
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _bytes.length;
+    };
+
+    _this.write = function(buffer) {
+      for (var i = 0; i < _bytes.length; i += 1) {
+        buffer.put(_bytes[i], 8);
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrKanji
+  //---------------------------------------------------------------------
+
+  var qrKanji = function(data) {
+
+    var _mode = QRMode.MODE_KANJI;
+    var _data = data;
+
+    var stringToBytes = qrcode.stringToBytesFuncs['SJIS'];
+    if (!stringToBytes) {
+      throw 'sjis not supported.';
+    }
+    !function(c, code) {
+      // self test for sjis support.
+      var test = stringToBytes(c);
+      if (test.length != 2 || ( (test[0] << 8) | test[1]) != code) {
+        throw 'sjis not supported.';
+      }
+    }('\u53cb', 0x9746);
+
+    var _bytes = stringToBytes(data);
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return ~~(_bytes.length / 2);
+    };
+
+    _this.write = function(buffer) {
+
+      var data = _bytes;
+
+      var i = 0;
+
+      while (i + 1 < data.length) {
+
+        var c = ( (0xff & data[i]) << 8) | (0xff & data[i + 1]);
+
+        if (0x8140 <= c && c <= 0x9FFC) {
+          c -= 0x8140;
+        } else if (0xE040 <= c && c <= 0xEBBF) {
+          c -= 0xC140;
+        } else {
+          throw 'illegal char at ' + (i + 1) + '/' + c;
+        }
+
+        c = ( (c >>> 8) & 0xff) * 0xC0 + (c & 0xff);
+
+        buffer.put(c, 13);
+
+        i += 2;
+      }
+
+      if (i < data.length) {
+        throw 'illegal char at ' + (i + 1);
+      }
+    };
+
+    return _this;
+  };
+
+  //=====================================================================
+  // GIF Support etc.
+  //
+
+  //---------------------------------------------------------------------
+  // byteArrayOutputStream
+  //---------------------------------------------------------------------
+
+  var byteArrayOutputStream = function() {
+
+    var _bytes = [];
+
+    var _this = {};
+
+    _this.writeByte = function(b) {
+      _bytes.push(b & 0xff);
+    };
+
+    _this.writeShort = function(i) {
+      _this.writeByte(i);
+      _this.writeByte(i >>> 8);
+    };
+
+    _this.writeBytes = function(b, off, len) {
+      off = off || 0;
+      len = len || b.length;
+      for (var i = 0; i < len; i += 1) {
+        _this.writeByte(b[i + off]);
+      }
+    };
+
+    _this.writeString = function(s) {
+      for (var i = 0; i < s.length; i += 1) {
+        _this.writeByte(s.charCodeAt(i) );
+      }
+    };
+
+    _this.toByteArray = function() {
+      return _bytes;
+    };
+
+    _this.toString = function() {
+      var s = '';
+      s += '[';
+      for (var i = 0; i < _bytes.length; i += 1) {
+        if (i > 0) {
+          s += ',';
+        }
+        s += _bytes[i];
+      }
+      s += ']';
+      return s;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // base64EncodeOutputStream
+  //---------------------------------------------------------------------
+
+  var base64EncodeOutputStream = function() {
+
+    var _buffer = 0;
+    var _buflen = 0;
+    var _length = 0;
+    var _base64 = '';
+
+    var _this = {};
+
+    var writeEncoded = function(b) {
+      _base64 += String.fromCharCode(encode(b & 0x3f) );
+    };
+
+    var encode = function(n) {
+      if (n < 0) {
+        // error.
+      } else if (n < 26) {
+        return 0x41 + n;
+      } else if (n < 52) {
+        return 0x61 + (n - 26);
+      } else if (n < 62) {
+        return 0x30 + (n - 52);
+      } else if (n == 62) {
+        return 0x2b;
+      } else if (n == 63) {
+        return 0x2f;
+      }
+      throw 'n:' + n;
+    };
+
+    _this.writeByte = function(n) {
+
+      _buffer = (_buffer << 8) | (n & 0xff);
+      _buflen += 8;
+      _length += 1;
+
+      while (_buflen >= 6) {
+        writeEncoded(_buffer >>> (_buflen - 6) );
+        _buflen -= 6;
+      }
+    };
+
+    _this.flush = function() {
+
+      if (_buflen > 0) {
+        writeEncoded(_buffer << (6 - _buflen) );
+        _buffer = 0;
+        _buflen = 0;
+      }
+
+      if (_length % 3 != 0) {
+        // padding
+        var padlen = 3 - _length % 3;
+        for (var i = 0; i < padlen; i += 1) {
+          _base64 += '=';
+        }
+      }
+    };
+
+    _this.toString = function() {
+      return _base64;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // base64DecodeInputStream
+  //---------------------------------------------------------------------
+
+  var base64DecodeInputStream = function(str) {
+
+    var _str = str;
+    var _pos = 0;
+    var _buffer = 0;
+    var _buflen = 0;
+
+    var _this = {};
+
+    _this.read = function() {
+
+      while (_buflen < 8) {
+
+        if (_pos >= _str.length) {
+          if (_buflen == 0) {
+            return -1;
+          }
+          throw 'unexpected end of file./' + _buflen;
+        }
+
+        var c = _str.charAt(_pos);
+        _pos += 1;
+
+        if (c == '=') {
+          _buflen = 0;
+          return -1;
+        } else if (c.match(/^\s$/) ) {
+          // ignore if whitespace.
+          continue;
+        }
+
+        _buffer = (_buffer << 6) | decode(c.charCodeAt(0) );
+        _buflen += 6;
+      }
+
+      var n = (_buffer >>> (_buflen - 8) ) & 0xff;
+      _buflen -= 8;
+      return n;
+    };
+
+    var decode = function(c) {
+      if (0x41 <= c && c <= 0x5a) {
+        return c - 0x41;
+      } else if (0x61 <= c && c <= 0x7a) {
+        return c - 0x61 + 26;
+      } else if (0x30 <= c && c <= 0x39) {
+        return c - 0x30 + 52;
+      } else if (c == 0x2b) {
+        return 62;
+      } else if (c == 0x2f) {
+        return 63;
+      } else {
+        throw 'c:' + c;
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // gifImage (B/W)
+  //---------------------------------------------------------------------
+
+  var gifImage = function(width, height) {
+
+    var _width = width;
+    var _height = height;
+    var _data = new Array(width * height);
+
+    var _this = {};
+
+    _this.setPixel = function(x, y, pixel) {
+      _data[y * _width + x] = pixel;
+    };
+
+    _this.write = function(out) {
+
+      //---------------------------------
+      // GIF Signature
+
+      out.writeString('GIF87a');
+
+      //---------------------------------
+      // Screen Descriptor
+
+      out.writeShort(_width);
+      out.writeShort(_height);
+
+      out.writeByte(0x80); // 2bit
+      out.writeByte(0);
+      out.writeByte(0);
+
+      //---------------------------------
+      // Global Color Map
+
+      // black
+      out.writeByte(0x00);
+      out.writeByte(0x00);
+      out.writeByte(0x00);
+
+      // white
+      out.writeByte(0xff);
+      out.writeByte(0xff);
+      out.writeByte(0xff);
+
+      //---------------------------------
+      // Image Descriptor
+
+      out.writeString(',');
+      out.writeShort(0);
+      out.writeShort(0);
+      out.writeShort(_width);
+      out.writeShort(_height);
+      out.writeByte(0);
+
+      //---------------------------------
+      // Local Color Map
+
+      //---------------------------------
+      // Raster Data
+
+      var lzwMinCodeSize = 2;
+      var raster = getLZWRaster(lzwMinCodeSize);
+
+      out.writeByte(lzwMinCodeSize);
+
+      var offset = 0;
+
+      while (raster.length - offset > 255) {
+        out.writeByte(255);
+        out.writeBytes(raster, offset, 255);
+        offset += 255;
+      }
+
+      out.writeByte(raster.length - offset);
+      out.writeBytes(raster, offset, raster.length - offset);
+      out.writeByte(0x00);
+
+      //---------------------------------
+      // GIF Terminator
+      out.writeString(';');
+    };
+
+    var bitOutputStream = function(out) {
+
+      var _out = out;
+      var _bitLength = 0;
+      var _bitBuffer = 0;
+
+      var _this = {};
+
+      _this.write = function(data, length) {
+
+        if ( (data >>> length) != 0) {
+          throw 'length over';
+        }
+
+        while (_bitLength + length >= 8) {
+          _out.writeByte(0xff & ( (data << _bitLength) | _bitBuffer) );
+          length -= (8 - _bitLength);
+          data >>>= (8 - _bitLength);
+          _bitBuffer = 0;
+          _bitLength = 0;
+        }
+
+        _bitBuffer = (data << _bitLength) | _bitBuffer;
+        _bitLength = _bitLength + length;
+      };
+
+      _this.flush = function() {
+        if (_bitLength > 0) {
+          _out.writeByte(_bitBuffer);
+        }
+      };
+
+      return _this;
+    };
+
+    var getLZWRaster = function(lzwMinCodeSize) {
+
+      var clearCode = 1 << lzwMinCodeSize;
+      var endCode = (1 << lzwMinCodeSize) + 1;
+      var bitLength = lzwMinCodeSize + 1;
+
+      // Setup LZWTable
+      var table = lzwTable();
+
+      for (var i = 0; i < clearCode; i += 1) {
+        table.add(String.fromCharCode(i) );
+      }
+      table.add(String.fromCharCode(clearCode) );
+      table.add(String.fromCharCode(endCode) );
+
+      var byteOut = byteArrayOutputStream();
+      var bitOut = bitOutputStream(byteOut);
+
+      // clear code
+      bitOut.write(clearCode, bitLength);
+
+      var dataIndex = 0;
+
+      var s = String.fromCharCode(_data[dataIndex]);
+      dataIndex += 1;
+
+      while (dataIndex < _data.length) {
+
+        var c = String.fromCharCode(_data[dataIndex]);
+        dataIndex += 1;
+
+        if (table.contains(s + c) ) {
+
+          s = s + c;
+
+        } else {
+
+          bitOut.write(table.indexOf(s), bitLength);
+
+          if (table.size() < 0xfff) {
+
+            if (table.size() == (1 << bitLength) ) {
+              bitLength += 1;
+            }
+
+            table.add(s + c);
+          }
+
+          s = c;
+        }
+      }
+
+      bitOut.write(table.indexOf(s), bitLength);
+
+      // end code
+      bitOut.write(endCode, bitLength);
+
+      bitOut.flush();
+
+      return byteOut.toByteArray();
+    };
+
+    var lzwTable = function() {
+
+      var _map = {};
+      var _size = 0;
+
+      var _this = {};
+
+      _this.add = function(key) {
+        if (_this.contains(key) ) {
+          throw 'dup key:' + key;
+        }
+        _map[key] = _size;
+        _size += 1;
+      };
+
+      _this.size = function() {
+        return _size;
+      };
+
+      _this.indexOf = function(key) {
+        return _map[key];
+      };
+
+      _this.contains = function(key) {
+        return typeof _map[key] != 'undefined';
+      };
+
+      return _this;
+    };
+
+    return _this;
+  };
+
+  var createDataURL = function(width, height, getPixel) {
+    var gif = gifImage(width, height);
+    for (var y = 0; y < height; y += 1) {
+      for (var x = 0; x < width; x += 1) {
+        gif.setPixel(x, y, getPixel(x, y) );
+      }
+    }
+
+    var b = byteArrayOutputStream();
+    gif.write(b);
+
+    var base64 = base64EncodeOutputStream();
+    var bytes = b.toByteArray();
+    for (var i = 0; i < bytes.length; i += 1) {
+      base64.writeByte(bytes[i]);
+    }
+    base64.flush();
+
+    return 'data:image/gif;base64,' + base64;
+  };
+
+  //---------------------------------------------------------------------
+  // returns qrcode function.
+
+  return qrcode;
+}();
+
+// multibyte support
+!function() {
+
+  qrcode.stringToBytesFuncs['UTF-8'] = function(s) {
+    // http://stackoverflow.com/questions/18729405/how-to-convert-utf8-string-to-byte-array
+    function toUTF8Array(str) {
+      var utf8 = [];
+      for (var i=0; i < str.length; i++) {
+        var charcode = str.charCodeAt(i);
+        if (charcode < 0x80) utf8.push(charcode);
+        else if (charcode < 0x800) {
+          utf8.push(0xc0 | (charcode >> 6),
+              0x80 | (charcode & 0x3f));
+        }
+        else if (charcode < 0xd800 || charcode >= 0xe000) {
+          utf8.push(0xe0 | (charcode >> 12),
+              0x80 | ((charcode>>6) & 0x3f),
+              0x80 | (charcode & 0x3f));
+        }
+        // surrogate pair
+        else {
+          i++;
+          // UTF-16 encodes 0x10000-0x10FFFF by
+          // subtracting 0x10000 and splitting the
+          // 20 bits of 0x0-0xFFFFF into two halves
+          charcode = 0x10000 + (((charcode & 0x3ff)<<10)
+            | (str.charCodeAt(i) & 0x3ff));
+          utf8.push(0xf0 | (charcode >>18),
+              0x80 | ((charcode>>12) & 0x3f),
+              0x80 | ((charcode>>6) & 0x3f),
+              0x80 | (charcode & 0x3f));
+        }
+      }
+      return utf8;
+    }
+    return toUTF8Array(s);
+  };
+
+}();
+
+(function (factory) {
+  if (typeof define === 'function' && define.amd) {
+      define([], factory);
+  } else if (typeof exports === 'object') {
+      module.exports = factory();
+  }
+}(function () {
+    return qrcode;
+}));
+
+</script>
+<script>
+window.SN_INLINE_ICONS = true;
+/* SnapNexus core — shared by every page.
+   - SN.api   : all data access (Appwrite, or an in-browser mock for testing)
+   - SN.theme : event themes (4 presets + custom colours/font)
+   - SN.plans : tiers, free-trial timing, limits
+   - SN.ui    : toasts, modals, QR codes, icons, escaping
+   Test mode: add ?mock=1 to any URL (remembered in this browser until ?mock=0). Data lives in
+   localStorage only and never touches Appwrite. Remove with ?mock=0.
+   Requires config.js to be loaded first. */
+(function () {
+  'use strict';
+  var cfg = window.SnapNexus;
+  var SN = window.SN = { cfg: cfg };
+
+  /* ------------------------------------------------------------------ utils */
+  SN.$ = function (s, r) { return (r || document).querySelector(s); };
+  SN.$$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+  SN.esc = function (v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  };
+  SN.qs = function (k) { return new URLSearchParams(location.search).get(k); };
+  SN.rand = function (n) { var s = ''; while (s.length < n) s += Math.random().toString(36).slice(2); return s.slice(0, n); };
+  SN.sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+  SN.icon = function (name, cls) { return '<svg class="i' + (cls ? ' ' + cls : '') + '" aria-hidden="true"><use href="' + (window.SN_INLINE_ICONS ? '' : SN.assetBase + 'icons.svg') + '#' + name + '"/></svg>'; };
+  SN.fmtDate = function (iso) { try { return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }); } catch (e) { return ''; } };
+  SN.fmtDateTime = function (iso) { try { return new Date(iso).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }); } catch (e) { return ''; } };
+  SN.fmtLeft = function (ms) {
+    if (ms <= 0) return '0m';
+    var m = Math.ceil(ms / 60000), h = Math.floor(m / 60), d = Math.floor(h / 24);
+    if (d >= 1) return d + 'd ' + (h % 24) + 'h';
+    if (h >= 1) return h + 'h ' + (m % 60) + 'm';
+    return m + 'm';
+  };
+  SN.isVideoUrl = function (u) { u = u || ''; return /^data:video\//.test(u) || /\.(mp4|mov|webm)(\?|&|$)/i.test(u) || /[?&]sn_kind=video/.test(u); };
+
+  // Analytics (PostHog). Safe no-op when PostHog is blocked or in test mode.
+  SN.track = function (event, props) { try { if (window.posthog && window.posthog.capture) window.posthog.capture(event, props || {}); } catch (e) { } };
+  SN.identify = function (user, props) { try { if (window.posthog && window.posthog.identify && user) window.posthog.identify(user.$id, props || {}); } catch (e) { } };
+  SN.resetAnalytics = function () { try { if (window.posthog && window.posthog.reset) window.posthog.reset(); } catch (e) { } };
+  // Human-readable error text for Appwrite errors
+  SN.errMsg = function (e) {
+    var m = (e && e.message) || String(e || 'Something went wrong');
+    var code = e && (e.code || 0), type = (e && e.type) || '';
+    if (code === 401 && /unauthorized|not authorized|missing scope/i.test(m + type)) return 'The server didn\'t allow this action. Your Appwrite permissions need updating (see setup/README.md).';
+    if (/Failed to fetch|NetworkError|network/i.test(m)) return 'Can\'t reach the server. Check your connection and try again.';
+    if (/storage_file_type_unsupported|extension/i.test(m + type)) return 'That file type isn\'t allowed.';
+    if (/storage_invalid_file_size|file size/i.test(m + type)) return 'That file is too big.';
+    return m;
+  };
+
+  // where assets live, relative to the current page (supports sub-folder hosting)
+  (function () {
+    var me = document.currentScript && document.currentScript.getAttribute('src') || 'assets/sn.js';
+    SN.assetBase = me.replace(/sn\.js(\?.*)?$/, '');
+  })();
+
+  /* ------------------------------------------------------------ mock switch */
+  (function () {
+    var q = SN.qs('mock');
+    try {
+      if (q === '1') localStorage.setItem('sn_mock', '1');
+      if (q === '0') localStorage.removeItem('sn_mock');
+      SN.mock = localStorage.getItem('sn_mock') === '1' || location.protocol === 'file:';
+    } catch (e) { SN.mock = q === '1' || location.protocol === 'file:'; }
+  })();
+  // keep ?mock=1 on internal links while testing
+  SN.link = function (path) { return path; };
+
+  /* -------------------------------------------------------------- plans */
+  var P = SN.plans = {};
+  P.norm = function (t) {
+    t = String(t || 'starter').toLowerCase();
+    if (cfg.LEGACY_TIERS && cfg.LEGACY_TIERS[t]) t = cfg.LEGACY_TIERS[t];
+    if (t === 'unpaid' || cfg.PLANS[t]) return t;
+    return 'starter';
+  };
+  P.info = function (t) { return cfg.PLANS[P.norm(t)] || { name: 'Awaiting payment', price: cfg.PLANS.single.price, ads: true }; };
+  P.label = function (t) { t = P.norm(t); return t === 'unpaid' ? 'Awaiting payment' : cfg.PLANS[t].name; };
+  P.badgeClass = function (t) { t = P.norm(t); return { starter: 'trial', single: 'single', pro: 'pro', unpaid: 'warn' }[t]; };
+  P.hasAds = function (ev) { var t = P.norm(ev && ev.tier); return t === 'starter' || t === 'unpaid'; };
+  P.trialEndsAt = function (ev) {
+    if (P.norm(ev.tier) !== 'starter') return null;
+    return new Date(ev.$createdAt).getTime() + (cfg.PLANS.starter.trialMinutes || 60) * 60000;
+  };
+  // Can guests upload / does the wall run right now?
+  P.wallState = function (ev) {
+    if (!ev) return 'missing';
+    if (ev.status === 'ended') return 'ended';
+    var t = P.norm(ev.tier);
+    if (t === 'unpaid') return 'unpaid';
+    if (t === 'starter' && Date.now() > P.trialEndsAt(ev)) return 'trial_over';
+    return 'live';
+  };
+  P.downloadUntil = function (ev) {
+    var t = P.norm(ev.tier), created = new Date(ev.$createdAt).getTime();
+    if (t === 'starter') return P.trialEndsAt(ev) + (cfg.PLANS.starter.downloadHours || 24) * 3600000;
+    if (t === 'unpaid') return created + 24 * 3600000;
+    return created + (cfg.PLANS[t].downloadDays || 30) * 86400000;
+  };
+
+  /* -------------------------------------------------------------- themes */
+  var T = SN.theme = {};
+  T.FONTS = [
+    { key: 'Inter', css: "'Inter', sans-serif", label: 'Inter · modern & clean' },
+    { key: 'Playfair Display', css: "'Playfair Display', serif", label: 'Playfair · classic wedding' },
+    { key: 'Syne', css: "'Syne', sans-serif", label: 'Syne · bold & edgy' },
+    { key: 'Space Grotesk', css: "'Space Grotesk', sans-serif", label: 'Space Grotesk · corporate' },
+    { key: 'Pacifico', css: "'Pacifico', cursive", label: 'Pacifico · fun party' },
+    { key: 'Urbanist', css: "'Urbanist', sans-serif", label: 'Urbanist · friendly' },
+    { key: 'Lora', css: "'Lora', serif", label: 'Lora · soft serif' }
+  ];
+  T.PRESETS = {
+    default:   { label: 'SnapNexus', bg: '#061022', accent: '#f5b301', head: 2, body: 0, glow: '#2f6fe4' },
+    wedding:   { label: 'Wedding',   bg: '#fdf6f2', accent: '#b8894a', head: 1, body: 6, glow: '#f6c9d0' },
+    corporate: { label: 'Corporate', bg: '#050506', accent: '#ffc83d', head: 0, body: 0, glow: '#ff7a1a' },
+    party:     { label: 'Party',     bg: '#0a0216', accent: '#ff2e9a', head: 5, body: 5, glow: '#00f0ff' }
+  };
+  T.hexToRgb = function (hex) {
+    var n = parseInt(String(hex).replace('#', ''), 16);
+    if (isNaN(n)) return [0, 0, 0];
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  };
+  T.lum = function (hex) {
+    return T.hexToRgb(hex).map(function (v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); })
+      .reduce(function (a, v, i) { return a + v * [0.2126, 0.7152, 0.0722][i]; }, 0);
+  };
+  T.mix = function (a, b, t) {
+    var x = T.hexToRgb(a), y = T.hexToRgb(b);
+    return '#' + x.map(function (v, i) { return Math.round(v + (y[i] - v) * t).toString(16).padStart(2, '0'); }).join('');
+  };
+  T.isHex = function (s) { return /^#?[0-9a-f]{6}$/i.test(s || ''); };
+  // Stored format: preset name ('default'|'wedding'|...) or compact custom 'c:BBBBBB:AAAAAA:F'
+  // (bg hex, accent hex, font index) — short enough for any string attribute size.
+  T.encode = function (t) {
+    if (t.preset && !t.custom) return t.preset;
+    return 'c:' + t.bg.replace('#', '').toLowerCase() + ':' + t.accent.replace('#', '').toLowerCase() + ':' + (t.font || 0);
+  };
+  T.parse = function (str) {
+    str = String(str || 'default');
+    var base;
+    if (str.indexOf('c:') === 0) {
+      var p = str.split(':');
+      var bg = '#' + (T.isHex(p[1]) ? p[1] : '061022'), ac = '#' + (T.isHex(p[2]) ? p[2] : 'f5b301');
+      var f = Math.max(0, Math.min(T.FONTS.length - 1, parseInt(p[3], 10) || 0));
+      base = { preset: null, custom: true, bg: bg, accent: ac, head: f, body: f === 4 ? 0 : f, font: f, glow: ac };
+    } else {
+      var pr = T.PRESETS[str] || T.PRESETS.default;
+      base = { preset: T.PRESETS[str] ? str : 'default', custom: false, bg: pr.bg, accent: pr.accent, head: pr.head, body: pr.body, font: pr.head, glow: pr.glow };
+    }
+    var light = T.lum(base.bg) > 0.4;
+    base.light = light;
+    base.text = light ? '#1d1a24' : '#f5f6fb';
+    base.muted = light ? T.mix('#1d1a24', base.bg, 0.4) : T.mix('#f5f6fb', base.bg, 0.4);
+    base.surface = light ? 'rgba(255,255,255,.7)' : 'rgba(255,255,255,.055)';
+    base.line = light ? 'rgba(0,0,0,.09)' : 'rgba(255,255,255,.12)';
+    base.onAccent = T.lum(base.accent) > 0.42 ? '#141018' : '#ffffff';
+    base.headCss = T.FONTS[base.head].css;
+    base.bodyCss = T.FONTS[base.body].css;
+    return base;
+  };
+  T.loadFonts = function (theme) {
+    var fams = [T.FONTS[theme.head].key, T.FONTS[theme.body].key].filter(function (v, i, a) { return a.indexOf(v) === i; });
+    fams.forEach(function (fam) {
+      var id = 'gf-' + fam.replace(/\s+/g, '-');
+      if (document.getElementById(id)) return;
+      var l = document.createElement('link');
+      l.id = id; l.rel = 'stylesheet';
+      l.href = 'https://fonts.googleapis.com/css2?family=' + fam.replace(/\s+/g, '+') + (fam === 'Pacifico' ? '' : ':wght@400;600;700;800') + '&display=swap';
+      document.head.appendChild(l);
+    });
+  };
+  // Applies a theme to an element by setting the design-system tokens
+  T.apply = function (theme, el) {
+    el = el || document.documentElement;
+    var s = el.style, rgb = T.hexToRgb(theme.accent).join(','), g = T.hexToRgb(theme.glow || theme.accent).join(',');
+    s.setProperty('--bg', theme.bg);
+    s.setProperty('--surface', theme.surface);
+    s.setProperty('--surface-solid', theme.light ? '#ffffff' : T.mix(theme.bg, '#ffffff', 0.07));
+    s.setProperty('--line', theme.line);
+    s.setProperty('--line-2', theme.light ? 'rgba(0,0,0,.14)' : 'rgba(255,255,255,.2)');
+    s.setProperty('--text', theme.text);
+    s.setProperty('--muted', theme.muted);
+    s.setProperty('--dim', theme.muted);
+    s.setProperty('--accent', theme.accent);
+    s.setProperty('--accent-2', T.mix(theme.accent, '#ffffff', 0.18));
+    s.setProperty('--accent-rgb', rgb);
+    s.setProperty('--glow-rgb', g);
+    s.setProperty('--on-accent', theme.onAccent);
+    s.setProperty('--head', theme.headCss);
+    s.setProperty('--font', theme.bodyCss);
+    if (el === document.documentElement) {
+      var m = document.querySelector('meta[name=theme-color]');
+      if (m) m.setAttribute('content', theme.bg);
+    }
+    T.loadFonts(theme);
+  };
+
+  /* ----------------------------------------------------------------- UI */
+  var U = SN.ui = {};
+  U.toast = function (msg, type) {
+    type = type || 'info';
+    var box = document.getElementById('sn-toasts');
+    if (!box) { box = document.createElement('div'); box.id = 'sn-toasts'; box.className = 'toasts'; box.setAttribute('role', 'status'); box.setAttribute('aria-live', 'polite'); document.body.appendChild(box); }
+    var t = document.createElement('div');
+    t.className = 'toast ' + type;
+    t.innerHTML = SN.icon(type === 'ok' ? 'circle-check' : type === 'err' ? 'triangle-alert' : 'info') + '<span>' + SN.esc(msg) + '</span>';
+    box.appendChild(t);
+    requestAnimationFrame(function () { t.classList.add('show'); });
+    setTimeout(function () { t.classList.remove('show'); setTimeout(function () { t.remove(); }, 300); }, type === 'err' ? 5500 : 3500);
+  };
+  U.open = function (id) {
+    var m = document.getElementById(id); if (!m) return;
+    m.classList.add('open'); m.setAttribute('aria-hidden', 'false');
+    var f = m.querySelector('[autofocus],input,select,textarea,button:not(.btn-icon)'); if (f) setTimeout(function () { f.focus(); }, 60);
+  };
+  U.close = function (id) { var m = document.getElementById(id); if (m) { m.classList.remove('open'); m.setAttribute('aria-hidden', 'true'); } };
+  document.addEventListener('click', function (e) {
+    var c = e.target.closest('[data-close]');
+    if (c) { U.close(c.getAttribute('data-close')); return; }
+    if (e.target.classList && e.target.classList.contains('modal') && !e.target.hasAttribute('data-sticky')) U.close(e.target.id);
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') SN.$$('.modal.open:not([data-sticky])').forEach(function (m) { U.close(m.id); });
+  });
+  U.copy = function (text, okMsg) {
+    function fallback() {
+      var ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); U.toast(okMsg || 'Copied', 'ok'); } catch (e) { U.toast('Copy failed. Long-press to copy instead.', 'err'); }
+      ta.remove();
+    }
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(function () { U.toast(okMsg || 'Copied', 'ok'); }, fallback);
+    else fallback();
+  };
+  U.busy = function (btn, on, label) {
+    if (!btn) return;
+    if (on) { btn.dataset.html = btn.innerHTML; btn.disabled = true; btn.innerHTML = SN.icon('loader-circle', 'spin') + '<span>' + SN.esc(label || 'Working…') + '</span>'; }
+    else { btn.disabled = false; if (btn.dataset.html) btn.innerHTML = btn.dataset.html; }
+  };
+  // QR code as inline SVG (vendored qrcode-generator), falls back to an image service
+  U.qrSvg = function (text, opts) {
+    opts = opts || {};
+    if (typeof window.qrcode === 'function') {
+      var q = window.qrcode(0, opts.ecl || 'M'); q.addData(text); q.make();
+      var n = q.getModuleCount(), m = opts.margin == null ? 2 : opts.margin, size = n + m * 2, d = '';
+      for (var r = 0; r < n; r++) for (var c = 0; c < n; c++) if (q.isDark(r, c)) d += 'M' + (c + m) + ' ' + (r + m) + 'h1v1h-1z';
+      return '<svg viewBox="0 0 ' + size + ' ' + size + '" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="QR code">' +
+        '<rect width="' + size + '" height="' + size + '" fill="' + (opts.bg || '#fff') + '"/><path d="' + d + '" fill="' + (opts.fg || '#0b0f1a') + '"/></svg>';
+    }
+    return '<img alt="QR code" src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=10&data=' + encodeURIComponent(text) + '">';
+  };
+  U.mockFlag = function () {
+    if (!SN.mock || document.getElementById('sn-mock-flag')) return;
+    var f = document.createElement('a'); f.id = 'sn-mock-flag'; f.className = 'mock-flag'; f.textContent = 'Test mode · not live data · exit';
+    f.href = location.pathname + '?mock=0'; f.title = 'Leave test mode';
+    document.body.appendChild(f);
+  };
+  document.addEventListener('DOMContentLoaded', U.mockFlag);
+
+  /* -------------------------------------------------------- UPI payments */
+  SN.upi = {
+    link: function (amount, note) {
+      return 'upi://pay?pa=' + encodeURIComponent(String(cfg.UPI_ID).trim()).replace('%40', '@') + '&pn=' + encodeURIComponent(cfg.UPI_PAYEE_NAME || 'SnapNexus') +
+        '&am=' + encodeURIComponent(Number(amount).toFixed(2)) + '&cu=INR&tn=' + encodeURIComponent(String(note || 'SnapNexus').slice(0, 50));
+    },
+    configured: function () { var v = String(cfg.UPI_ID || ''); return /^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/.test(v) && v.indexOf('PASTE_') !== 0 && v.indexOf('yourupi') !== 0; },
+    ref: function (seed) { var s = String(seed || SN.rand(8)).replace(/^evt_/, '').replace(/[^a-z0-9]/gi, '').toUpperCase(); return 'SNX-' + (s.slice(-6) || SN.rand(6).toUpperCase()); },
+    validUtr: function (s) { return /^[A-Za-z0-9]{6,30}$/.test(String(s || '').trim()); }
+  };
+
+  /* --------------------------------------------- procedural sample photos */
+  function rng(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; var t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  var PAL = [['#3b1d0f', '#c2410c', '#fbbf24', '#fde68a'], ['#1e0b2e', '#7e22ce', '#ec4899', '#f9a8d4'], ['#0b1a2e', '#1d4ed8', '#22d3ee', '#a5f3fc'], ['#2a0f14', '#be123c', '#fb7185', '#fecdd3'], ['#10201a', '#047857', '#facc15', '#fef08a'], ['#1f1407', '#92400e', '#f59e0b', '#fff7ed'], ['#120f24', '#4338ca', '#f472b6', '#fde68a']];
+  SN.samplePhoto = function (seed, size) {
+    var S = size || 360, c = document.createElement('canvas'); c.width = c.height = S;
+    var x = c.getContext('2d'); if (!x) return '';
+    var k = S / 360, r = rng(seed * 977 + 13), p = PAL[seed % PAL.length], type = seed % 3, i;
+    var g = x.createLinearGradient(0, 0, S * 0.3, S); g.addColorStop(0, p[1]); g.addColorStop(0.55, p[0]); g.addColorStop(1, '#07070a');
+    x.fillStyle = g; x.fillRect(0, 0, S, S);
+    x.globalCompositeOperation = 'lighter';
+    for (i = 0; i < 26; i++) {
+      var bx = r() * S, by = r() * S * 0.7, br = (8 + r() * 34) * k, col = p[2 + (i % 2)];
+      var rg = x.createRadialGradient(bx, by, 0, bx, by, br); rg.addColorStop(0, col); rg.addColorStop(0.6, col + '55'); rg.addColorStop(1, col + '00');
+      x.globalAlpha = 0.15 + r() * 0.35; x.fillStyle = rg; x.beginPath(); x.arc(bx, by, br, 0, 7); x.fill();
+    }
+    if (type === 1) for (i = 0; i < 3; i++) {
+      var sx = S * (0.2 + 0.3 * i), bg = x.createLinearGradient(sx, 0, sx, S); bg.addColorStop(0, p[3] + 'aa'); bg.addColorStop(1, p[3] + '00');
+      x.globalAlpha = 0.35; x.fillStyle = bg; x.beginPath(); x.moveTo(sx - 8 * k, 0); x.lineTo(sx + 8 * k, 0); x.lineTo(sx + (70 - r() * 140) * k, S); x.lineTo(sx - (70 + r() * 40) * k, S); x.closePath(); x.fill();
+    }
+    if (type === 2) { x.globalAlpha = 0.9; for (var q = 0; q < 2; q++) { var y0 = (30 + q * 50 + r() * 20) * k; for (i = 0; i < 14; i++) { var lx = i * (S / 13), ly = y0 + Math.sin(i / 13 * Math.PI) * 28 * k; var lg = x.createRadialGradient(lx, ly, 0, lx, ly, 9 * k); lg.addColorStop(0, '#fff'); lg.addColorStop(0.3, p[3]); lg.addColorStop(1, p[3] + '00'); x.fillStyle = lg; x.beginPath(); x.arc(lx, ly, 9 * k, 0, 7); x.fill(); } } }
+    x.globalCompositeOperation = 'source-over'; x.globalAlpha = 1;
+    var people = type === 1 ? 7 + Math.floor(r() * 4) : 1 + Math.floor(r() * 4), small = type === 1;
+    for (i = 0; i < people; i++) {
+      var px = small ? (i + 0.5) * (S / people) + (r() - 0.5) * 20 * k : S * (0.5 + (i - (people - 1) / 2) * 0.24) + (r() - 0.5) * 16 * k;
+      var hr = (small ? 14 + r() * 7 : 26 + r() * 12) * k, bodyH = (small ? 40 + r() * 20 : 90 + r() * 50) * k, hy = S - bodyH - hr * 0.75 - (small ? r() * 6 : r() * 20) * k;
+      x.fillStyle = 'rgba(8,6,12,0.94)'; x.beginPath(); x.arc(px, hy, hr, 0, 7); x.fill();
+      x.beginPath(); x.ellipse(px, S + 6 * k, hr * 2.3, bodyH + hr * 0.2, 0, Math.PI, Math.PI * 2); x.fill();
+      x.strokeStyle = p[3]; x.globalAlpha = 0.35; x.lineWidth = 2 * k; x.beginPath(); x.arc(px, hy, hr, Math.PI * 1.05, Math.PI * 1.7); x.stroke(); x.globalAlpha = 1;
+    }
+    var v = x.createRadialGradient(S / 2, S / 2, S * 0.3, S / 2, S / 2, S * 0.75); v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,0.55)');
+    x.fillStyle = v; x.fillRect(0, 0, S, S);
+    try { return c.toDataURL('image/jpeg', 0.82); } catch (e) { return ''; }
+  };
+
+  /* ---------------------------------------------------- image processing */
+  // Resize to max width, re-encode as JPEG, and stamp a small watermark in the corner.
+  SN.processImage = function (file, maxW, stamp) {
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file), img = new Image();
+      img.onload = function () {
+        URL.revokeObjectURL(url);
+        var w = img.naturalWidth, h = img.naturalHeight;
+        if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+        var c = document.createElement('canvas'); c.width = w; c.height = h;
+        var x = c.getContext('2d'); x.drawImage(img, 0, 0, w, h);
+        if (stamp) {
+          var fs = Math.max(12, Math.round(Math.min(w, h) * 0.028)), pad = Math.round(fs * 0.9);
+          x.font = '600 ' + fs + 'px Inter, system-ui, sans-serif';
+          x.textAlign = 'right'; x.textBaseline = 'bottom';
+          x.shadowColor = 'rgba(0,0,0,.55)'; x.shadowBlur = fs * 0.4;
+          x.fillStyle = 'rgba(255,255,255,.88)';
+          x.fillText(stamp, w - pad, h - pad);
+        }
+        c.toBlob(function (b) { b ? resolve(b) : reject(new Error('Could not process image')); }, 'image/jpeg', 0.85);
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('Unsupported image. Try a JPG or PNG.')); };
+      img.src = url;
+    });
+  };
+  SN.videoDuration = function (file) {
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file), v = document.createElement('video');
+      v.preload = 'metadata';
+      v.onloadedmetadata = function () { URL.revokeObjectURL(url); resolve(v.duration); };
+      v.onerror = function () { URL.revokeObjectURL(url); reject(new Error('Could not read video')); };
+      v.src = url;
+    });
+  };
+
+  /* =================================================================== API */
+  var A = SN.api = {};
+  var C = cfg;
+
+  /* ---------- real backend (Appwrite 14) ---------- */
+  function Real() {
+    if (typeof window.Appwrite === 'undefined') throw new Error('Could not reach the server. Check your connection and refresh.');
+    var AW = window.Appwrite, Q = AW.Query;
+    var client = new AW.Client().setEndpoint(C.ENDPOINT).setProject(C.PROJECT_ID);
+    var account = new AW.Account(client), db = new AW.Databases(client), st = new AW.Storage(client);
+    var D = C.DATABASE_ID;
+    function url(u) { return typeof u === 'string' ? u : u.href; }
+    function list(coll, queries) { return db.listDocuments(D, coll, queries); }
+    async function listAll(coll, queries, max) {
+      var out = [], offset = 0, page = 100; max = max || 2000;
+      while (out.length < max) {
+        var r = await list(coll, queries.concat([Q.limit(page), Q.offset(offset)]));
+        out = out.concat(r.documents);
+        if (r.documents.length < page) break;
+        offset += page;
+      }
+      return out;
+    }
+    return {
+      Q: Q,
+      me: function () { return account.get().catch(function () { return null; }); },
+      prefs: function () { return account.getPrefs().catch(function () { return {}; }); },
+      setPrefs: function (p) { return account.updatePrefs(p); },
+      signIn: function (e, p) { return account.createEmailPasswordSession(e, p); },
+      signUp: async function (n, e, p) { await account.create(AW.ID.unique(), e, p, n); await account.createEmailPasswordSession(e, p); try { await account.updatePrefs({ tier: 'starter' }); } catch (x) { } },
+      signOut: function () { return account.deleteSession('current'); },
+      recover: function (email, url) { return account.createRecovery(email, url); },
+      resetPassword: function (uid, secret, pw) { return account.updateRecovery(uid, secret, pw); },
+      getEvent: async function (eventId) { var r = await list(C.COLLECTION_ID, [Q.equal('eventId', eventId)]); return r.documents[0] || null; },
+      hostDocs: function (email) { return listAll(C.COLLECTION_ID, [Q.equal('hostEmail', email)], 500); },
+      eventsByStatus: function (status, since, lim) {
+        var q = [Q.equal('status', status)]; if (since) q.push(Q.greaterThanEqual('$createdAt', since));
+        return lim ? list(C.COLLECTION_ID, q.concat([Q.limit(lim)])) : listAll(C.COLLECTION_ID, q, 2000).then(function (d) { return { total: d.length, documents: d }; });
+      },
+      createDoc: function (id, data) { return db.createDocument(D, C.COLLECTION_ID, id, data); },
+      updateEvent: function (docId, data) { return db.updateDocument(D, C.COLLECTION_ID, docId, data); },
+      uploads: function (eventId, opt) {
+        opt = opt || {};
+        var q = [Q.equal('event_id', eventId)];
+        if (opt.groupId) q.push(Q.equal('group_id', opt.groupId));
+        else if (opt.publicOnly) q.push(Q.isNull('group_id'));
+        return (opt.limit ? list(C.UPLOADS_COLLECTION_ID, q.concat([Q.limit(opt.limit)])).then(function (r) { return r.documents; }) : listAll(C.UPLOADS_COLLECTION_ID, q, 3000));
+      },
+      putFile: async function (file, id) {
+        var f = await st.createFile(C.BUCKET_ID, id || AW.ID.unique(), file);
+        return { id: f.$id, url: url(st.getFileView(C.BUCKET_ID, f.$id)) };
+      },
+      delFile: function (id) { return st.deleteFile(C.BUCKET_ID, id); },
+      fileUrl: function (id) { return url(st.getFileView(C.BUCKET_ID, id)); },
+      createUploadDoc: function (data) { return db.createDocument(D, C.UPLOADS_COLLECTION_ID, AW.ID.unique(), data); },
+      updateUpload: function (id, data) { return db.updateDocument(D, C.UPLOADS_COLLECTION_ID, id, data); },
+      deleteUploadDoc: function (id) { return db.deleteDocument(D, C.UPLOADS_COLLECTION_ID, id); },
+      groups: function (eventId) { return listAll(C.GROUPS_COLLECTION_ID, [Q.equal('event_id', eventId)], 500); },
+      findGroup: async function (eventId, name) { var r = await list(C.GROUPS_COLLECTION_ID, [Q.equal('event_id', eventId), Q.equal('group_name', name)]); return r.documents[0] || null; },
+      createGroup: function (data) { return db.createDocument(D, C.GROUPS_COLLECTION_ID, AW.ID.unique(), data); },
+      ID: function () { return AW.ID.unique(); }
+    };
+  }
+
+  /* ---------- mock backend (localStorage) ---------- */
+  function Mock() {
+    var KEY = 'sn_mock_db_v1';
+    function load() { try { return JSON.parse(localStorage.getItem(KEY)) || null; } catch (e) { return null; } }
+    function save(d) { try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) { console.warn('Mock storage full', e); throw new Error('Test storage is full. Reset test data from the admin page.'); } }
+    var d = load();
+    if (!d) { d = { users: [], session: null, events: [], uploads: [], groups: [], files: {} }; save(d); }
+    function fresh() { d = load() || d; return d; }
+    function now() { return new Date().toISOString(); }
+    function id() { return SN.rand(20); }
+    function delay(v) { return SN.sleep(120).then(function () { return JSON.parse(JSON.stringify(v)); }); }
+    function err(m) { var e = new Error(m); return Promise.reject(e); }
+    function sortDesc(a) { return a.sort(function (x, y) { return new Date(y.$createdAt) - new Date(x.$createdAt); }); }
+    return {
+      mock: true,
+      me: function () { fresh(); var u = d.users.find(function (u) { return u.email === d.session; }); return delay(u ? { $id: u.$id, name: u.name, email: u.email } : null); },
+      prefs: function () { fresh(); var u = d.users.find(function (u) { return u.email === d.session; }); return delay(u ? u.prefs : {}); },
+      setPrefs: function (p) { fresh(); var u = d.users.find(function (u) { return u.email === d.session; }); if (!u) return err('Not signed in'); u.prefs = p; save(d); return delay(p); },
+      signIn: function (e, p) { fresh(); var u = d.users.find(function (u) { return u.email === e.toLowerCase(); }); if (!u || u.pw !== p) return err('Invalid credentials. Please check the email and password.'); d.session = u.email; save(d); return delay({}); },
+      signUp: function (n, e, p) { fresh(); e = e.toLowerCase(); if (d.users.some(function (u) { return u.email === e; })) return err('A user with the same email already exists.'); if (String(p).length < 8) return err('Password must be at least 8 characters.'); d.users.push({ $id: id(), name: n, email: e, pw: p, prefs: { tier: 'starter' } }); d.session = e; save(d); return delay({}); },
+      signOut: function () { fresh(); d.session = null; save(d); return delay({}); },
+      recover: function (email) { fresh(); var u = d.users.find(function (u) { return u.email === String(email).toLowerCase(); }); if (u) { u.recovery = 'mocksecret'; save(d); console.info('[test mode] reset link: reset.html?userId=' + u.$id + '&secret=mocksecret'); } return delay({}); },
+      resetPassword: function (uid, secret, pw) { fresh(); var u = d.users.find(function (u) { return u.$id === uid; }); if (!u || u.recovery !== secret) return err('Invalid or expired reset link.'); if (String(pw).length < 8) return err('Password must be at least 8 characters.'); u.pw = pw; delete u.recovery; save(d); return delay({}); },
+      getEvent: function (eventId) { fresh(); return delay(d.events.find(function (x) { return x.eventId === eventId; }) || null); },
+      hostDocs: function (email) { fresh(); return delay(d.events.filter(function (x) { return x.hostEmail === email; })); },
+      eventsByStatus: function (status, since) { fresh(); var r = d.events.filter(function (x) { return x.status === status && (!since || x.$createdAt >= since); }); return delay({ total: r.length, documents: r }); },
+      createDoc: function (docId, data) { fresh(); var me = d.users.find(function (u) { return u.email === d.session; }); var doc = Object.assign({ $id: docId || id(), $createdAt: now(), $updatedAt: now(), $permissions: me ? ['read("user:' + me.$id + '")', 'update("user:' + me.$id + '")', 'delete("user:' + me.$id + '")'] : [] }, data); d.events.push(doc); save(d); return delay(doc); },
+      updateEvent: function (docId, data) { fresh(); var x = d.events.find(function (e) { return e.$id === docId; }); if (!x) return err('Document not found'); Object.assign(x, data, { $updatedAt: now() }); save(d); return delay(x); },
+      uploads: function (eventId, opt) {
+        opt = opt || {}; fresh();
+        var r = d.uploads.filter(function (u) { return u.event_id === eventId && (opt.groupId ? u.group_id === opt.groupId : opt.publicOnly ? !u.group_id : true); });
+        r = sortDesc(r); if (opt.limit) r = r.slice(0, opt.limit);
+        return delay(r);
+      },
+      putFile: function (file, fid) {
+        return new Promise(function (res, rej) {
+          var fr = new FileReader();
+          fr.onload = function () { fresh(); fid = fid || id(); d.files[fid] = fr.result; try { save(d); } catch (e) { delete d.files[fid]; return rej(e); } res({ id: fid, url: fr.result }); };
+          fr.onerror = function () { rej(new Error('Could not read file')); };
+          fr.readAsDataURL(file);
+        });
+      },
+      delFile: function (fid) { fresh(); delete d.files[fid]; save(d); return delay({}); },
+      fileUrl: function (fid) { fresh(); return d.files[fid] || ''; },
+      createUploadDoc: function (data) { fresh(); var doc = Object.assign({ $id: id(), $createdAt: now(), is_pinned: false }, data); d.uploads.push(doc); save(d); return delay(doc); },
+      updateUpload: function (uid, data) { fresh(); var x = d.uploads.find(function (u) { return u.$id === uid; }); if (!x) return err('Document not found'); Object.assign(x, data); save(d); return delay(x); },
+      deleteUploadDoc: function (uid) { fresh(); d.uploads = d.uploads.filter(function (u) { return u.$id !== uid; }); save(d); return delay({}); },
+      groups: function (eventId) { fresh(); return delay(d.groups.filter(function (g) { return g.event_id === eventId; })); },
+      findGroup: function (eventId, name) { fresh(); return delay(d.groups.find(function (g) { return g.event_id === eventId && g.group_name === name; }) || null); },
+      createGroup: function (data) { fresh(); var doc = Object.assign({ $id: id(), $createdAt: now() }, data); d.groups.push(doc); save(d); return delay(doc); },
+      ID: function () { return id(); },
+      _db: function () { return fresh(); },
+      _reset: function () { localStorage.removeItem(KEY); }
+    };
+  }
+
+  var B = null;
+  A.ready = function () {
+    if (B) return B;
+    B = SN.mock ? Mock() : Real();
+    return B;
+  };
+  function be() { return A.ready(); }
+
+  /* ---------- high-level operations used by the pages ---------- */
+  var REAL_STATUSES = ['active', 'ended'];
+  A.me = function () { return be().me(); };
+  A.prefs = function () { return be().prefs(); };
+  A.signIn = function (e, p) { return be().signIn(e, p); };
+  A.signUp = function (n, e, p) { return be().signUp(n, e, p); };
+  A.signOut = function () { return be().signOut(); };
+  A.recover = function (email) { return be().recover(email, C.resolveUrl('reset.html')); };
+  A.resetPassword = function (uid, secret, pw) { return be().resetPassword(uid, secret, pw); };
+  A.isAdmin = function (user) { return !!user && (C.ADMIN_EMAILS || []).map(function (x) { return x.toLowerCase(); }).indexOf(String(user.email).toLowerCase()) !== -1; };
+
+  A.getEvent = function (eventId) { return be().getEvent(eventId); };
+  A.updateEvent = function (docId, data) { return be().updateEvent(docId, data); };
+
+  // All of a host's docs, split into real events and billing records
+  A.hostData = async function (email) {
+    var docs = await be().hostDocs(email);
+    var events = docs.filter(function (x) { return REAL_STATUSES.indexOf(x.status) !== -1; })
+      .sort(function (a, b) { return new Date(b.$createdAt) - new Date(a.$createdAt); });
+    var subs = docs.filter(function (x) { return x.status === 'subscription'; });
+    var pays = docs.filter(function (x) { return String(x.status).indexOf('payment') === 0; });
+    return { events: events, subs: subs, payments: pays };
+  };
+  // Subscription records: Events docs with status 'subscription', eventName 'until|<ms>'
+  A.proUntil = function (subs, prefs) {
+    var best = 0;
+    var admins = C.ADMIN_USER_IDS || [];
+    (subs || []).forEach(function (s) {
+      if (admins.length && !(s.$permissions || []).some(function (p) { return admins.some(function (id) { return p.indexOf('user:' + id) !== -1; }); })) return; // not granted by an admin
+      var m = /^until\|(\d+)/.exec(s.eventName || ''); if (m) best = Math.max(best, +m[1]);
+    });
+    // Note: plans in account prefs from the old site are NOT trusted (anyone can edit their own prefs).
+    return best;
+  };
+  A.createEvent = function (data) {
+    var eid = 'evt_' + SN.rand(9);
+    return be().createDoc(eid, { eventId: eid, eventName: data.eventName, tier: data.tier, hostEmail: data.hostEmail, status: 'active', theme: data.theme || 'default' });
+  };
+  A.endEvent = function (ev) { return be().updateEvent(ev.$id, { status: 'ended' }); };
+
+  // Payment requests: Events docs with status 'payment_pending' | 'payment_done' | 'payment_rejected'
+  // eventName = 'plan|amount|utr|targetEventId'
+  A.requestPayment = function (o) {
+    var pid = 'pay_' + SN.rand(9);
+    return be().createDoc(pid, { eventId: pid, status: 'payment_pending', tier: o.plan, hostEmail: o.hostEmail, eventName: [o.plan, o.amount, String(o.utr).trim(), o.targetEventId || '-', o.ref || ''].join('|') });
+  };
+  A.parsePayment = function (doc) {
+    var p = String(doc.eventName || '').split('|');
+    return { doc: doc, plan: p[0], amount: +p[1] || 0, utr: p[2] || '', target: p[3] && p[3] !== '-' ? p[3] : null, ref: p[4] || '', status: String(doc.status).replace('payment_', ''), email: doc.hostEmail, at: doc.$createdAt };
+  };
+  A.payments = async function () {
+    var out = [];
+    for (var s of ['payment_pending', 'payment_done', 'payment_rejected']) { var r = await be().eventsByStatus(s); out = out.concat(r.documents); }
+    return out.map(A.parsePayment).sort(function (a, b) { return new Date(b.at) - new Date(a.at); });
+  };
+  A.setPaymentStatus = function (doc, status) { return be().updateEvent(doc.$id, { status: 'payment_' + status }); };
+  A.grantPro = async function (email, days) {
+    var docs = await be().hostDocs(email);
+    var subs = docs.filter(function (x) { return x.status === 'subscription'; });
+    var cur = A.proUntil(subs), from = Math.max(Date.now(), cur), until = from + days * 86400000;
+    if (subs.length) await be().updateEvent(subs[0].$id, { eventName: 'until|' + until });
+    else { var sid = 'sub_' + SN.rand(9); await be().createDoc(sid, { eventId: sid, status: 'subscription', tier: 'pro', hostEmail: email, eventName: 'until|' + until }); }
+    return until;
+  };
+  A.eventsByStatus = function (status, since, lim) { return be().eventsByStatus(status, since, lim); };
+  A.logVisit = function (email) {
+    try {
+      if (sessionStorage.getItem('visited')) return;
+      var vid = 'visit_' + Date.now();
+      be().createDoc(vid, { eventId: vid, status: 'visit', eventName: 'Page Visit', hostEmail: email || 'anonymous', tier: 'none' })
+        .then(function () { sessionStorage.setItem('visited', 'true'); }).catch(function () { });
+    } catch (e) { }
+  };
+
+  // Uploads
+  A.isPublic = function (u) { return !u.group_id && u.is_public_wall_allowed !== false && u.is_public_wall_allowed !== 'false'; };
+  A.uploads = function (eventId, opt) { return be().uploads(eventId, opt); };
+  A.addUpload = async function (o) {
+    // o: { eventId, blob, name, mime, kind, groupId }
+    var safe = o.eventId + '_' + Date.now() + '_' + SN.rand(4) + '_' + String(o.name || 'file').replace(/[^a-zA-Z0-9.]/g, '').slice(-40);
+    var file = new File([o.blob], safe, { type: o.mime || o.blob.type || 'application/octet-stream' });
+    var f = await be().putFile(file);
+    var fileUrl = f.url + (o.kind === 'video' && f.url.indexOf('data:') !== 0 ? (f.url.indexOf('?') === -1 ? '?' : '&') + 'sn_kind=video' : '');
+    var payload = { file_id: f.id, event_id: o.eventId, file_url: fileUrl, is_public_wall_allowed: !o.groupId };
+    if (o.groupId) payload.group_id = String(o.groupId);
+    try { return await be().createUploadDoc(payload); }
+    catch (e) { try { await be().delFile(f.id); } catch (x) { } throw e; }
+  };
+  A.removeUpload = async function (u) {
+    await be().deleteUploadDoc(u.$id);
+    if (u.file_id) { try { await be().delFile(u.file_id); } catch (e) { } }
+  };
+  A.updateUpload = function (id, data) { return be().updateUpload(id, data); };
+
+  // Groups (passcodes are stored hashed)
+  A.hash = async function (s) {
+    var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+    return Array.from(new Uint8Array(buf)).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+  };
+  A.groups = function (eventId) { return be().groups(eventId); };
+  A.joinGroup = async function (eventId, name, pass) {
+    var h = await A.hash(pass), g = await be().findGroup(eventId, name);
+    if (g) { if (g.passcode !== h) throw new Error('Wrong passcode for this group.'); return { group: g, created: false }; }
+    g = await be().createGroup({ event_id: eventId, group_name: name, passcode: h, created_by_token: 'anonymous_' + SN.rand(9) });
+    return { group: g, created: true };
+  };
+
+  // Files / ads (ads live in storage as global_ad_1..3, as on the previous site)
+  A.putFile = function (file, id) { return be().putFile(file, id); };
+  A.delFile = function (id) { return be().delFile(id); };
+  A.fileUrl = function (id) { return be().fileUrl(id); };
+  A.logoId = function (eventId) { return ('logo_' + eventId).slice(0, 36); };
+  A.logoUrl = function (ev) {
+    if (ev && ev.customWatermark) return ev.customWatermark;
+    if (SN.mock) return be().fileUrl(A.logoId(ev.eventId)) || '';
+    return C.ENDPOINT + '/storage/buckets/' + C.BUCKET_ID + '/files/' + A.logoId(ev.eventId) + '/view?project=' + C.PROJECT_ID;
+  };
+  A.setLogo = async function (ev, file) {
+    var fid = A.logoId(ev.eventId);
+    try { await be().delFile(fid); } catch (e) { }
+    await be().putFile(file, fid);
+  };
+  A.removeLogo = async function (ev) { await be().delFile(A.logoId(ev.eventId)); };
+  A.adUrl = function (slot) {
+    if (SN.mock) return be().fileUrl('global_ad_' + slot) || '';
+    return C.ENDPOINT + '/storage/buckets/' + C.BUCKET_ID + '/files/global_ad_' + slot + '/view?project=' + C.PROJECT_ID;
+  };
+
+  // Mock-only: seed a realistic demo account so every page can be tried end-to-end
+  A.seedMock = async function () {
+    if (!SN.mock) return;
+    var db = be()._db();
+    if (db.users.length) return;
+    await be().signUp('Demo Host', 'host@example.com', 'password123');
+    await be().signOut();
+    await be().signUp('Admin', (C.ADMIN_EMAILS || ['admin@example.com'])[0], 'password123');
+    await be().signOut();
+    var ev = await A.createEvent({ eventName: "Riya & Arjun's Sangeet", tier: 'single', hostEmail: 'host@example.com', theme: 'default' });
+    for (var i = 0; i < 9; i++) {
+      var dataUrl = SN.samplePhoto(i + 1, 480), blob = await (await fetch(dataUrl)).blob();
+      await A.addUpload({ eventId: ev.eventId, blob: blob, name: 'photo' + i + '.jpg', mime: 'image/jpeg', kind: 'image' });
+    }
+  };
+})();
+
+</script>
+<style>
+  html,body{height:100%;overflow:hidden}
+  body{background:var(--bg);font-size:1.4vh}
+  body.idle,body.idle *{cursor:none!important}
+  .bgfx{position:fixed;inset:0;z-index:0;pointer-events:none;background:
+    radial-gradient(60vw 50vh at 10% 0%,rgba(var(--glow-rgb,47,111,228),.28),transparent 70%),
+    radial-gradient(50vw 50vh at 100% 100%,rgba(var(--accent-rgb),.12),transparent 70%)}
+  .tv{position:relative;z-index:1;height:100vh;display:grid;grid-template-columns:1fr auto;grid-template-rows:1fr auto;gap:1.6vh;padding:1.8vh}
+  .wall{grid-column:1;grid-row:1;position:relative;min-height:0;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(3,1fr);gap:1.2vh}
+  .tile{position:relative;overflow:hidden;border-radius:1.6vh;background:var(--surface);border:1px solid var(--line)}
+  .tile img,.tile video{width:100%;height:100%;object-fit:cover}
+  .tile.spot{grid-column:span 2;grid-row:span 2;border-radius:2.2vh;box-shadow:0 2vh 6vh rgba(0,0,0,.35)}
+  .tile.spot img,.tile.spot video{position:absolute;inset:0;transition:opacity 1s}
+  .tile.spot .bgblur{position:absolute;inset:-5%;background-size:cover;background-position:center;filter:blur(3vh) brightness(.6);transform:scale(1.1)}
+  .tile.spot .fit{object-fit:contain}
+  .tile.new{animation:pop .9s cubic-bezier(.2,1.4,.4,1)}
+  .tile.new::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 .5vh var(--accent);animation:ring 1.8s ease-out forwards}
+  @keyframes pop{from{transform:scale(.6);filter:brightness(2)}to{transform:none;filter:none}}
+  @keyframes ring{from{opacity:1}to{opacity:0}}
+  .tile .pin{position:absolute;top:1vh;left:1vh;background:var(--accent);color:var(--on-accent);border-radius:99px;padding:.4vh 1vh;font-size:1.3vh;font-weight:700;display:flex;gap:.5vh;align-items:center}
+  .ph{background:linear-gradient(135deg,rgba(255,255,255,.04),rgba(255,255,255,.01))}
+
+  .side{grid-column:2;grid-row:1 / span 2;width:24vw;min-width:260px;max-width:460px;display:flex;flex-direction:column;gap:2vh;padding:3vh 2.4vh;border-radius:2.2vh;background:var(--surface);border:1px solid var(--line);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);transition:width .4s,padding .4s,opacity .4s}
+  body.noside .side{display:none}
+  body.noside .tv{grid-template-columns:1fr}
+  body.noside .ads{grid-column:1}
+  .side .logo-slot img{max-height:9vh;max-width:100%;object-fit:contain;margin:0 auto}
+  .ev-kicker{font-size:1.3vh;letter-spacing:.2em;text-transform:uppercase;font-weight:700;color:var(--muted);text-align:center}
+  .ev-title{font-family:var(--head);font-size:clamp(20px,3.6vh,52px);font-weight:700;color:var(--accent);text-align:center;line-height:1.1;word-break:break-word}
+  .qr{background:#fff;border-radius:2vh;padding:1.6vh;margin:0 auto;width:100%;max-width:30vh;box-shadow:0 2vh 5vh rgba(0,0,0,.35)}
+  .qr svg,.qr img{width:100%;height:auto;display:block}
+  .scan{text-align:center}
+  .scan b{display:block;font-family:var(--head);font-size:2.6vh;margin-bottom:.4vh}
+  .scan span{color:var(--muted);font-size:1.6vh}
+  .stats{margin-top:auto;display:flex;justify-content:space-between;align-items:center;gap:1vh;font-size:1.6vh;color:var(--muted)}
+  .stats .count{font-family:var(--head);font-size:3.4vh;color:var(--text);font-weight:700;line-height:1}
+  .live{display:inline-flex;align-items:center;gap:.8vh;padding:.6vh 1.4vh;border-radius:99px;background:rgba(244,63,94,.14);color:#fecdd3;font-weight:700;letter-spacing:.14em;font-size:1.3vh}
+  .live i{width:1vh;height:1vh;border-radius:50%;background:#f43f5e;animation:blink 1.4s infinite}
+  @keyframes blink{50%{opacity:.25}}
+  .brand-foot{text-align:center;font-size:1.3vh;color:var(--muted)} .brand-foot b{color:var(--text)}
+
+  .ads{grid-column:1;grid-row:2;height:10vh;border-radius:1.6vh;overflow:hidden;position:relative;background:linear-gradient(90deg,#0b2a6b,#123b91);border:1px solid rgba(255,255,255,.1)}
+  .ad{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:2vh;padding:0 3vh;opacity:0;transform:translateY(20%);transition:opacity .7s,transform .7s;color:#fff;font-weight:600;font-size:2.2vh;text-align:center}
+  .ad.on{opacity:1;transform:none}
+  .ad img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+  .ad .tag{position:absolute;right:1.2vh;top:.8vh;font-size:1.1vh;letter-spacing:.14em;text-transform:uppercase;opacity:.6;z-index:1}
+  .ad .yl{color:#ffd34d}
+
+  .toast-new{position:absolute;left:2vh;bottom:2vh;z-index:5;display:flex;align-items:center;gap:1.2vh;padding:1vh 2vh 1vh 1vh;border-radius:99px;background:rgba(6,10,20,.8);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#fff;font-weight:600;font-size:1.8vh;border:1px solid rgba(255,255,255,.15);opacity:0;transform:translateY(40%);transition:.4s}
+  .toast-new.show{opacity:1;transform:none}
+  .toast-new .av{width:3.4vh;height:3.4vh;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--on-accent)}
+  .toast-new .av .i{width:1.8vh;height:1.8vh}
+
+  .over{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.4vh;text-align:center;padding:4vh;background:var(--bg)}
+  .over .big{width:12vh;height:12vh;border-radius:3vh;display:grid;place-items:center;background:var(--surface);border:1px solid var(--line);color:var(--accent)}
+  .over .big .i{width:6vh;height:6vh}
+  .over h1{font-size:clamp(28px,6vh,80px)}
+  .over p{color:var(--muted);font-size:clamp(16px,2.4vh,30px);max-width:60vw}
+  .waiting{grid-column:1 / -1;grid-row:1 / -1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2vh;text-align:center;border:2px dashed var(--line-2);border-radius:2.2vh}
+  .waiting h2{font-size:clamp(24px,5vh,64px)}
+  .waiting p{color:var(--muted);font-size:clamp(14px,2.2vh,28px)}
+  .waiting .i{width:8vh;height:8vh;color:var(--accent)}
+
+  .controls{position:fixed;top:2vh;left:2vh;z-index:30;display:flex;gap:8px;opacity:0;transition:opacity .3s}
+  body:not(.idle) .controls{opacity:1}
+  .controls .btn{background:rgba(6,10,20,.7);color:#fff;border-color:rgba(255,255,255,.2);backdrop-filter:blur(8px)}
+  .demo-flag{position:fixed;top:2vh;left:50%;transform:translateX(-50%);z-index:25;background:var(--accent);color:var(--on-accent);font-weight:700;border-radius:99px;padding:.8vh 2vh;font-size:1.6vh}
+
+  @media (orientation: portrait){
+    body{font-size:1.2vh;overflow:auto}
+    html,body{height:auto}
+    .tv{height:auto;min-height:100vh;grid-template-columns:1fr;grid-template-rows:auto auto auto}
+    .wall{grid-template-columns:repeat(2,1fr);grid-template-rows:none;grid-auto-rows:22vw}
+    .tile.spot{grid-column:span 2;grid-row:span 2}
+    .side{grid-column:1;grid-row:3;width:auto;max-width:none}
+    .ads{grid-row:2;height:12vw}
+  }
+</style>
 </head>
 <body>
-    <div class="liquid-mesh"></div>
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true" id="sn-sprite">
+<symbol id="camera" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z"/> <circle cx="12" cy="13" r="3"/></symbol>
+<symbol id="qr-code" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="5" height="5" x="3" y="3" rx="1"/> <rect width="5" height="5" x="16" y="3" rx="1"/> <rect width="5" height="5" x="3" y="16" rx="1"/> <path d="M21 16h-3a2 2 0 0 0-2 2v3"/> <path d="M21 21v.01"/> <path d="M12 7v3a2 2 0 0 1-2 2H7"/> <path d="M3 12h.01"/> <path d="M12 3h.01"/> <path d="M12 16v.01"/> <path d="M16 12h1"/> <path d="M21 12v.01"/> <path d="M12 21v-1"/></symbol>
+<symbol id="zap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z"/></symbol>
+<symbol id="shield-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/> <path d="m9 12 2 2 4-4"/></symbol>
+<symbol id="download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/> <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/> <path d="m7 10 5 5 5-5"/></symbol>
+<symbol id="stamp" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 13V8.5C14 7 15 7 15 5a3 3 0 0 0-6 0c0 2 1 2 1 3.5V13"/> <path d="M20 15.5a2.5 2.5 0 0 0-2.5-2.5h-11A2.5 2.5 0 0 0 4 15.5V17a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1z"/> <path d="M5 22h14"/></symbol>
+<symbol id="monitor" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/> <line x1="8" x2="16" y1="21" y2="21"/> <line x1="12" x2="12" y1="17" y2="21"/></symbol>
+<symbol id="palette" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"/> <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/> <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/> <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/> <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/></symbol>
+<symbol id="type" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16"/> <path d="M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2"/> <path d="M9 20h6"/></symbol>
+<symbol id="eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/> <circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/> <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/> <path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/> <path d="m2 2 20 20"/></symbol>
+<symbol id="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></symbol>
+<symbol id="arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/> <path d="m12 5 7 7-7 7"/></symbol>
+<symbol id="arrow-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/> <path d="M19 12H5"/></symbol>
+<symbol id="sparkles" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/> <path d="M20 2v4"/> <path d="M22 4h-4"/> <circle cx="4" cy="20" r="2"/></symbol>
+<symbol id="plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/> <path d="M12 5v14"/></symbol>
+<symbol id="x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/> <path d="m6 6 12 12"/></symbol>
+<symbol id="lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/> <path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+<symbol id="lock-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/> <path d="M7 11V7a5 5 0 0 1 9.9-1"/></symbol>
+<symbol id="users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/> <path d="M16 3.128a4 4 0 0 1 0 7.744"/> <path d="M22 21v-2a4 4 0 0 0-3-3.87"/> <circle cx="9" cy="7" r="4"/></symbol>
+<symbol id="upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/> <path d="m17 8-5-5-5 5"/> <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></symbol>
+<symbol id="image" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/> <circle cx="9" cy="9" r="2"/> <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></symbol>
+<symbol id="video" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/> <rect x="2" y="6" width="14" height="12" rx="2"/></symbol>
+<symbol id="trash-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 11v6"/> <path d="M14 11v6"/> <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/> <path d="M3 6h18"/> <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+<symbol id="pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/> <path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></symbol>
+<symbol id="copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/> <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+<symbol id="external-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/> <path d="M10 14 21 3"/> <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></symbol>
+<symbol id="printer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/> <path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/> <rect x="6" y="14" width="12" height="8" rx="1"/></symbol>
+<symbol id="log-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 17 5-5-5-5"/> <path d="M21 12H9"/> <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/></symbol>
+<symbol id="loader-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></symbol>
+<symbol id="refresh-cw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/> <path d="M21 3v5h-5"/> <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/> <path d="M8 16H3v5"/></symbol>
+<symbol id="clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/> <path d="M12 6v6l4 2"/></symbol>
+<symbol id="crown" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/> <path d="M5 21h14"/></symbol>
+<symbol id="maximize" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/> <path d="M21 8V5a2 2 0 0 0-2-2h-3"/> <path d="M3 16v3a2 2 0 0 0 2 2h3"/> <path d="M16 21h3a2 2 0 0 0 2-2v-3"/></symbol>
+<symbol id="minimize" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3"/> <path d="M21 8h-3a2 2 0 0 1-2-2V3"/> <path d="M3 16h3a2 2 0 0 1 2 2v3"/> <path d="M16 21v-3a2 2 0 0 1 2-2h3"/></symbol>
+<symbol id="triangle-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/> <path d="M12 9v4"/> <path d="M12 17h.01"/></symbol>
+<symbol id="mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/> <rect x="2" y="4" width="20" height="16" rx="2"/></symbol>
+<symbol id="settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/> <circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="chart-column" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16"/> <path d="M18 17V9"/> <path d="M13 17V5"/> <path d="M8 17v-3"/></symbol>
+<symbol id="calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v3"/> <path d="M16 2v3"/> <rect x="3" y="3" width="18" height="18" rx="2"/> <path d="M3 9h18"/></symbol>
+<symbol id="user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/> <circle cx="12" cy="7" r="4"/></symbol>
+<symbol id="indian-rupee" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12"/> <path d="M6 8h12"/> <path d="m6 13 8.5 8"/> <path d="M6 13h3"/> <path d="M9 13c6.667 0 6.667-10 0-10"/></symbol>
+<symbol id="smartphone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/> <path d="M12 18h.01"/></symbol>
+<symbol id="globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/> <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/> <path d="M2 12h20"/></symbol>
+<symbol id="link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/> <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+<symbol id="play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/></symbol>
+<symbol id="circle-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/> <path d="m16 9-5.5 5.5L8 12"/></symbol>
+<symbol id="circle-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/> <path d="m15 9-6 6"/> <path d="m9 9 6 6"/></symbol>
+<symbol id="ban" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/> <path d="M4.929 4.929 19.07 19.071"/></symbol>
+<symbol id="images" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 11-1.296-1.296a2.4 2.4 0 0 0-3.408 0L11 16"/> <path d="M4 8a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2"/> <circle cx="13" cy="7" r="1" fill="currentColor"/> <rect x="8" y="2" width="14" height="14" rx="2"/></symbol>
+<symbol id="folder-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="5" x="14" y="17" rx="1"/> <path d="M10 20H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H20a2 2 0 0 1 2 2v2.5"/> <path d="M20 17v-2a2 2 0 1 0-4 0v2"/></symbol>
+<symbol id="text-align-start" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 5H3"/> <path d="M15 12H3"/> <path d="M17 19H3"/></symbol>
+<symbol id="power" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v10"/> <path d="M18.4 6.6a9 9 0 1 1-12.77.04"/></symbol>
+<symbol id="megaphone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 6a13 13 0 0 0 8.4-2.8A1 1 0 0 1 21 4v12a1 1 0 0 1-1.6.8A13 13 0 0 0 11 14H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"/> <path d="M6 14a12 12 0 0 0 2.4 7.2 2 2 0 0 0 3.2-2.4A8 8 0 0 1 10 14"/> <path d="M8 6v8"/></symbol>
+<symbol id="info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/> <path d="M12 16v-4"/> <path d="M12 8h.01"/></symbol>
+</svg>
+<div class="bgfx"></div>
+<div class="tv" id="tv">
+  <section class="wall" id="wall" aria-live="polite"></section>
+  <aside class="side" id="side">
+    <div class="logo-slot" id="logoSlot" hidden><img id="logoImg" alt=""></div>
+    <div><p class="ev-kicker">Live photo wall</p><h1 class="ev-title" id="evTitle">…</h1></div>
+    <div class="qr" id="qr"></div>
+    <div class="scan"><b>Scan to share</b><span>Point your camera at the code. No app needed.</span></div>
+    <div class="stats"><div><div class="count" id="count">0</div>photos</div><span class="live"><i></i>LIVE</span></div>
+    <p class="brand-foot" id="brandFoot">Powered by <b>SnapNexus</b></p>
+  </aside>
+  <section class="ads" id="ads" hidden></section>
+  <div class="toast-new" id="toastNew"><span class="av" id="toastIcon"></span><span id="toastTxt">New photo!</span></div>
+</div>
 
-    <div class="sidebar">
-        <h1 id="tvEventName">Live Event</h1>
-        <p style="margin-bottom: 10px; color: var(--text-secondary);">Scan to upload!</p>
-        <div class="qr-placeholder">
-            <img id="qrImage" src="" style="width: 100%; border-radius: 10px;">
-        </div>
-        <p style="margin-top: auto; font-size: 0.9rem; color: var(--text-secondary); text-align: center;">Want this full screen? Host can upgrade to VIP.</p>
-    </div>
+<div class="controls" id="controls">
+  <button class="btn btn-sm" id="btnFs"></button>
+  <button class="btn btn-sm" id="btnSide"></button>
+</div>
 
-    <div class="slideshow-container">
-        <div id="layer1" class="photo-layer"></div>
-        <div id="layer2" class="photo-layer"></div>
-    </div>
+<div class="over" id="over" hidden>
+  <div class="big" id="overIcon"></div>
+  <h1 id="overTitle"></h1>
+  <p id="overText"></p>
+</div>
 
-    <div class="watermark">Powered by SnapNexus</div>
+<script>
+(function () {
+  'use strict';
+  var S = window.SN, C = S.cfg, I = S.icon, esc = S.esc;
+  var eventId = S.qs('event');
+  var isDemo = !!eventId && eventId.indexOf('demo_') === 0;
+  var ev = null, items = [], known = {}, spotIdx = 0, firstLoad = true, timers = [];
 
-    <div class="ad-banner">
-        <div class="ad-text active" id="ad1">Host your own interactive photo wall at SnapNexus.in</div>
-        <div class="ad-text" id="ad2">Upgrade to VIP to remove this banner - SnapNexus.in</div>
-        <div class="ad-text" id="ad3">Soni Tech Solutions - Web Development</div>
-    </div>
+  S.$('#btnFs').innerHTML = I('maximize') + '<span>Fullscreen</span>';
+  S.$('#btnSide').innerHTML = I('qr-code') + '<span>Hide QR</span>';
+  S.$('#toastIcon').innerHTML = I('camera');
 
-    <script>
-        const cfg = window.SnapNexus;
-        const client = new Appwrite.Client()
-            .setEndpoint(cfg.ENDPOINT)
-            .setProject(cfg.PROJECT_ID);
-        const databases = new Appwrite.Databases(client);
-        const storage = new Appwrite.Storage(client);
+  function overlay(kind) {
+    var map = {
+      missing: ['circle-x', 'Wall not found', 'This link doesn\'t match an event. Open the wall again from your dashboard.'],
+      ended: ['circle-check', 'That\'s a wrap!', 'Thanks for sharing your moments. This event has ended.'],
+      trial_over: ['clock', 'Free trial ended', 'The host can upgrade from their SnapNexus dashboard to keep this wall live.'],
+      unpaid: ['clock', 'Almost ready', 'This wall goes live as soon as the host\'s payment is confirmed.'],
+      error: ['triangle-alert', 'Connection lost', 'We\'ll keep trying to reconnect…']
+    }[kind];
+    S.$('#overIcon').innerHTML = I(map[0]);
+    S.$('#overTitle').textContent = map[1];
+    S.$('#overText').textContent = map[2];
+    S.$('#over').hidden = false;
+  }
+  function clearOverlay() { S.$('#over').hidden = true; }
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const eventId = urlParams.get('event');
-        const isDemo = urlParams.get('isDemo') === 'true';
-        if (!eventId) { document.body.innerHTML = '<h1 style="color:white; text-align:center; padding-top:20vh;">Invalid Link</h1>'; throw new Error("Halt"); }
+  /* ----- event + chrome ----- */
+  async function loadEvent() {
+    if (!eventId) { overlay('missing'); return false; }
+    if (isDemo) {
+      ev = { eventId: eventId, eventName: 'Live Demo', tier: 'starter', status: 'active', theme: 'default', $createdAt: new Date().toISOString() };
+    } else {
+      var fresh;
+      try { fresh = await S.api.getEvent(eventId); } catch (e) { if (!ev) overlay('error'); return !!ev; }
+      if (!fresh) { overlay('missing'); return false; }
+      var themeChanged = !ev || ev.theme !== fresh.theme || ev.eventName !== fresh.eventName || ev.customWatermark !== fresh.customWatermark || ev.tier !== fresh.tier;
+      ev = fresh;
+      if (!themeChanged) { applyState(); return true; }
+    }
+    S.theme.apply(S.theme.parse(ev.theme));
+    document.title = ev.eventName + ' · Live Wall';
+    S.$('#evTitle').textContent = ev.eventName;
+    var joinUrl = C.resolveUrl('app.html?event=' + encodeURIComponent(ev.eventId));
+    S.$('#qr').innerHTML = S.ui.qrSvg(joinUrl, { margin: 1 });
+    var pro = S.plans.norm(ev.tier) === 'pro';
+    S.$('#logoSlot').hidden = true;
+    if (pro) {
+      var lu = S.api.logoUrl(ev), li = S.$('#logoImg');
+      li.onload = function () { S.$('#logoSlot').hidden = false; };
+      li.onerror = function () { S.$('#logoSlot').hidden = true; };
+      if (lu) li.src = lu + (lu.indexOf('data:') === 0 ? '' : (lu.indexOf('?') > -1 ? '&' : '?') + 't=' + Math.floor(Date.now() / 300000));
+    }
+    S.$('#brandFoot').hidden = pro;
+    setupAds(isDemo || S.plans.hasAds(ev));
+    applyState();
+    if (!window.__tracked) { window.__tracked = 1; S.track('wall_opened', { plan: S.plans.norm(ev.tier), demo: isDemo }); }
+    return true;
+  }
+  function applyState() {
+    var st = isDemo ? 'live' : S.plans.wallState(ev);
+    if (st === 'live') clearOverlay(); else overlay(st);
+    return st;
+  }
 
-        document.getElementById('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(cfg.resolveUrl(`app.html?event=${eventId}`))}`;
+  /* ----- ads (free trial + unpaid) ----- */
+  var adTimer = null, adsOn = null;
+  function setupAds(on) {
+    if (adsOn === on) return; adsOn = on;
+    var box = S.$('#ads'); box.hidden = !on; clearInterval(adTimer);
+    if (!on) return;
+    var text = [
+      '<span>Host your own live photo wall at <b class="yl">snapnexus.in</b>. Free for 1 hour.</span>',
+      '<span>Loving this? Remove ads from ₹' + C.PLANS.single.price + ' per event at <b class="yl">snapnexus.in</b></span>',
+      '<span>Websites by <b class="yl">Soni Tech Solutions</b></span>'
+    ];
+    box.innerHTML = '';
+    var slides = [];
+    function addSlide(html) { var d = document.createElement('div'); d.className = 'ad'; d.innerHTML = '<span class="tag">Ad</span>' + html; box.appendChild(d); slides.push(d); }
+    // try sponsor image ads uploaded from the admin page (global_ad_1..3)
+    var pending = 3, imgs = [];
+    for (var n = 1; n <= 3; n++) (function (n) {
+      var u = S.api.adUrl(n); if (!u) { if (--pending === 0) done(); return; }
+      var im = new Image();
+      im.onload = function () { imgs[n] = u; if (--pending === 0) done(); };
+      im.onerror = function () { if (--pending === 0) done(); };
+      im.src = u;
+    })(n);
+    function done() {
+      imgs.forEach(function (u) { if (u) addSlide('<img alt="Sponsor" src="' + esc(u) + '">'); });
+      text.forEach(addSlide);
+      var i = 0; slides[0].classList.add('on');
+      adTimer = setInterval(function () { slides[i].classList.remove('on'); i = (i + 1) % slides.length; slides[i].classList.add('on'); }, 7000);
+    }
+  }
 
-        function applyTheme(theme) {
-            document.documentElement.setAttribute('data-theme', theme || 'default');
-        }
+  /* ----- photos ----- */
+  var demoSeed = [];
+  if (isDemo) for (var k = 1; k <= 11; k++) demoSeed.push({ $id: 'demo' + k, file_url: S.samplePhoto(k, 640), $createdAt: new Date(Date.now() - k * 60000).toISOString(), is_pinned: false, demo: true });
 
-        function renderLayer(el, item) {
-            if (!item) { el.innerHTML = ''; return; }
-            if (item.type === 'video') {
-                el.innerHTML = `<video src="${item.url}" autoplay muted loop playsinline></video>`;
-            } else {
-                el.innerHTML = `<img src="${item.url}" alt="">`;
-            }
-        }
+  async function loadPhotos() {
+    var docs;
+    try { docs = await S.api.uploads(eventId, { publicOnly: true, limit: 100 }); } catch (e) { return; }
+    docs = docs.filter(S.api.isPublic).concat(demoSeed);
+    docs.sort(function (a, b) { return new Date(b.$createdAt) - new Date(a.$createdAt); });
+    var fresh = docs.filter(function (d) { return !known[d.$id]; });
+    docs.forEach(function (d) { known[d.$id] = true; });
+    var changed = fresh.length || docs.length !== items.length;
+    items = docs;
+    S.$('#count').textContent = items.length;
+    if (!changed && !firstLoad) return;
+    if (!firstLoad && fresh.length) { spotIdx = 0; showToast(fresh.length); }
+    render(firstLoad ? {} : fresh.reduce(function (m, d) { m[d.$id] = true; return m; }, {}));
+    firstLoad = false;
+  }
 
-        let photos = [];
-        let currentIndex = 0;
-        let activeLayer = 1;
+  function media(d, cls) {
+    var u = esc(d.file_url || '');
+    return S.isVideoUrl(d.file_url) ? '<video class="' + (cls || '') + '" src="' + u + '" autoplay muted loop playsinline></video>' : '<img class="' + (cls || '') + '" src="' + u + '" alt="">';
+  }
+  function spotlightOrder() {
+    // pinned photos first (Pro), then newest
+    var pinned = items.filter(function (d) { return d.is_pinned === true || d.is_pinned === 'true'; });
+    var rest = items.filter(function (d) { return pinned.indexOf(d) === -1; });
+    return pinned.concat(rest);
+  }
+  function render(newIds) {
+    var wall = S.$('#wall');
+    if (!items.length) {
+      wall.innerHTML = '<div class="waiting">' + I('camera') + '<h2>Be the first to share!</h2><p>Scan the QR code and your photo shows up here in seconds.</p></div>';
+      return;
+    }
+    var order = spotlightOrder(), spot = order[spotIdx % order.length];
+    var rest = items.filter(function (d) { return d !== spot; }).slice(0, 8);
+    var html = '<div class="tile spot' + (newIds[spot.$id] ? ' new' : '') + '" id="spot">' + spotInner(spot) + '</div>';
+    rest.forEach(function (d) {
+      html += '<div class="tile' + (newIds[d.$id] ? ' new' : '') + '">' + media(d) + ((d.is_pinned === true || d.is_pinned === 'true') ? '<span class="pin">' + I('pin') + 'Pinned</span>' : '') + '</div>';
+    });
+    for (var i = rest.length; i < 8; i++) html += '<div class="tile ph"></div>';
+    wall.innerHTML = html;
+  }
+  function spotInner(d) {
+    var bg = S.isVideoUrl(d.file_url) ? '' : '<div class="bgblur" style="background-image:url(&quot;' + esc(d.file_url) + '&quot;)"></div>';
+    return bg + media(d, 'fit');
+  }
+  function rotateSpot() {
+    if (items.length < 2 || document.hidden) return;
+    spotIdx++;
+    var order = spotlightOrder(), d = order[spotIdx % order.length], el = S.$('#spot');
+    if (!el) return;
+    el.style.transition = 'opacity .5s'; el.style.opacity = '0';
+    setTimeout(function () { el.innerHTML = spotInner(d); el.style.opacity = '1'; }, 500);
+  }
+  var toastT;
+  function showToast(n) {
+    S.$('#toastTxt').textContent = n > 1 ? n + ' new photos just arrived!' : 'New photo just arrived!';
+    var t = S.$('#toastNew'); t.classList.add('show'); clearTimeout(toastT);
+    toastT = setTimeout(function () { t.classList.remove('show'); }, 3500);
+  }
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            const layer1 = document.getElementById('layer1');
-            const layer2 = document.getElementById('layer2');
+  /* ----- controls ----- */
+  S.$('#btnFs').addEventListener('click', toggleFs);
+  S.$('#btnSide').addEventListener('click', toggleSide);
+  function toggleFs() {
+    if (!document.fullscreenElement) { (document.documentElement.requestFullscreen || function () { }).call(document.documentElement); }
+    else document.exitFullscreen();
+  }
+  document.addEventListener('fullscreenchange', function () {
+    S.$('#btnFs').innerHTML = document.fullscreenElement ? I('minimize') + '<span>Exit fullscreen</span>' : I('maximize') + '<span>Fullscreen</span>';
+  });
+  function toggleSide() {
+    document.body.classList.toggle('noside');
+    S.$('#btnSide').innerHTML = I('qr-code') + '<span>' + (document.body.classList.contains('noside') ? 'Show QR' : 'Hide QR') + '</span>';
+  }
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'f' || e.key === 'F') toggleFs();
+    if (e.key === 'q' || e.key === 'Q') toggleSide();
+  });
+  var idleT;
+  function wake() { document.body.classList.remove('idle'); clearTimeout(idleT); idleT = setTimeout(function () { document.body.classList.add('idle'); }, 3000); }
+  ['mousemove', 'touchstart', 'keydown'].forEach(function (t) { document.addEventListener(t, wake, { passive: true }); });
+  wake();
 
-            if (isDemo) {
-                document.getElementById('tvEventName').innerText = 'Live Demo Room';
-            } else {
-                try {
-                    const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [ Appwrite.Query.equal('eventId', eventId) ]);
-                    if (res.documents.length > 0) {
-                        document.getElementById('tvEventName').innerText = res.documents[0].eventName;
-                        applyTheme(res.documents[0].theme);
-                    }
-                } catch(e) { console.error(e); }
-            }
+  if (isDemo) { var f = document.createElement('div'); f.className = 'demo-flag'; f.textContent = 'Live demo · scan the QR with your phone to try it'; document.body.appendChild(f); }
 
-            async function fetchPhotos() {
-                try {
-                    const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.UPLOADS_COLLECTION_ID, [
-                        Appwrite.Query.equal('event_id', eventId),
-                        Appwrite.Query.limit(100)
-                    ]);
-                    // Filter for public media (handles both String 'true' and Boolean true)
-                    const publicPhotos = res.documents.filter(doc => 
-                        doc.is_public_wall_allowed === 'true' || 
-                        doc.is_public_wall_allowed === true || 
-                        String(doc.is_public_wall_allowed) !== 'false'
-                    );
-
-                    // Client-side latest-first sorting
-                    publicPhotos.sort((a, b) => new Date(b.$createdAt) - new Date(a.$createdAt));
-
-                    const newItems = publicPhotos.map(doc => {
-                        const url = doc.file_url || (doc.file_id ? storage.getFileView(cfg.BUCKET_ID, doc.file_id).href : '');
-                        const type = (url.toLowerCase().includes('.mp4') || url.toLowerCase().includes('.mov') || url.toLowerCase().includes('.webm')) ? 'video' : 'image';
-                        return { url, type };
-                    }).filter(item => item.url);
-                    if (JSON.stringify(newItems) !== JSON.stringify(photos)) {
-                        photos = newItems;
-                        if (photos.length > 0 && !layer1.classList.contains('active') && !layer2.classList.contains('active')) {
-                            renderLayer(layer1, photos[0]);
-                            layer1.classList.add('active');
-                        }
-                    }
-                } catch(e) {}
-            }
-
-            function nextSlide() {
-                if (photos.length === 0) return;
-                currentIndex = (currentIndex + 1) % photos.length;
-                const nextItem = photos[currentIndex];
-                if (activeLayer === 1) { renderLayer(layer2, nextItem); layer2.classList.add('active'); layer1.classList.remove('active'); activeLayer = 2; }
-                else { renderLayer(layer1, nextItem); layer1.classList.add('active'); layer2.classList.remove('active'); activeLayer = 1; }
-            }
-
-            fetchPhotos(); setInterval(fetchPhotos, 1500); setInterval(nextSlide, 4500);
-
-            async function checkEventStatus() {
-                if (isDemo) return;
-                try {
-                    const res = await databases.listDocuments(cfg.DATABASE_ID, cfg.COLLECTION_ID, [ Appwrite.Query.equal('eventId', eventId) ]);
-                    if (res.documents.length > 0 && res.documents[0].status === 'ended') {
-                        document.body.innerHTML = '<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; width:100vw; background:#020617; z-index:9999; position:absolute; top:0; left:0;"><h1 style="font-size: 4rem; color: #ef4444; font-family:\'Syne\';">Event Ended</h1><p style="color: #94a3b8; font-size: 1.5rem; margin-top: 10px;">Thanks for participating! - SnapNexus</p></div>';
-                    } else if (res.documents.length > 0) {
-                        applyTheme(res.documents[0].theme);
-                    }
-                } catch(e) {}
-            }
-            setInterval(checkEventStatus, 5000);
-
-            // Ad Rotation Logic
-            const ads = [document.getElementById('ad1'), document.getElementById('ad2'), document.getElementById('ad3')];
-            let currentAdIndex = 0;
-
-            setInterval(() => {
-                const currentAd = ads[currentAdIndex];
-                currentAd.classList.remove('active');
-                currentAd.classList.add('exit');
-
-                currentAdIndex = (currentAdIndex + 1) % ads.length;
-                const nextAd = ads[currentAdIndex];
-
-                setTimeout(() => {
-                    currentAd.classList.remove('exit');
-                    nextAd.classList.add('active');
-                }, 800);
-
-            }, 15000);
-        });
-    </script>
+  /* ----- boot ----- */
+  (async function boot() {
+    try { S.api.ready(); } catch (e) { overlay('error'); return; }
+    var ok = await loadEvent();
+    if (!ok) { setTimeout(boot, 10000); return; }
+    await loadPhotos();
+    timers.push(setInterval(loadPhotos, 3000));
+    timers.push(setInterval(rotateSpot, 6500));
+    timers.push(setInterval(function () { if (!isDemo) loadEvent(); }, 8000));
+    // keep the screen awake where supported
+    try { if (navigator.wakeLock) { var lock = await navigator.wakeLock.request('screen'); document.addEventListener('visibilitychange', async function () { if (!document.hidden) try { lock = await navigator.wakeLock.request('screen'); } catch (e) { } }); } } catch (e) { }
+  })();
+})();
+</script>
 </body>
 </html>

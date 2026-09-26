@@ -1,973 +1,1016 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script>
-        !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey getNextSurveyStep identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty createPersonProfile opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing debug".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
-        posthog.init('phc_qTBMwhJu6UwxVHTpDkL2dr2ryQDBF776uQG573GjYbbj',{api_host:'https://us.i.posthog.com', defaults:'2026-01-30'})
-    </script>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>SnapNexus — Live Interactive Photo Wall</title>
-    <meta name="description" content="Guests scan, snap, and see photos on the big screen instantly. Premium plans for weddings & events.">
-    <link rel="icon" type="image/png" href="/favicon.png">
-    <meta property="og:image" content="https://snapnexus.in/SNAPN.png">
-    <link rel="preload" as="image" href="/SNAPN-logo.webp">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Urbanist:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,600&family=Playfair+Display:wght@600;700&family=Lora:ital,wght@0,500;1,500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
-    <script>
-        (function () {
-            try {
-                var t = localStorage.getItem('snapnexus_theme_preview') || 'default';
-                document.documentElement.setAttribute('data-theme', t);
-            } catch (e) {}
-        })();
-    </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
-    <script src="https://unpkg.com/lucide@latest" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0" defer></script>
-    <script src="/config.js" defer></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+<meta charset="UTF-8">
+<script>
+/* PostHog analytics (same project as the previous site). Skipped in test mode. */
+(function(){
+  try {
+    var q = new URLSearchParams(location.search).get('mock');
+    if (q === '1' || localStorage.getItem('sn_mock') === '1' || location.protocol === 'file:') return;
+  } catch (e) {}
+  !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey getNextSurveyStep identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty createPersonProfile opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing debug".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+  posthog.init('phc_qTBMwhJu6UwxVHTpDkL2dr2ryQDBF776uQG573GjYbbj',{api_host:'https://us.i.posthog.com', defaults:'2026-01-30'})
+})();
 
-        /* ---------- Theme tokens ---------- */
-        :root { --font-brand: 'Syne', sans-serif; }
-        :root,
-        [data-theme="default"] {
-            --bg-mesh-a: #020617; --bg-mesh-b: #1e3a8a; --bg-mesh-c: #3b82f6; --bg-mesh-d: #4f46e5;
-            --bg-solid: #020617;
-            --surface-bg: rgba(20, 30, 55, 0.45);
-            --surface-border: rgba(255, 255, 255, 0.2);
-            --surface-border-soft: rgba(255, 255, 255, 0.08);
-            --text-primary: #ffffff;
-            --text-secondary: #cbd5e1;
-            --accent: #3b82f6;
-            --accent-strong: #4f46e5;
-            --accent-soft: rgba(59, 130, 246, 0.15);
-            --font-heading: 'Syne', sans-serif;
-            --font-body: 'Urbanist', system-ui, sans-serif;
-            --radius-card: 32px;
-        }
-        [data-theme="wedding"] {
-            --bg-mesh-a: #fff7f3; --bg-mesh-b: #fde2e7; --bg-mesh-c: #f6c9d0; --bg-mesh-d: #e9c9a8;
-            --bg-solid: #fdf6f2;
-            --surface-bg: rgba(255, 255, 255, 0.55);
-            --surface-border: rgba(196, 154, 108, 0.45);
-            --surface-border-soft: rgba(196, 154, 108, 0.25);
-            --text-primary: #5c3a3a;
-            --text-secondary: #8a6a64;
-            --accent: #c9a063;
-            --accent-strong: #a9824f;
-            --accent-soft: rgba(201, 160, 99, 0.18);
-            --font-heading: 'Playfair Display', serif;
-            --font-body: 'Lora', serif;
-            --radius-card: 36px;
-        }
-        [data-theme="corporate"] {
-            --bg-mesh-a: #000000; --bg-mesh-b: #ffc400; --bg-mesh-c: #ff5e00; --bg-mesh-d: #22d3ee;
-            --bg-solid: #020203;
-            --surface-bg: rgba(255, 255, 255, 0.05);
-            --surface-border: rgba(255, 255, 255, 0.16);
-            --surface-border-soft: rgba(255, 255, 255, 0.08);
-            --text-primary: #ffffff;
-            --text-secondary: #d4d4d8;
-            --accent: #ffc83d;
-            --accent-strong: #ff7a1a;
-            --accent-soft: rgba(255, 200, 61, 0.18);
-            --font-heading: 'Inter', sans-serif;
-            --font-body: 'Inter', sans-serif;
-            --radius-card: 16px;
-        }
-        [data-theme="party"] {
-            --bg-mesh-a: #070110; --bg-mesh-b: #1a0530; --bg-mesh-c: #5b0fb5; --bg-mesh-d: #ff00c8;
-            --bg-solid: #070110;
-            --surface-bg: rgba(20, 4, 32, 0.5);
-            --surface-border: rgba(255, 0, 200, 0.4);
-            --surface-border-soft: rgba(255, 0, 200, 0.2);
-            --text-primary: #f5f3ff;
-            --text-secondary: #c4b5fd;
-            --accent: #00f0ff;
-            --accent-strong: #ff00c8;
-            --accent-soft: rgba(0, 240, 255, 0.18);
-            --font-heading: 'Urbanist', sans-serif;
-            --font-body: 'Urbanist', system-ui, sans-serif;
-            --radius-card: 24px;
-        }
+</script>
+<script src="config.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SnapNexus | Live Photo Wall for Events</title>
+<meta name="description" content="Guests scan a QR code, snap a photo, and it appears on the big screen in seconds. No app, no sign-up. Try free for 1 hour, then plans from ₹49.">
+<meta name="theme-color" content="#050b18">
+<meta property="og:type" content="website">
+<meta property="og:title" content="SnapNexus: Every guest's camera. One live wall.">
+<meta property="og:description" content="Guests scan, snap, and their photos appear on the big screen in seconds. No app. No sign-up.">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="favicon.png">
+<meta property="og:image" content="https://snapnexus.in/SNAPN.png">
+<meta property="og:url" content="https://snapnexus.in/">
+<link rel="canonical" href="https://snapnexus.in/">
 
-        body { font-family: var(--font-body); background: var(--bg-solid); color: var(--text-primary); overflow-x: hidden; line-height: 1.5; transition: background 0.4s ease, color 0.4s ease; }
-        h1, h2, h3, .price, .step-number { font-family: var(--font-heading); }
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Syne:wght@600;700;800&family=Playfair+Display:ital,wght@0,600;1,600&family=Space+Grotesk:wght@600;700&family=Pacifico&family=Urbanist:wght@600;700&display=swap" rel="stylesheet">
 
-        /* ---- Backgrounds ---- */
-        .liquid-mesh { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -3; background: radial-gradient(circle at 20% 30%, var(--bg-mesh-a), var(--bg-mesh-b) 30%, var(--bg-mesh-c) 65%, var(--bg-mesh-d)); background-size: 200% 200%; animation: liquidShift 16s ease infinite alternate; transition: background 0.6s ease; }
-        @keyframes liquidShift { 0% { background-position: 0% 0%; } 50% { background-position: 100% 100%; } 100% { background-position: 0% 50%; } }
-        [data-theme="corporate"] .liquid-mesh { background: radial-gradient(ellipse 60% 50% at 18% 15%, rgba(10, 69, 112, 0.55), transparent 60%), radial-gradient(ellipse 50% 45% at 8% 92%, rgba(10, 69, 112, 0.35), transparent 60%), #020203; animation: none; }
-        [data-theme="corporate"] .liquid-mesh::before { content: ''; position: absolute; top: 6%; left: -10%; width: 78%; height: 80%; background: radial-gradient(ellipse 70% 65% at 40% 58%, #f3fa7a 0%, #e9d34a 16%, #d9a01f 32%, #b16d02 50%, #7a4400 66%, transparent 82%); border-radius: 38% 62% 58% 42% / 52% 46% 54% 48%; filter: blur(45px); animation: corporateBlobMorph 26s ease-in-out infinite alternate; }
-        @keyframes corporateBlobMorph { 0% { border-radius: 38% 62% 58% 42% / 52% 46% 54% 48%; transform: rotate(-4deg) scale(1); } 50% { border-radius: 48% 52% 45% 55% / 45% 55% 48% 52%; transform: rotate(2deg) scale(1.04); } 100% { border-radius: 42% 58% 50% 50% / 50% 48% 52% 50%; transform: rotate(-6deg) scale(1); } }
-        .noise-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -2; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E"); opacity: 0.4; }
+<script>document.documentElement.classList.add('js');</script>
 
-        /* ---- Glass utilities ---- */
-        .glass-deep { background: var(--surface-bg); backdrop-filter: blur(24px); border: 1px solid var(--surface-border-soft); transition: background 0.4s ease, border-color 0.4s ease; }
-        .glass-card { background: var(--surface-bg); backdrop-filter: blur(12px); border: 1px solid var(--surface-border); border-radius: var(--radius-card); transition: transform 0.25s ease, box-shadow 0.3s, background 0.4s ease, border-color 0.4s ease, border-radius 0.4s ease; }
+<style>
+:root{
+  --bg:#050b18; --bg-2:#071126; --bg-3:#0c1a36;
+  --line:rgba(150,180,255,.09); --line-2:rgba(150,180,255,.18);
+  --text:#f2f5fb; --muted:#9dabc6; --dim:#6a7894;
+  --accent:#f5b301; --accent-rgb:245,179,1; --on-accent:#1b1303;
+  --blue:#2f6fe4; --blue-rgb:47,111,228;
+  --radius:24px;
+  --font:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --display:'Syne','Inter',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;background:radial-gradient(1100px 700px at 15% -5%,rgba(var(--blue-rgb),.30),transparent 60%),radial-gradient(900px 600px at 100% 10%,rgba(var(--blue-rgb),.14),transparent 60%),var(--bg);background-repeat:no-repeat;color:var(--text);font-family:var(--font);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+button,input,select{font:inherit;color:inherit}
+h1,h2,h3{font-family:var(--display);line-height:1.08;letter-spacing:-.02em;margin:0}
+p{margin:0}
+.i{width:1.25em;height:1.25em;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.wrap{width:100%;max-width:1200px;margin:0 auto;padding:0 24px}
+.accent{color:var(--accent);transition:color .3s}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
-        /* ---- Header ---- */
-        .sticky-header { position: fixed; top: 0; left: 0; width: 100%; z-index: 1000; padding: 20px 40px; transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1); background: rgba(2, 6, 23, 0.65); backdrop-filter: blur(18px); border-bottom: 1px solid rgba(255,255,255,0.08); }
-        .sticky-header.shrink { padding: 12px 40px; background: rgba(2, 6, 23, 0.85); }
-        .header-container { max-width: 1280px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
-        .logo { display: flex; align-items: center; gap: 14px; text-decoration: none; }
-        .logo-img { width: 40px; height: 40px; border-radius: 10px; object-fit: cover; box-shadow: 0 0 15px rgba(251, 191, 36, 0.3); background: #fff; }
-        .logo-text { font-family: var(--font-brand); font-weight: 800; font-size: 1.5rem; background: linear-gradient(135deg, #fde047, #f59e0b, #d97706); -webkit-background-clip: text; background-clip: text; color: transparent; letter-spacing: -0.5px; }
-        .nav-links { display: flex; align-items: center; gap: 32px; }
-        .nav-links a { color: #e2e8f0; text-decoration: none; font-weight: 600; transition: 0.2s; }
-        .nav-links a:hover { color: #60a5fa; }
+/* ambient */
+.noise{position:fixed;inset:0;pointer-events:none;z-index:-2;opacity:.035;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.glow-layer{position:fixed;inset:0;pointer-events:none;z-index:-1;overflow:hidden}
+#glow{position:absolute;top:-300px;left:-300px;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(var(--accent-rgb),.28) 0%,transparent 60%);filter:blur(70px);will-change:transform}
+#glow.ambient{top:18%;left:50%;transform:translateX(-50%);animation:breathe 9s ease-in-out infinite alternate}
+@keyframes breathe{from{opacity:.5;transform:translateX(-50%) scale(.85)}to{opacity:.85;transform:translateX(-50%) scale(1.15)}}
 
-        /* ---- Buttons ---- */
-        .btn-physics { display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 12px 28px; font-weight: 800; font-size: 1rem; font-family: var(--font-body); border-radius: 60px; border: none; cursor: none; transition: box-shadow 0.2s, background 0.2s, filter 0.2s; background: linear-gradient(105deg, var(--accent), var(--accent-strong)); color: white; box-shadow: 0 8px 20px var(--accent-soft); text-decoration: none; will-change: transform; }
-        .btn-physics:hover { filter: brightness(1.1); box-shadow: 0 14px 32px var(--accent-soft); }
-        .btn-physics:active { filter: brightness(0.95); }
-        .btn-outline { background: rgba(255,255,255,0.08); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.3); box-shadow: none; }
-        .btn-outline:hover { background: rgba(255,255,255,0.15); }
-        .btn-gold { background: linear-gradient(105deg, #fbbf24, #f59e0b); color: #020617; box-shadow: 0 8px 20px rgba(245,158,11,0.3); }
-        .btn-gold:hover { box-shadow: 0 14px 32px rgba(245,158,11,0.5); }
-        .btn-premium { background: linear-gradient(105deg, #10b981, #059669); color: #fff; box-shadow: 0 8px 20px rgba(16,185,129,0.25); }
-        .btn-premium:hover { box-shadow: 0 14px 32px rgba(16,185,129,0.4); }
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;padding:14px 26px;border-radius:999px;font-weight:600;font-size:1rem;border:1px solid transparent;cursor:pointer;transition:transform .25s,box-shadow .25s,background .25s,border-color .25s;white-space:nowrap}
+.btn-primary{background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 78%,#fff),var(--accent));color:var(--on-accent);box-shadow:0 0 24px rgba(var(--accent-rgb),.25)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 34px rgba(var(--accent-rgb),.45)}
+.btn-ghost{background:rgba(255,255,255,.04);border-color:var(--line-2);color:var(--text)}
+.btn-ghost:hover{background:rgba(255,255,255,.08)}
+.btn-white{background:#fff;color:#0a0a0f}
+.btn-white:hover{background:#e6e6ea}
+.btn-sm{padding:9px 18px;font-size:.875rem}
+.btn:focus-visible,a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 
-        /* ---- Layout ---- */
-        .container { max-width: 1280px; margin: 0 auto; padding: 0 32px; }
+/* nav */
+.nav{position:fixed;top:0;left:0;right:0;z-index:50;border-bottom:1px solid transparent;transition:background .3s,border-color .3s,backdrop-filter .3s}
+.nav.scrolled{background:rgba(5,11,24,.72);border-color:var(--line);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.nav .wrap{height:72px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.logo{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:700;font-size:1.4rem;letter-spacing:-.02em}
+.logo img{height:24px;width:auto;display:block}
+@media(max-width:420px){.logo img{height:18px}}
+.nav-links{display:none;gap:32px;font-size:.9rem;font-weight:500;color:var(--muted)}
+.nav-links a:hover{color:var(--text)}
+.nav-cta{display:flex;align-items:center;gap:18px}
+.nav-login{display:none;font-size:.9rem;font-weight:500;color:#c9c9d4}
+.nav-login:hover{color:#fff}
+@media(min-width:880px){.nav-links{display:flex}}
+@media(min-width:560px){.nav-login{display:block}}
 
-        /* ---- Hero ---- */
-        .hero { padding-top: 160px; padding-bottom: 80px; text-align: center; position: relative; overflow: visible; }
-        #hero-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; opacity: 0.5; }
-        .hero > *:not(#hero-canvas):not(.hero-float-tile) { position: relative; z-index: 1; }
+/* hero */
+.hero{padding:120px 0 72px;position:relative}
+.hero-grid{display:grid;gap:56px;align-items:center}
+@media(min-width:1000px){.hero{padding:150px 0 110px}.hero-grid{grid-template-columns:1fr 1.12fr;gap:40px}}
+.pill{display:inline-flex;align-items:center;gap:10px;padding:7px 16px;border-radius:999px;background:rgba(var(--accent-rgb),.08);border:1px solid rgba(var(--accent-rgb),.3);font-size:.75rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:26px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 0 rgba(var(--accent-rgb),.6);animation:ping 2s infinite}
+@keyframes ping{70%{box-shadow:0 0 0 8px rgba(var(--accent-rgb),0)}100%{box-shadow:0 0 0 0 rgba(var(--accent-rgb),0)}}
+.hero h1{font-size:clamp(2.6rem,7vw,4.9rem);font-weight:800;margin-bottom:24px}
+.hero h1 .accent{display:block}
+.lede{font-size:clamp(1.05rem,1.6vw,1.25rem);color:var(--muted);max-width:34rem;margin-bottom:36px}
+.hero-ctas{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:30px}
+.ticks{display:flex;flex-wrap:wrap;gap:10px 22px;font-size:.875rem;color:var(--muted);list-style:none;padding:0;margin:0}
+.ticks li{display:flex;align-items:center;gap:7px}
+.ticks .i{width:16px;height:16px;color:var(--accent)}
+@media(max-width:480px){.hero-ctas .btn{flex:1 1 100%}}
 
-        /* Floating photo tiles behind hero text */
-        .hero-float-tile { position: absolute; border-radius: 18px; pointer-events: none; z-index: 0; overflow: hidden; border: 1px solid rgba(255,255,255,0.18); box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
-        .hero-float-tile::after { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent); }
+/* ---------- hero stage (live wall animation) ---------- */
+.stage{position:relative;width:100%;aspect-ratio:6/5;container-type:inline-size;user-select:none}
+.tv{position:absolute;left:9%;right:0;top:4%}
+.tv-frame{background:#0a1426;border:1px solid var(--line-2);border-radius:2.2cqw;padding:1.1cqw;box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 90px rgba(var(--accent-rgb),.18)}
+.tv-screen{position:relative;aspect-ratio:16/10;border-radius:1.3cqw;overflow:hidden;background:radial-gradient(120% 90% at 50% 0%,#12213f 0%,#060d1c 70%);display:flex;flex-direction:column;padding:1.6cqw;gap:1.2cqw}
+.tv-head{display:flex;align-items:center;justify-content:space-between;font-size:1.55cqw;font-weight:600;color:#d8d8e2}
+.tv-title{font-family:'Playfair Display',serif;font-style:italic;font-size:2.1cqw;color:#fff}
+.tv-meta{display:flex;align-items:center;gap:1.2cqw}
+.live{display:inline-flex;align-items:center;gap:.7cqw;background:rgba(var(--accent-rgb),.18);color:#fff;border:1px solid rgba(var(--accent-rgb),.5);padding:.35cqw 1cqw;border-radius:99px;font-size:1.3cqw;font-weight:700;letter-spacing:.1em}
+.live i{width:.9cqw;height:.9cqw;border-radius:50%;background:#ff3b5c;animation:blink 1.4s infinite}
+@keyframes blink{50%{opacity:.25}}
+.count{font-variant-numeric:tabular-nums;color:#a9a9b8}
+.tv-grid{flex:1;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(3,1fr);gap:.9cqw;min-height:0}
+.tile{position:relative;border-radius:.9cqw;overflow:hidden;background:#12203d}
+.tv-grid .tile:first-child{grid-column:span 2;grid-row:span 2;border-radius:1.2cqw}
+.tile img{width:100%;height:100%;object-fit:cover}
+.tile.pop img{animation:pop .7s cubic-bezier(.2,1.4,.4,1)}
+.tile.pop::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 .35cqw var(--accent);animation:ring 1.4s ease-out forwards}
+@keyframes pop{from{transform:scale(.55);filter:brightness(2.2)}to{transform:scale(1);filter:brightness(1)}}
+@keyframes ring{from{opacity:1}to{opacity:0}}
+.toast{position:absolute;left:2cqw;bottom:2cqw;display:flex;align-items:center;gap:.9cqw;background:rgba(10,10,14,.82);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid var(--line-2);border-radius:99px;padding:.6cqw 1.4cqw .6cqw .6cqw;font-size:1.35cqw;font-weight:500;color:#fff;opacity:0;transform:translateY(40%);transition:opacity .35s,transform .35s}
+.toast.show{opacity:1;transform:none}
+.avatar{width:2.4cqw;height:2.4cqw;border-radius:50%;display:grid;place-items:center;font-size:1.2cqw;font-weight:700;background:var(--accent);color:var(--on-accent)}
+.tv-stand{width:18%;height:3.2cqw;margin:0 auto;background:linear-gradient(#131318,#0a0a0d);clip-path:polygon(22% 0,78% 0,100% 100%,0 100%);opacity:.9}
 
-        .hero-badge { display: inline-flex; align-items: center; gap: 8px; background: var(--accent-soft); border: 1px solid var(--surface-border-soft); padding: 8px 20px; border-radius: 50px; font-size: 0.9rem; font-weight: 700; color: var(--accent); margin-bottom: 24px; transition: background 0.4s ease, color 0.4s ease; }
-        .hero h1 { font-family: var(--font-brand); font-size: clamp(2.8rem, 7vw, 4.8rem); font-weight: 800; line-height: 1.1; letter-spacing: -0.03em; background: linear-gradient(135deg, var(--text-primary), var(--text-secondary), var(--accent)); -webkit-background-clip: text; background-clip: text; color: transparent; margin: 0 0 24px; transition: background 0.4s ease; animation: h1SlideUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.35s both; }
-        @keyframes h1SlideUp { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: translateY(0); } }
-        .hero-sub { font-size: 1.25rem; max-width: 680px; margin: 0 auto 40px; color: var(--text-secondary); font-weight: 500; }
-        .hero-cta { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; }
+.phone{position:absolute;left:0;bottom:1%;width:27%;aspect-ratio:9/19;background:#050506;border-radius:4.2cqw;padding:.9cqw;border:1px solid var(--line-2);box-shadow:0 30px 60px rgba(0,0,0,.7),0 0 0 .5cqw rgba(255,255,255,.03);z-index:3;animation:float 7s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.6cqw)}}
+.phone-screen{position:relative;width:100%;height:100%;border-radius:3.4cqw;overflow:hidden;background:#000;display:flex;flex-direction:column}
+.phone-notch{position:absolute;top:1cqw;left:50%;transform:translateX(-50%);width:7cqw;height:1.9cqw;border-radius:99px;background:#000;z-index:3}
+.ph-top{padding:4.2cqw 1.8cqw 1.2cqw;font-size:1.25cqw;font-weight:600;color:#fff;text-align:center;opacity:.85}
+.ph-view{position:relative;flex:1;margin:0 1.2cqw;border-radius:1.6cqw;overflow:hidden;background:#111}
+.ph-view img{width:100%;height:100%;object-fit:cover;transition:opacity .35s}
+.ph-view .corner{position:absolute;width:3cqw;height:3cqw;border:.3cqw solid rgba(255,255,255,.85)}
+.c1{top:1.2cqw;left:1.2cqw;border-right:0!important;border-bottom:0!important;border-radius:.8cqw 0 0 0}
+.c2{top:1.2cqw;right:1.2cqw;border-left:0!important;border-bottom:0!important;border-radius:0 .8cqw 0 0}
+.c3{bottom:1.2cqw;left:1.2cqw;border-right:0!important;border-top:0!important;border-radius:0 0 0 .8cqw}
+.c4{bottom:1.2cqw;right:1.2cqw;border-left:0!important;border-top:0!important;border-radius:0 0 .8cqw 0}
+.flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+.flash.go{animation:flash .45s ease-out}
+@keyframes flash{0%{opacity:.9}100%{opacity:0}}
+.ph-bar{height:11cqw;display:grid;place-items:center}
+.shutter{width:6.6cqw;height:6.6cqw;border-radius:50%;border:.45cqw solid #fff;display:grid;place-items:center}
+.shutter span{width:5cqw;height:5cqw;border-radius:50%;background:var(--accent);transition:transform .15s}
+.shutter.press span{transform:scale(.78)}
+.fly{position:absolute;z-index:5;border-radius:1.4cqw;overflow:hidden;box-shadow:0 1.5cqw 4cqw rgba(0,0,0,.6),0 0 0 .3cqw #fff;pointer-events:none}
+.fly img{width:100%;height:100%;object-fit:cover}
 
-        /* ---- Stats bar ---- */
-        .stats-bar { display: flex; justify-content: center; flex-wrap: wrap; gap: 0; margin: 0 0 80px; }
-        .stat-item { flex: 1; min-width: 200px; max-width: 280px; text-align: center; padding: 36px 24px; border-right: 1px solid var(--surface-border-soft); }
-        .stat-item:last-child { border-right: none; }
-        .stat-number { font-family: var(--font-heading); font-size: 3rem; font-weight: 800; background: linear-gradient(135deg, var(--text-primary), var(--accent)); -webkit-background-clip: text; background-clip: text; color: transparent; display: block; line-height: 1; margin-bottom: 8px; }
-        .stat-label { color: var(--text-secondary); font-weight: 600; font-size: 0.95rem; }
+.qr-card{position:absolute;right:1%;bottom:0;width:23%;background:#fff;color:#0b0b10;border-radius:2cqw;padding:1.6cqw 1.6cqw 1.3cqw;box-shadow:0 24px 60px rgba(0,0,0,.55);transform:rotate(5deg);z-index:2;animation:float2 8s ease-in-out infinite}
+@keyframes float2{0%,100%{transform:rotate(5deg) translateY(0)}50%{transform:rotate(3deg) translateY(-1.2cqw)}}
+.qr-card svg{width:100%;height:auto;display:block}
+.qr-cap{margin-top:1cqw;text-align:center;font-weight:700;font-size:1.7cqw;line-height:1.2}
+.qr-cap small{display:block;font-weight:500;font-size:1.25cqw;color:#666}
 
-        /* ---- Section titles ---- */
-        .section-title { text-align: center; font-size: 2.6rem; font-weight: 800; margin: 100px 0 48px; color: var(--text-primary); }
+/* sections */
+section{position:relative;padding:96px 0}
+.band{background:var(--bg-2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.head{text-align:center;max-width:720px;margin:0 auto 56px}
+.head .eyebrow,.eyebrow{font-size:.75rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:14px}
+.head h2{font-size:clamp(2rem,4.5vw,3.25rem);font-weight:700;margin-bottom:16px}
+.head p{color:var(--muted);font-size:1.1rem}
+@media(max-width:640px){section{padding:72px 0}.head{margin-bottom:40px}}
 
-        /* ---- Steps ---- */
-        .steps-grid { display: flex; flex-wrap: wrap; gap: 30px; justify-content: center; margin-bottom: 80px; }
-        .step-card { flex: 1; min-width: 280px; padding: 40px 32px; text-align: center; color: var(--text-primary); will-change: transform; }
-        .step-card p { color: var(--text-secondary); }
-        .step-icon-wrapper { width: 70px; height: 70px; margin: 0 auto 24px; background: var(--accent-soft); border-radius: 20px; display: flex; align-items: center; justify-content: center; color: var(--accent); border: 1px solid var(--surface-border); transition: background 0.4s ease, color 0.4s ease, border-color 0.4s ease, transform 0.3s ease; }
-        .step-card:hover .step-icon-wrapper { transform: scale(1.12) rotate(-4deg); }
+.card{background:rgba(22,22,28,.45);border:1px solid var(--line);border-radius:var(--radius);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);transition:border-color .35s,box-shadow .35s,transform .35s}
+.card:hover{border-color:var(--line-2);box-shadow:0 12px 40px rgba(var(--accent-rgb),.12)}
 
-        /* ---- Vibe / Theme Picker ---- */
-        .vibe-section { text-align: center; margin: 60px 0 100px; }
-        .vibe-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; max-width: 900px; margin: 0 auto; }
-        .theme-swatch { cursor: none; border-radius: 20px; padding: 20px; border: 2px solid var(--surface-border); background: var(--surface-bg); transition: 0.2s; text-align: left; }
-        .theme-swatch:hover { border-color: var(--accent); transform: translateY(-3px); }
-        .theme-swatch.active { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
-        .theme-swatch-preview { height: 64px; border-radius: 12px; margin-bottom: 14px; }
-        .theme-swatch-label { font-weight: 700; font-size: 1rem; display: flex; align-items: center; gap: 6px; color: var(--text-primary); }
-        .theme-swatch-desc { font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px; }
-        .theme-swatch-check { display: none; color: var(--accent); width: 16px; height: 16px; }
-        .theme-swatch.active .theme-swatch-check { display: inline-flex; }
+/* use cases */
+.uses{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:0}
+.uses span{padding:8px 16px;border-radius:99px;border:1px solid var(--line);background:rgba(255,255,255,.02);font-size:.9rem;color:#c3c3cf}
+.uses-wrap{padding:36px 0;border-top:1px solid var(--line)}
+.uses-label{text-align:center;font-size:.8rem;color:var(--dim);letter-spacing:.12em;text-transform:uppercase;font-weight:600;margin-bottom:16px}
 
-        /* ---- Dashboard Preview ---- */
-        .dashboard-preview { background: var(--surface-bg); backdrop-filter: blur(16px); border-radius: 48px; padding: 56px 40px; margin: 80px 0; border: 1px solid var(--surface-border-soft); transition: background 0.4s ease, border-color 0.4s ease; }
-        .dashboard-grid { display: flex; flex-wrap: wrap; align-items: center; gap: 40px; }
-        .dashboard-text { flex: 1; min-width: 300px; }
-        .dashboard-text h3 { font-size: 2.2rem; margin-bottom: 20px; line-height: 1.2; }
-        .feature-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3); color: #fbbf24; border-radius: 40px; padding: 6px 16px; font-size: 0.85rem; font-weight: 700; margin-bottom: 24px; }
+/* steps */
+.steps{display:grid;gap:20px}
+@media(min-width:860px){.steps{grid-template-columns:repeat(3,1fr)}}
+.step{padding:32px;position:relative;overflow:hidden}
+.step-num{font-family:var(--display);font-size:4.5rem;font-weight:800;line-height:1;position:absolute;right:22px;top:14px;color:rgba(255,255,255,.04)}
+.ico{width:52px;height:52px;border-radius:15px;display:grid;place-items:center;background:rgba(var(--accent-rgb),.12);color:var(--accent);margin-bottom:22px;transition:background .3s,color .3s}
+.ico .i{width:24px;height:24px}
+.step h3,.feat h3{font-size:1.3rem;font-weight:700;margin-bottom:10px}
+.step p,.feat p{color:var(--muted);font-size:.975rem}
 
-        /* Mockup */
-        .mockup { flex: 1; min-width: 300px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 24px; box-shadow: inset 0 0 40px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 16px; }
-        .mockup-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; }
-        .mockup-row { display: flex; gap: 12px; align-items: center; }
-        .mockup-bar-track { flex: 1; height: 12px; background: rgba(255,255,255,0.06); border-radius: 6px; overflow: hidden; }
-        .mockup-bar-fill { height: 100%; border-radius: 6px; width: 0%; transition: none; }
-        .mockup-bar-fill.blue { background: linear-gradient(90deg, #3b82f6, #6366f1); }
-        .mockup-bar-fill.green { background: linear-gradient(90deg, #10b981, #059669); }
-        .mockup-bar-fill.gold { background: linear-gradient(90deg, #fbbf24, #f59e0b); }
-        .mockup-live-count { font-family: var(--font-heading); font-size: 1.8rem; font-weight: 800; color: #10b981; text-align: center; padding: 8px 0; }
-        .mockup-live-label { font-size: 0.75rem; color: rgba(255,255,255,0.5); text-align: center; margin-top: -10px; letter-spacing: 0.1em; text-transform: uppercase; }
-        .sparkline { display: flex; align-items: flex-end; gap: 4px; height: 48px; padding: 8px 0 0; }
-        .sparkline-bar { flex: 1; background: rgba(59,130,246,0.4); border-radius: 3px 3px 0 0; transition: background 0.3s; }
-        .sparkline-bar:hover { background: rgba(59,130,246,0.8); }
-        .mockup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
-        .mockup-thumb { height: 64px; background: rgba(255,255,255,0.04); border-radius: 10px; border: 1px solid rgba(255,255,255,0.07); position: relative; overflow: hidden; }
-        .mockup-thumb::after { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.05), transparent); }
+/* studio */
+.studio{display:grid;gap:48px;align-items:center}
+@media(min-width:960px){.studio{grid-template-columns:minmax(0,420px) auto;justify-content:center;gap:72px}}
+.panel{padding:28px;display:flex;flex-direction:column;gap:26px}
+.field-label{display:flex;align-items:center;gap:8px;font-weight:700;font-size:1rem;margin-bottom:12px}
+.field-label .i{color:var(--accent);width:18px;height:18px}
+.text-in{width:100%;background:var(--bg);border:1px solid var(--line-2);border-radius:14px;padding:13px 16px;outline:none;font-weight:500}
+.text-in:focus{border-color:var(--accent)}
+.presets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.studio>*{min-width:0}
+.preset{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.preset{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;border:1px solid var(--line-2);background:var(--bg);cursor:pointer;font-size:.875rem;font-weight:600;text-align:left;transition:border-color .2s,background .2s}
+.preset:hover{background:#0f0f14}
+.preset[aria-pressed="true"]{border-color:var(--accent);background:rgba(var(--accent-rgb),.08)}
+.sw{width:26px;height:26px;border-radius:50%;flex:none;border:1px solid rgba(255,255,255,.2);position:relative;overflow:hidden}
+.sw::after{content:"";position:absolute;right:0;bottom:0;width:50%;height:50%;background:var(--sw-a)}
+.color-row{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--bg);border:1px solid var(--line-2);border-radius:14px;padding:10px 12px 10px 16px}
+.color-row+.color-row{margin-top:10px}
+.color-row label{font-weight:600;font-size:.925rem;cursor:pointer}
+.color-row .val{display:flex;align-items:center;gap:10px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.8rem;color:var(--dim)}
+input[type=color]{-webkit-appearance:none;appearance:none;border:0;width:36px;height:36px;padding:0;border-radius:50%;background:none;cursor:pointer}
+input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+input[type=color]::-webkit-color-swatch{border:2px solid rgba(255,255,255,.25);border-radius:50%}
+input[type=color]::-moz-color-swatch{border:2px solid rgba(255,255,255,.25);border-radius:50%}
+.select-wrap{position:relative}
+.select-wrap select{width:100%;appearance:none;-webkit-appearance:none;background:var(--bg);border:1px solid var(--line-2);border-radius:14px;padding:13px 40px 13px 16px;font-weight:600;cursor:pointer;outline:none}
+.select-wrap select option{background:#0d0d12}
+.select-wrap::after{content:"";position:absolute;right:18px;top:50%;width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:translateY(-70%) rotate(45deg);pointer-events:none}
+.panel-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:.85rem;color:var(--dim);border-top:1px solid var(--line);padding-top:20px}
+.link-btn{background:none;border:0;color:var(--muted);cursor:pointer;font-weight:600;padding:4px 0}
+.link-btn:hover{color:#fff}
 
-        /* ---- Pricing ---- */
-        .pricing-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin: 60px 0; }
-        .price-card { padding: 36px 24px; text-align: center; position: relative; display: flex; flex-direction: column; cursor: none; will-change: transform; transform-style: preserve-3d; }
-        .price-card .card-highlight { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: radial-gradient(circle 140px at 50% 50%, rgba(255,255,255,0.06), transparent); opacity: 0; transition: opacity 0.3s; }
-        .price-card:hover .card-highlight { opacity: 1; }
-        .price-card.vip { border: 1px solid rgba(251,191,36,0.6); box-shadow: 0 0 40px rgba(251,191,36,0.15); background: rgba(20, 30, 55, 0.75); z-index: 2; }
-        .most-popular { position: absolute; top: -16px; left: 50%; transform: translateX(-50%); background: linear-gradient(105deg, #fbbf24, #f59e0b); color: #020617; font-weight: 800; font-family: 'Urbanist', sans-serif; padding: 6px 20px; border-radius: 60px; font-size: 0.8rem; white-space: nowrap; box-shadow: 0 4px 12px rgba(245,158,11,0.4); }
-        .price { font-size: 2.8rem; font-weight: 800; margin: 20px 0; color: var(--text-primary); }
-        .price-card.vip .price { color: #facc15; }
-        .price small { font-size: 1rem; font-weight: 500; color: var(--text-secondary); font-family: var(--font-body); }
-        .price-card ul { list-style: none; margin: 24px 0 32px; flex-grow: 1; }
-        .price-card li { margin: 14px 0; font-weight: 500; display: flex; align-items: center; text-align: left; gap: 12px; color: var(--text-secondary); }
-        .price-card li i { color: var(--accent); width: 18px; height: 18px; flex-shrink: 0; }
-        .price-card.vip li i { color: #fbbf24; }
+.mock-wrap{display:flex;justify-content:center}
+.mock{width:300px;height:620px;max-width:100%;background:#000;border-radius:46px;padding:11px;border:1px solid var(--line-2);box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 0 5px rgba(255,255,255,.03),0 0 80px rgba(var(--accent-rgb),.15)}
+.mock-screen{--m-bg:#061022;--m-accent:#f5b301;--m-text:#ffffff;--m-on:#1b1303;--m-font:'Syne',sans-serif;position:relative;height:100%;border-radius:36px;overflow:hidden;background:var(--m-bg);color:var(--m-text);font-family:var(--m-font);display:flex;flex-direction:column;align-items:center;padding:54px 22px 22px;transition:background .4s,color .4s}
+.mock-notch{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:92px;height:26px;border-radius:99px;background:#000}
+.m-kicker{font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;opacity:.55;margin-bottom:6px;font-family:var(--font);font-weight:600}
+.m-title{font-size:1.75rem;font-weight:700;color:var(--m-accent);text-align:center;line-height:1.15;margin-bottom:18px;min-height:2.3em;display:flex;align-items:center;word-break:break-word;transition:color .4s}
+.m-shutter{width:104px;height:104px;border-radius:50%;border:4px solid var(--m-accent);display:grid;place-items:center;margin-bottom:16px;transition:border-color .4s}
+.m-shutter span{width:84px;height:84px;border-radius:50%;background:var(--m-accent);color:var(--m-on);display:grid;place-items:center;transition:background .4s,color .4s;box-shadow:0 8px 30px rgba(0,0,0,.25)}
+.m-shutter .i{width:32px;height:32px}
+.m-cta{font-weight:600;font-size:1.05rem;margin-bottom:4px}
+.m-sub{font-size:.75rem;opacity:.6;margin-bottom:20px;text-align:center;font-family:var(--font)}
+.m-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-radius:14px;border:1px solid color-mix(in srgb,var(--m-text) 16%,transparent);font-size:.8rem;font-weight:600;font-family:var(--font)}
+.m-switch{width:38px;height:22px;border-radius:99px;background:var(--m-accent);position:relative;transition:background .4s}
+.m-switch::after{content:"";position:absolute;right:3px;top:3px;width:16px;height:16px;border-radius:50%;background:var(--m-on)}
+.m-gallery{width:100%;margin-top:auto;padding-top:16px}
+.m-gallery p{font-size:.68rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;opacity:.65;margin-bottom:10px;font-family:var(--font)}
+.m-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.m-grid img,.m-grid div{aspect-ratio:1;width:100%;object-fit:cover;border-radius:9px;background:color-mix(in srgb,var(--m-text) 10%,transparent)}
 
-        /* ---- Mobile CTA ---- */
-        .mobile-sticky-cta { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 1100; display: none; width: calc(100% - 40px); max-width: 360px; background: rgba(2,6,23,0.85); backdrop-filter: blur(24px); border-radius: 60px; padding: 10px; border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
-        .mobile-sticky-cta .btn-physics { width: 100%; padding: 14px; cursor: pointer; }
+/* features */
+.feats{display:grid;gap:20px}
+@media(min-width:700px){.feats{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:1024px){.feats{grid-template-columns:repeat(3,1fr)}}
+.feat{padding:30px}
 
-        /* ---- Footer ---- */
-        footer { margin-top: 100px; padding: 60px 32px 40px; border-top: 1px solid rgba(255,255,255,0.08); text-align: center; }
-        .footer-links { display: flex; justify-content: center; gap: 32px; margin-bottom: 32px; flex-wrap: wrap; }
-        .footer-links a { color: #94a3b8; text-decoration: none; font-weight: 600; transition: color 0.2s; cursor: none; }
-        footer p { color: var(--text-secondary); }
-        footer p a { color: var(--accent); font-weight: 600; text-decoration: underline; transition: color 0.2s; }
-        footer p a:hover { color: var(--accent-strong); }
+/* pricing */
+.plans{display:grid;gap:24px;max-width:1120px;margin:0 auto;align-items:stretch}
+@media(min-width:720px){.plans{grid-template-columns:1fr 1fr}}
+@media(min-width:1060px){.plans{grid-template-columns:repeat(3,1fr)}}
+@media(min-width:720px) and (max-width:1059px){.plan.free{grid-column:1/-1}}
+.plan li.muted{color:var(--dim)}
+.plan li.muted .i{color:var(--dim)}
+.plan{padding:36px;display:flex;flex-direction:column;position:relative}
+.plan.pro{border-color:rgba(var(--accent-rgb),.6);background:linear-gradient(180deg,rgba(var(--accent-rgb),.09),rgba(22,22,28,.5));box-shadow:0 0 60px rgba(var(--accent-rgb),.14)}
+.badge{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:var(--accent);color:var(--on-accent);font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:6px 14px;border-radius:99px;white-space:nowrap}
+.plan-name{font-weight:600;color:#c9c9d4;margin-bottom:8px}
+.plan.pro .plan-name{color:var(--accent)}
+.price{display:flex;align-items:baseline;gap:8px;margin-bottom:6px}
+.price b{font-family:var(--display);font-size:3.6rem;font-weight:700;line-height:1}
+.price span{color:var(--dim)}
+.plan-desc{color:var(--muted);font-size:.925rem;margin-bottom:26px}
+.plan ul{list-style:none;padding:0;margin:0 0 32px;display:flex;flex-direction:column;gap:13px;flex:1}
+.plan li{display:flex;gap:11px;align-items:flex-start;font-size:.975rem;color:#dcdce4}
+.plan li .i{width:19px;height:19px;color:var(--accent);margin-top:3px}
+.plan .btn{width:100%}
+.pay-note{text-align:center;color:var(--dim);font-size:.9rem;margin-top:30px}
 
-        .tier-indicator { margin-top: auto; display: none; padding-top: 15px; text-align: center; font-size: 0.9rem; color: #10b981; font-weight: bold; }
+/* faq */
+.faq{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+.faq details{border:1px solid var(--line);border-radius:18px;background:rgba(22,22,28,.4);transition:border-color .3s}
+.faq details[open]{border-color:var(--line-2)}
+.faq summary{list-style:none;cursor:pointer;padding:20px 24px;font-weight:600;font-size:1.05rem;display:flex;justify-content:space-between;align-items:center;gap:16px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary .i{color:var(--muted);transition:transform .3s}
+.faq details[open] summary .i{transform:rotate(45deg);color:var(--accent)}
+.faq .ans{padding:0 24px 22px;color:var(--muted)}
 
-        /* ---- Event Ticker ---- */
-        .event-ticker-wrap { overflow: hidden; padding: 28px 0; margin: 80px 0 0; border-top: 1px solid var(--surface-border-soft); border-bottom: 1px solid var(--surface-border-soft); }
-        .event-ticker { display: flex; width: max-content; animation: tickerScroll 22s linear infinite; }
-        .event-ticker:hover { animation-play-state: paused; }
-        .event-ticker-inner { display: flex; align-items: center; }
-        .ticker-item { display: inline-flex; align-items: center; gap: 16px; padding: 0 32px; font-size: 1rem; font-weight: 700; color: var(--text-secondary); font-family: var(--font-heading); white-space: nowrap; letter-spacing: 0.02em; }
-        .ticker-dot { color: var(--accent); font-size: 0.85rem; }
-        @keyframes tickerScroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-        #confetti-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9998; }
+/* final cta */
+.final{text-align:center;padding:110px 0;overflow:hidden}
+.final::before{content:"";position:absolute;left:50%;top:50%;width:min(900px,120vw);height:420px;transform:translate(-50%,-50%);background:radial-gradient(closest-side,rgba(var(--accent-rgb),.22),transparent);pointer-events:none}
+.final h2{font-size:clamp(2.2rem,5.5vw,4rem);font-weight:800;margin-bottom:18px;position:relative}
+.final p{color:var(--muted);font-size:1.1rem;margin:0 auto 34px;max-width:32rem;position:relative}
+.final .hero-ctas{justify-content:center;position:relative;margin:0}
 
-        /* ---- Custom cursor ---- */
-        #cursor-dot, #cursor-ring { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 9999; border-radius: 50%; transform: translate(-50%, -50%); }
-        #cursor-dot { width: 8px; height: 8px; background: var(--accent); transition: background 0.3s, transform 0.1s; }
-        #cursor-ring { width: 36px; height: 36px; border: 2px solid var(--accent); opacity: 0.6; transition: border-color 0.3s, transform 0.15s ease, opacity 0.3s, width 0.3s, height 0.3s; }
-        #cursor-ring.hovered { width: 52px; height: 52px; opacity: 0.9; border-color: var(--accent); background: var(--accent-soft); }
-        #cursor-ring.clicking { transform: translate(-50%, -50%) scale(0.8); opacity: 1; }
-        @media (pointer: coarse) { #cursor-dot, #cursor-ring { display: none; } body { cursor: auto; } .btn-physics, .theme-swatch, .footer-links a { cursor: pointer; } }
+/* footer */
+footer{border-top:1px solid var(--line);background:#030814;padding:44px 0}
+footer .wrap{display:flex;flex-direction:column;align-items:center;gap:22px;text-align:center}
+@media(min-width:800px){footer .wrap{flex-direction:row;justify-content:space-between;text-align:left}}
+.foot-links{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 26px;font-size:.9rem;color:var(--dim);font-weight:500}
+.foot-links a:hover{color:#fff}
+.copy{font-size:.85rem;color:#55555f}
 
-        /* ---- Responsive ---- */
-        @media (max-width: 1024px) { .pricing-grid { grid-template-columns: repeat(2, 1fr); gap: 24px; } }
-        @media (max-width: 768px) { .sticky-header { padding: 16px 20px; } .nav-links { display: none; } .pricing-grid { grid-template-columns: 1fr; } .mobile-sticky-cta { display: block; } .hero { padding-top: 150px; } .container { padding: 0 20px; } .dashboard-preview { padding: 40px 24px; } .stats-bar { gap: 0; } .stat-item { border-right: none; border-bottom: 1px solid var(--surface-border-soft); } .stat-item:last-child { border-bottom: none; } }
+/* reveal (only hides when JS is running) */
+.js .reveal{opacity:0;transform:translateY(28px);transition:opacity .8s cubic-bezier(.5,0,0,1),transform .8s cubic-bezier(.5,0,0,1)}
+.js .reveal.in{opacity:1;transform:none}
 
-        /* ---- Mobile / reduced-motion perf mode ---- */
-        @media (max-width: 768px), (prefers-reduced-motion: reduce) {
-            .liquid-mesh { animation: none; }
-            [data-theme="corporate"] .liquid-mesh::before { animation: none; }
-            #hero-canvas { display: none; }
-            .hero-float-tile { display: none; }
-            .event-ticker { animation: none; }
-            .glass-deep, .glass-card, .sticky-header, .mobile-sticky-cta, .dashboard-preview { backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
-        }
-        @media (prefers-reduced-motion: reduce) {
-            *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
-        }
-    </style>
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+  .js .reveal{opacity:1;transform:none}
+}
+</style>
 </head>
 <body>
-    <!-- Custom cursor -->
-    <div id="cursor-dot"></div>
-    <div id="cursor-ring"></div>
-    <canvas id="confetti-canvas"></canvas>
 
-    <div class="liquid-mesh"></div>
-    <div class="noise-overlay"></div>
+<!-- Icon sprite (Lucide, ISC licence) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z"/><circle cx="12" cy="13" r="3"/></symbol>
+  <symbol id="i-qr" viewBox="0 0 24 24"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></symbol>
+  <symbol id="i-zap" viewBox="0 0 24 24"><path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.950a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></symbol>
+  <symbol id="i-stamp" viewBox="0 0 24 24"><path d="M14 13V8.5C14 7 15 7 15 5a3 3 0 0 0-6 0c0 2 1 2 1 3.5V13"/><path d="M20 15.5a2.5 2.5 0 0 0-2.5-2.5h-11A2.5 2.5 0 0 0 4 15.5V17a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1z"/><path d="M5 22h14"/></symbol>
+  <symbol id="i-monitor" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></symbol>
+  <symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"/><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/></symbol>
+  <symbol id="i-type" viewBox="0 0 24 24"><path d="M12 4v16"/><path d="M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2"/><path d="M9 20h6"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+  <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
+  <symbol id="i-text" viewBox="0 0 24 24"><path d="M21 5H3"/><path d="M15 12H3"/><path d="M17 19H3"/></symbol>
+</svg>
 
-    <header class="sticky-header" id="stickyHeader">
-        <div class="header-container">
-            <a class="logo" href="index.html" aria-label="SnapNexus Home"><picture><source srcset="SNAPN-logo.webp" type="image/webp"><img src="SNAPN-logo.png" alt="SnapNexus Logo" class="logo-img" width="40" height="40" fetchpriority="high" onerror="this.style.display='none'"></picture><span class="logo-text">SnapNexus</span></a>
-            <nav class="nav-links"><a href="#features">Features</a><a href="#pricing">Pricing</a><a href="login.html" id="navLoginBtn">Host Login</a><a href="dashboard.html" class="btn-physics btn-outline" style="padding: 8px 20px;">Dashboard</a></nav>
+<div class="noise" aria-hidden="true"></div>
+<div class="glow-layer" aria-hidden="true"><div id="glow"></div></div>
+
+<!-- NAV -->
+<header class="nav" id="nav">
+  <div class="wrap">
+    <a href="#top" class="logo" aria-label="SnapNexus home">
+      <img src="logo.png" alt="SnapNexus" width="220" height="24">
+    </a>
+    <nav class="nav-links" aria-label="Main">
+      <a href="#how">How it works</a>
+      <a href="#studio">Design studio</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <div class="nav-cta">
+      <a href="login.html" class="nav-login">Host login</a>
+      <a href="#pricing" class="btn btn-white btn-sm">Get started</a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+  <!-- HERO -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <div class="pill reveal"><span class="dot"></span>Live photo wall for events</div>
+        <h1 class="reveal" style="transition-delay:.08s">Every guest's camera. <span class="accent">One live wall.</span></h1>
+        <p class="lede reveal" style="transition-delay:.16s">Guests scan a QR code, snap a photo, and it's on the big screen in seconds. No app to download, no account to create, and every photo saved for you when the night is over.</p>
+        <div class="hero-ctas reveal" style="transition-delay:.24s">
+          <a href="login.html?plan=trial" class="btn btn-primary">Try it free for 1 hour <svg class="i"><use href="#i-arrow"/></svg></a>
+          <a href="#" class="btn btn-ghost" data-demo>Try the live demo</a>
         </div>
-    </header>
+        <ul class="ticks reveal" style="transition-delay:.32s">
+          <li><svg class="i"><use href="#i-check"/></svg>Free trial, no payment</li>
+          <li><svg class="i"><use href="#i-check"/></svg>Works on any phone</li>
+          <li><svg class="i"><use href="#i-check"/></svg>Any TV or projector</li>
+          <li><svg class="i"><use href="#i-check"/></svg>Pay by UPI</li>
+        </ul>
+      </div>
 
-    <main class="container">
-        <!-- Hero -->
-        <section class="hero" id="heroSection">
-            <canvas id="hero-canvas"></canvas>
-
-            <!-- Floating photo tiles (decorated with gradient colors) -->
-            <div class="hero-float-tile" id="ft1" style="width:110px;height:80px;top:12%;left:4%;background:linear-gradient(135deg,#6366f1,#a855f7);opacity:0;"></div>
-            <div class="hero-float-tile" id="ft2" style="width:80px;height:100px;top:30%;right:3%;background:linear-gradient(135deg,#f59e0b,#ef4444);opacity:0;"></div>
-            <div class="hero-float-tile" id="ft3" style="width:90px;height:70px;top:60%;left:6%;background:linear-gradient(135deg,#10b981,#3b82f6);opacity:0;"></div>
-            <div class="hero-float-tile" id="ft4" style="width:70px;height:90px;bottom:18%;right:5%;background:linear-gradient(135deg,#ec4899,#f97316);opacity:0;"></div>
-            <div class="hero-float-tile" id="ft5" style="width:60px;height:60px;top:8%;right:16%;background:linear-gradient(135deg,#22d3ee,#6366f1);opacity:0;"></div>
-            <div class="hero-float-tile" id="ft6" style="width:75px;height:55px;bottom:25%;left:14%;background:linear-gradient(135deg,#fbbf24,#10b981);opacity:0;"></div>
-
-            <div class="hero-badge"><i data-lucide="sparkles" style="width:16px; height:16px;"></i> Premium Live Experience</div>
-            <h1 id="heroH1">Live photo wall.<br>Zero app required.</h1>
-            <p class="hero-sub">Guests scan, snap, and appear instantly on the big screen. The ultimate interactive gallery for weddings, parties, and corporate events.</p>
-            <div class="hero-cta">
-                <button onclick="launchDemo()" class="btn-physics btn-gold" id="ctaDemo">✨ Try Live Demo Now</button>
-                <a href="login.html" class="btn-physics" id="ctaTrial">Start Free Trial <i data-lucide="arrow-right" style="width:18px;"></i></a>
-                <a href="#pricing" class="btn-physics btn-outline" id="ctaPricing">View Premium Plans</a>
+      <!-- Animated live-wall scene -->
+      <div class="stage reveal" id="stage" style="transition-delay:.2s" role="img" aria-label="Animation: a guest takes a photo on their phone and it appears instantly on a live photo wall on a TV">
+        <div class="tv">
+          <div class="tv-frame">
+            <div class="tv-screen">
+              <div class="tv-head">
+                <span class="tv-title">Riya &amp; Arjun's Sangeet</span>
+                <span class="tv-meta"><span class="count"><span id="count">128</span> photos</span><span class="live"><i></i>LIVE</span></span>
+              </div>
+              <div class="tv-grid" id="tvGrid"></div>
+              <div class="toast" id="toast"><span class="avatar" id="toastAv">P</span><span id="toastTxt">Priya added a photo</span></div>
             </div>
-        </section>
-
-        <!-- Stats bar -->
-        <section class="stats-bar glass-deep" style="border-radius: 24px; margin-bottom: 80px;">
-            <div class="stat-item">
-                <span class="stat-number">60 sec</span>
-                <span class="stat-label">Setup Time</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-number">0 Apps</span>
-                <span class="stat-label">Required to Use</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-number">4 Themes</span>
-                <span class="stat-label">Wedding · Corporate · Party · Default</span>
-            </div>
-        </section>
-
-        <!-- How it works -->
-        <div id="features"><h2 class="section-title" data-aos="fade-up">How the <span style="color:#60a5fa;">Magic</span> Happens</h2></div>
-        <div class="steps-grid" id="stepsGrid">
-            <div class="glass-card step-card" id="step1">
-                <div class="step-icon-wrapper"><i data-lucide="qr-code" style="width:36px; height:36px;"></i></div>
-                <h3 style="margin: 16px 0;">1. Scan QR</h3>
-                <p>Display your QR. Guests scan with their native camera to instantly open the upload portal.</p>
-            </div>
-            <div class="glass-card step-card" id="step2">
-                <div class="step-icon-wrapper"><i data-lucide="upload-cloud" style="width:36px; height:36px;"></i></div>
-                <h3 style="margin: 16px 0;">2. Upload Photo</h3>
-                <p>Guests snap a fresh photo or choose from their gallery. No app downloads, no account creation.</p>
-            </div>
-            <div class="glass-card step-card" id="step3">
-                <div class="step-icon-wrapper"><i data-lucide="monitor-play" style="width:36px; height:36px;"></i></div>
-                <h3 style="margin: 16px 0;">3. Instant Display</h3>
-                <p>Photos instantly sync to the big screen via the cloud, creating a dynamic, shared visual experience.</p>
-            </div>
-        </div>
-
-        <!-- Vibe / Theme picker -->
-        <section class="vibe-section" data-aos="fade-up">
-            <h2 class="section-title" style="margin-top: 0;">Pick Your Event's <span style="color:#60a5fa;">Vibe</span></h2>
-            <p class="hero-sub" style="margin-top: -24px; opacity:1;">This whole page is a live preview — every theme you host can choose for your guest upload page and TV wall.</p>
-            <div class="vibe-grid" id="vibePickerGrid">
-                <div class="theme-swatch" data-theme="default">
-                    <div class="theme-swatch-preview" style="background: linear-gradient(135deg, #020617, #3b82f6);"></div>
-                    <div class="theme-swatch-label"><i data-lucide="check-circle" class="theme-swatch-check"></i> Default</div>
-                    <div class="theme-swatch-desc">Sleek dark blue, all-purpose</div>
-                </div>
-                <div class="theme-swatch" data-theme="wedding">
-                    <div class="theme-swatch-preview" style="background: linear-gradient(135deg, #fff7f3, #f6c9d0, #c9a063);"></div>
-                    <div class="theme-swatch-label"><i data-lucide="check-circle" class="theme-swatch-check"></i> Wedding</div>
-                    <div class="theme-swatch-desc">Soft pastels, elegant serif</div>
-                </div>
-                <div class="theme-swatch" data-theme="corporate">
-                    <div class="theme-swatch-preview" style="background: radial-gradient(ellipse 70% 65% at 30% 55%, #f3fa7a 0%, #d9a01f 30%, #b16d02 55%, transparent 80%), radial-gradient(ellipse 60% 50% at 15% 10%, rgba(10,69,112,0.7), transparent 65%), #020203;"></div>
-                    <div class="theme-swatch-label"><i data-lucide="check-circle" class="theme-swatch-check"></i> Corporate</div>
-                    <div class="theme-swatch-desc">Aurora mesh, premium keynote</div>
-                </div>
-                <div class="theme-swatch" data-theme="party">
-                    <div class="theme-swatch-preview" style="background: linear-gradient(135deg, #070110, #5b0fb5, #ff00c8);"></div>
-                    <div class="theme-swatch-label"><i data-lucide="check-circle" class="theme-swatch-check"></i> Party</div>
-                    <div class="theme-swatch-desc">Dark mode, neon accents</div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Dashboard preview -->
-        <section class="dashboard-preview glass-card" data-aos="fade-right" data-aos-duration="1000">
-            <div class="dashboard-grid">
-                <div class="dashboard-text">
-                    <div class="feature-badge"><i data-lucide="crown" style="width:14px; height:14px;"></i> VIP Dashboard</div>
-                    <h3>Total Control.<br>Live Moderation.</h3>
-                    <p>Remove unwanted photos instantly, download all memories as a high-res ZIP, customize the TV loop, and watch live engagement stats.</p>
-                    <div style="display:flex; flex-direction:column; gap:12px; margin-top:20px;">
-                        <span style="display:flex; gap:8px;"><i data-lucide="shield-alert" style="color:#ef4444;"></i> Live Kill-Switch</span>
-                        <span style="display:flex; gap:8px;"><i data-lucide="image-off" style="color:#60a5fa;"></i> Ad-Free & White-Labeled</span>
-                        <span style="display:flex; gap:8px;"><i data-lucide="download" style="color:#10b981;"></i> Bulk Media Export</span>
-                    </div>
-                </div>
-                <div class="mockup" id="dashMockup">
-                    <div class="mockup-header">
-                        <span style="font-family:'Syne'; font-weight:700;">Host Console</span>
-                        <i data-lucide="layout-dashboard" style="width:20px; color:#cbd5e1;"></i>
-                    </div>
-                    <div class="mockup-live-count" id="mockupCount">0</div>
-                    <div class="mockup-live-label">📸 Photos Live</div>
-                    <div class="mockup-row">
-                        <span style="font-size:0.72rem;color:rgba(255,255,255,0.45);min-width:48px;">Views</span>
-                        <div class="mockup-bar-track"><div class="mockup-bar-fill blue" data-width="60"></div></div>
-                        <span style="font-size:0.72rem;color:rgba(255,255,255,0.45);min-width:28px;">—</span>
-                    </div>
-                    <div class="mockup-row">
-                        <span style="font-size:0.72rem;color:rgba(255,255,255,0.45);min-width:48px;">Uploads</span>
-                        <div class="mockup-bar-track"><div class="mockup-bar-fill green" data-width="60"></div></div>
-                        <span style="font-size:0.72rem;color:rgba(255,255,255,0.45);min-width:28px;">—</span>
-                    </div>
-                    <div class="mockup-row">
-                        <span style="font-size:0.72rem;color:rgba(255,255,255,0.45);min-width:48px;">Rating</span>
-                        <div class="mockup-bar-track"><div class="mockup-bar-fill gold" data-width="60"></div></div>
-                        <span style="font-size:0.72rem;color:rgba(255,255,255,0.45);min-width:28px;">—</span>
-                    </div>
-                    <div class="sparkline" id="sparkline"></div>
-                    <div class="mockup-grid">
-                        <div class="mockup-thumb"></div>
-                        <div class="mockup-thumb"></div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Pricing -->
-        <section id="pricing" data-aos="fade-up"><h2 class="section-title">Flexible <span style="color:#facc15;">Pricing</span> for Every Event</h2></section>
-        <div class="pricing-grid" data-aos="fade-up" data-aos-delay="50">
-            <div class="glass-card price-card" data-aos="flip-left" data-aos-delay="100">
-                <div class="card-highlight"></div>
-                <h3>Starter</h3><div class="price">₹0 <small>/event</small></div>
-                <ul>
-                    <li><i data-lucide="check"></i> Basic TV loop</li>
-                    <li><i data-lucide="check"></i> SnapNexus watermark</li>
-                    <li><i data-lucide="check"></i> Partner Ads displayed</li>
-                    <li><i data-lucide="check"></i> Max 50 photos</li>
-                </ul>
-                <button onclick="handlePlan('starter')" class="btn-physics btn-outline">Deploy Free Wall</button>
-                <div class="tier-indicator" id="ind-starter">Current Plan</div>
-            </div>
-            <div class="glass-card price-card" data-aos="flip-left" data-aos-delay="200">
-                <div class="card-highlight"></div>
-                <h3>Pro</h3><div class="price">₹499 <small>/event</small></div>
-                <ul>
-                    <li><i data-lucide="check"></i> No watermark</li>
-                    <li><i data-lucide="check"></i> Basic moderation</li>
-                    <li><i data-lucide="check"></i> Unlimited photos</li>
-                    <li><i data-lucide="check"></i> Email support</li>
-                </ul>
-                <button onclick="handlePlan('pro')" class="btn-physics">Choose Pro</button>
-                <div class="tier-indicator" id="ind-pro">Current Plan</div>
-            </div>
-            <div class="glass-card price-card" data-aos="flip-left" data-aos-delay="300">
-                <div class="card-highlight"></div>
-                <h3>Premium</h3><div class="price">₹999 <small>/event</small></div>
-                <ul>
-                    <li><i data-lucide="check"></i> High-res downloads</li>
-                    <li><i data-lucide="check"></i> Custom QR codes</li>
-                    <li><i data-lucide="check"></i> Analytics dashboard</li>
-                    <li><i data-lucide="check"></i> Priority queue</li>
-                </ul>
-                <button onclick="handlePlan('premium')" class="btn-physics btn-premium">Go Premium</button>
-                <div class="tier-indicator" id="ind-premium">Current Plan</div>
-            </div>
-            <div class="glass-card price-card vip" data-aos="flip-left" data-aos-delay="400">
-                <div class="card-highlight"></div>
-                <div class="most-popular">Best Value</div>
-                <h3>VIP</h3><div class="price">₹2,999 <small>/mo</small></div>
-                <ul>
-                    <li><i data-lucide="check"></i> Full dashboard</li>
-                    <li><i data-lucide="check"></i> Live kill-switch</li>
-                    <li><i data-lucide="check"></i> Custom ad injection</li>
-                    <li><i data-lucide="check"></i> White‑labeled</li>
-                    <li><i data-lucide="check"></i> Priority 24/7 support</li>
-                </ul>
-                <button onclick="handlePlan('vip')" class="btn-physics btn-gold">Secure VIP Pass</button>
-                <div class="tier-indicator" id="ind-vip">Current Plan</div>
-            </div>
+          </div>
+          <div class="tv-stand"></div>
         </div>
 
-        <!-- Event type ticker -->
-        <div class="event-ticker-wrap">
-            <div class="event-ticker">
-                <div class="event-ticker-inner">
-                    <span class="ticker-item">Wedding <span class="ticker-dot">✦</span></span>
-                    <span class="ticker-item">Birthday <span class="ticker-dot">✦</span></span>
-                    <span class="ticker-item">Corporate <span class="ticker-dot">✦</span></span>
-                    <span class="ticker-item">Festival <span class="ticker-dot">✦</span></span>
-                    <span class="ticker-item">Graduation <span class="ticker-dot">✦</span></span>
-                    <span class="ticker-item">Product Launch <span class="ticker-dot">✦</span></span>
-                    <span class="ticker-item">Anniversary <span class="ticker-dot">✦</span></span>
-                    <span class="ticker-item">Conference <span class="ticker-dot">✦</span></span>
-                </div>
-                <div class="event-ticker-inner" aria-hidden="true">
-                    <span class="ticker-item">Wedding <span class="ticker-dot">✦</span></span>
-                    <span class="ticker-item">Birthday <span class="ticker-dot">✦</span></span>
-                    <span class="ticker-item">Corporate <span class="ticker-dot">✦</span></span>
-                    <span class="ticker-item">Festival <span class="ticker-dot">✦</span></span>
-                    <span class="ticker-item">Graduation <span class="ticker-dot">✦</span></span>
-                    <span class="ticker-item">Product Launch <span class="ticker-dot">✦</span></span>
-                    <span class="ticker-item">Anniversary <span class="ticker-dot">✦</span></span>
-                    <span class="ticker-item">Conference <span class="ticker-dot">✦</span></span>
-                </div>
+        <div class="phone" id="phone">
+          <div class="phone-screen">
+            <div class="phone-notch"></div>
+            <div class="ph-top">Sangeet Night</div>
+            <div class="ph-view" id="phView">
+              <img id="phImg" alt="">
+              <span class="corner c1"></span><span class="corner c2"></span><span class="corner c3"></span><span class="corner c4"></span>
+              <div class="flash" id="flash"></div>
             </div>
+            <div class="ph-bar"><div class="shutter" id="shutter"><span></span></div></div>
+          </div>
         </div>
-    </main>
 
-    <div class="mobile-sticky-cta"><button onclick="handlePlan('vip')" class="btn-physics btn-gold"><i data-lucide="zap"></i> Upgrade to VIP ₹2999</button></div>
+        <div class="qr-card">
+          <svg id="qr" viewBox="0 0 25 25" shape-rendering="crispEdges" aria-hidden="true"></svg>
+          <div class="qr-cap">Scan to share<small>No app needed</small></div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-    <footer class="glass-deep">
-        <div class="footer-links"><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms of Service</a><a href="security.html">Security</a><a href="mailto:sooperfast.net@yahoo.com">Contact Support</a><a href="https://soni-tech-solutions.vercel.app" target="_blank" rel="noopener">Report Issue</a></div>
-        <p>© 2026 SnapNexus. A product by <a href="https://soni-tech-solutions.vercel.app/" target="_blank" rel="noopener">Soni Tech Solutions</a>.</p>
-    </footer>
+  <div class="uses-wrap">
+    <div class="wrap">
+      <p class="uses-label">Made for</p>
+      <div class="uses">
+        <span>Weddings &amp; sangeets</span><span>College fests</span><span>Birthdays</span><span>Corporate offsites</span><span>Restaurant nights</span><span>Reunions</span>
+      </div>
+    </div>
+  </div>
 
-    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js" defer></script>
-    <script defer>
-      document.addEventListener('DOMContentLoaded', function () {
-        // ── Init ──────────────────────────────────────────────────────────
-        const isPerfMode = window.matchMedia('(max-width: 768px)').matches ||
-            window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  <!-- HOW IT WORKS -->
+  <section id="how" class="band">
+    <div class="wrap">
+      <div class="head reveal">
+        <p class="eyebrow">How it works</p>
+        <h2>Live in three steps.</h2>
+        <p>Set it up in a few minutes before the event. Your guests don't need to set up anything.</p>
+      </div>
+      <div class="steps">
+        <div class="card step reveal">
+          <span class="step-num">01</span>
+          <div class="ico"><svg class="i"><use href="#i-qr"/></svg></div>
+          <h3>Create your event</h3>
+          <p>Name it, pick your colours and font, then print the QR code straight from your dashboard. Put it on tables, the entrance, or the screen itself.</p>
+        </div>
+        <div class="card step reveal" style="transition-delay:.1s">
+          <span class="step-num">02</span>
+          <div class="ico"><svg class="i"><use href="#i-camera"/></svg></div>
+          <h3>Guests scan &amp; snap</h3>
+          <p>They point their phone camera at the QR, and your event page opens in the browser. One tap to shoot or pick from the camera roll.</p>
+        </div>
+        <div class="card step reveal" style="transition-delay:.2s">
+          <span class="step-num">03</span>
+          <div class="ico"><svg class="i"><use href="#i-monitor"/></svg></div>
+          <h3>The wall comes alive</h3>
+          <p>Open the live wall on any TV or projector and new photos roll in as they're shared. Afterwards, download all of them in one ZIP.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
-        lucide.createIcons();
-        AOS.init({ duration: 900, once: true, offset: 50 });
-        gsap.registerPlugin(ScrollTrigger);
+  <!-- DESIGN STUDIO -->
+  <section id="studio">
+    <div class="wrap">
+      <div class="head reveal">
+        <p class="eyebrow">Design studio</p>
+        <h2>Make it look like <span class="accent">your</span> event.</h2>
+        <p>Match your invite, your décor or your brand. Every colour and font you pick shows up on your guests' phones. Try it below.</p>
+      </div>
 
-        // Header shrink on scroll
-        const header = document.getElementById('stickyHeader');
-        ScrollTrigger.create({
-            trigger: document.body, start: "top top", end: "+=100",
-            onUpdate: (self) => header.classList.toggle('shrink', self.progress > 0)
-        });
+      <div class="studio">
+        <div class="card panel reveal">
+          <div>
+            <label class="field-label" for="nameIn"><svg class="i"><use href="#i-text"/></svg>Event name</label>
+            <input id="nameIn" class="text-in" type="text" maxlength="28" value="Riya &amp; Arjun" autocomplete="off" spellcheck="false">
+          </div>
 
-        // ── Canvas particle field ─────────────────────────────────────────
-        (function () {
-            if (isPerfMode) return; // skip particle field on mobile / reduced-motion
-            const canvas = document.getElementById('hero-canvas');
-            const ctx = canvas.getContext('2d');
-            let W, H, particles = [];
+          <div>
+            <p class="field-label"><svg class="i"><use href="#i-sparkles"/></svg>Start from a look</p>
+            <div class="presets" id="presets">
+              <button type="button" class="preset" data-bg="#061022" data-accent="#f5b301" data-font="'Syne', sans-serif" aria-pressed="true"><span class="sw" style="background:#061022;--sw-a:#f5b301"></span>SnapNexus</button>
+              <button type="button" class="preset" data-bg="#fdf6f2" data-accent="#b8894a" data-font="'Playfair Display', serif" aria-pressed="false"><span class="sw" style="background:#fdf6f2;--sw-a:#b8894a"></span>Wedding</button>
+              <button type="button" class="preset" data-bg="#0a0216" data-accent="#ff2e9a" data-font="'Urbanist', sans-serif" aria-pressed="false"><span class="sw" style="background:#0a0216;--sw-a:#ff2e9a"></span>Party</button>
+              <button type="button" class="preset" data-bg="#050506" data-accent="#ffc83d" data-font="'Inter', sans-serif" aria-pressed="false"><span class="sw" style="background:#050506;--sw-a:#ffc83d"></span>Corporate</button>
+            </div>
+          </div>
 
-            function resize() {
-                W = canvas.width = canvas.offsetWidth;
-                H = canvas.height = canvas.offsetHeight;
-            }
+          <div>
+            <p class="field-label"><svg class="i"><use href="#i-palette"/></svg>Colours</p>
+            <div class="color-row">
+              <label for="bgPick">Background</label>
+              <span class="val"><span id="bgHex">#061022</span><input type="color" id="bgPick" value="#061022" aria-label="Background colour"></span>
+            </div>
+            <div class="color-row">
+              <label for="acPick">Accent</label>
+              <span class="val"><span id="acHex">#f5b301</span><input type="color" id="acPick" value="#f5b301" aria-label="Accent colour"></span>
+            </div>
+          </div>
 
-            function Particle() {
-                this.reset = function () {
-                    this.x = Math.random() * W;
-                    this.y = H + Math.random() * 40;
-                    this.r = Math.random() * 2.5 + 0.5;
-                    this.speed = Math.random() * 0.6 + 0.2;
-                    this.drift = (Math.random() - 0.5) * 0.3;
-                    this.alpha = Math.random() * 0.4 + 0.1;
-                };
-                this.reset();
-                this.y = Math.random() * H; // start distributed
-            }
+          <div>
+            <label class="field-label" for="fontPick"><svg class="i"><use href="#i-type"/></svg>Font</label>
+            <div class="select-wrap">
+              <select id="fontPick">
+                <option value="'Inter', sans-serif">Inter · modern &amp; clean</option>
+                <option value="'Playfair Display', serif">Playfair · classic wedding</option>
+                <option value="'Syne', sans-serif" selected>Syne · bold &amp; edgy</option>
+                <option value="'Space Grotesk', sans-serif">Space Grotesk · corporate</option>
+                <option value="'Pacifico', cursive">Pacifico · fun party</option>
+                <option value="'Urbanist', sans-serif">Urbanist · friendly</option>
+              </select>
+            </div>
+          </div>
 
-            function init() {
-                particles = Array.from({ length: 28 }, () => new Particle());
-            }
+          <div class="panel-foot">
+            <span>Preview only. Your real event is set up in the dashboard.</span>
+            <button type="button" class="link-btn" id="resetBtn">Reset</button>
+          </div>
+        </div>
 
-            function draw() {
-                ctx.clearRect(0, 0, W, H);
-                particles.forEach(p => {
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-                    ctx.fillStyle = `rgba(99,102,241,${p.alpha})`;
-                    ctx.fill();
-                    p.y -= p.speed;
-                    p.x += p.drift;
-                    if (p.y + p.r < 0) p.reset();
-                });
-                requestAnimationFrame(draw);
-            }
+        <div class="mock-wrap reveal" style="transition-delay:.15s">
+          <div class="mock" aria-label="Preview of the guest upload page">
+            <div class="mock-screen" id="mock">
+              <div class="mock-notch"></div>
+              <p class="m-kicker">You're invited to share</p>
+              <h3 class="m-title" id="mTitle">Riya &amp; Arjun</h3>
+              <div class="m-shutter"><span><svg class="i"><use href="#i-camera"/></svg></span></div>
+              <p class="m-cta">Tap to add a photo</p>
+              <p class="m-sub">Take one now or pick from your gallery</p>
+              <div class="m-toggle">Show on the big screen <span class="m-switch"></span></div>
+              <div class="m-gallery">
+                <p>Latest photos</p>
+                <div class="m-grid" id="mGrid"><div></div><div></div><div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-            resize();
-            init();
-            draw();
-            window.addEventListener('resize', () => { resize(); });
-        })();
+  <!-- FEATURES -->
+  <section id="features" class="band">
+    <div class="wrap">
+      <div class="head reveal">
+        <p class="eyebrow">Features</p>
+        <h2>Everything the night needs. Nothing it doesn't.</h2>
+      </div>
+      <div class="feats">
+        <div class="card feat reveal">
+          <div class="ico"><svg class="i"><use href="#i-zap"/></svg></div>
+          <h3>No app, no sign-up</h3>
+          <p>Guests scan with their normal camera and upload from the browser. Nothing to install and no password to forget, so more people actually share.</p>
+        </div>
+        <div class="card feat reveal" style="transition-delay:.08s">
+          <div class="ico"><svg class="i"><use href="#i-monitor"/></svg></div>
+          <h3>Live on any screen</h3>
+          <p>Smart TV, laptop on a projector, LED wall. If it has a browser, it can run your wall. New photos appear on their own.</p>
+        </div>
+        <div class="card feat reveal" style="transition-delay:.16s">
+          <div class="ico"><svg class="i"><use href="#i-shield"/></svg></div>
+          <h3>You stay in control</h3>
+          <p>Every upload lands in your dashboard in real time. Hide anything from the wall or delete it in one tap.</p>
+        </div>
+        <div class="card feat reveal">
+          <div class="ico"><svg class="i"><use href="#i-lock"/></svg></div>
+          <h3>Private groups</h3>
+          <p>Bridesmaids, the college gang, the core team: guests can start a passcode-locked group. Those photos stay off the big screen and in your download.</p>
+        </div>
+        <div class="card feat reveal" style="transition-delay:.08s">
+          <div class="ico"><svg class="i"><use href="#i-camera"/></svg></div>
+          <h3>Photos and short videos</h3>
+          <p>Guests can send up to 5 at a time, including clips up to 15 seconds. Every photo is stamped with your event name, so shared pictures carry your moment with it.</p>
+        </div>
+        <div class="card feat reveal" style="transition-delay:.16s">
+          <div class="ico"><svg class="i"><use href="#i-download"/></svg></div>
+          <h3>One-click ZIP</h3>
+          <p>When the party's over, download every photo from every guest in a single ZIP. No chasing people on group chats.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
-        // ── GSAP Hero Intro Timeline ──────────────────────────────────────
-        (function () {
-            const tl = gsap.timeline({ delay: 0.15 });
+  <!-- PRICING -->
+  <section id="pricing">
+    <div class="wrap">
+      <div class="head reveal">
+        <p class="eyebrow">Pricing</p>
+        <h2>Less than the cost of a samosa plate.</h2>
+        <p>Try it free, pay per event, or go monthly if you run events for a living.</p>
+      </div>
+      <div class="plans">
+        <div class="card plan free reveal">
+          <p class="plan-name">Free Trial</p>
+          <div class="price"><b>₹0</b><span>/ 1 hour</span></div>
+          <p class="plan-desc">Test the live wall at your next get-together before you pay a rupee.</p>
+          <ul>
+            <li><svg class="i"><use href="#i-check"/></svg>1 hour of live wall time</li>
+            <li><svg class="i"><use href="#i-check"/></svg>Guests upload by scanning your QR</li>
+            <li><svg class="i"><use href="#i-check"/></svg>Host dashboard with moderation</li>
+            <li><svg class="i"><use href="#i-check"/></svg>Download for 24 hours after</li>
+            <li class="muted"><svg class="i"><use href="#i-monitor"/></svg>Ads appear on the wall</li>
+          </ul>
+          <a href="login.html?plan=trial" class="btn btn-ghost">Start free trial</a>
+        </div>
+        <div class="card plan reveal" style="transition-delay:.08s">
+          <p class="plan-name">Single Event</p>
+          <div class="price"><b>₹49</b><span>/ event</span></div>
+          <p class="plan-desc">For your wedding, birthday or one big night.</p>
+          <ul>
+            <li><svg class="i"><use href="#i-check"/></svg><span><strong>No ads</strong> on your wall</span></li>
+            <li><svg class="i"><use href="#i-check"/></svg>Unlimited guest uploads</li>
+            <li><svg class="i"><use href="#i-check"/></svg>Live wall on any screen</li>
+            <li><svg class="i"><use href="#i-check"/></svg>Host dashboard with moderation</li>
+            <li><svg class="i"><use href="#i-check"/></svg>Your own colours &amp; fonts</li>
+            <li><svg class="i"><use href="#i-check"/></svg>Event name on every photo</li>
+            <li><svg class="i"><use href="#i-check"/></svg>Download everything for 30 days</li>
+          </ul>
+          <a href="login.html?plan=single" class="btn btn-ghost">Host an event</a>
+        </div>
+        <div class="card plan pro reveal" style="transition-delay:.16s">
+          <span class="badge">For event managers</span>
+          <p class="plan-name">Pro Creator</p>
+          <div class="price"><b>₹999</b><span>/ month</span></div>
+          <p class="plan-desc">For planners, venues and agencies running events every week.</p>
+          <ul>
+            <li><svg class="i"><use href="#i-check"/></svg>Everything in Single Event</li>
+            <li><svg class="i"><use href="#i-check"/></svg><span><strong>Unlimited events</strong> every month</span></li>
+            <li><svg class="i"><use href="#i-check"/></svg>Your logo on the wall, our branding off</li>
+            <li><svg class="i"><use href="#i-check"/></svg>Pin favourite photos to the spotlight</li>
+            <li><svg class="i"><use href="#i-check"/></svg>Priority support from the founder</li>
+          </ul>
+          <a href="login.html?plan=pro" class="btn btn-primary">Go Pro</a>
+        </div>
+      </div>
+      <p class="pay-note reveal">No payment needed for the trial. Paid plans work with any UPI app, and you don't need a card.</p>
+    </div>
+  </section>
 
-            // JS-owned initial states — elements stay visible if JS fails (no CSS opacity:0)
-            gsap.set(['.hero-badge', '.hero-sub', '.hero-cta'], { opacity: 0, y: 24 });
+  <!-- FAQ -->
+  <section id="faq" class="band">
+    <div class="wrap">
+      <div class="head reveal">
+        <p class="eyebrow">FAQ</p>
+        <h2>Good questions.</h2>
+      </div>
+      <div class="faq reveal">
+        <details>
+          <summary>Do my guests need to download an app?<svg class="i"><use href="#i-plus"/></svg></summary>
+          <p class="ans">No. Guests scan the QR code with their phone's camera and SnapNexus opens in the browser. No app, no account, no OTP.</p>
+        </details>
+        <details>
+          <summary>What do I need for the live wall?<svg class="i"><use href="#i-plus"/></svg></summary>
+          <p class="ans">Any screen that can open a web page: a smart TV, a laptop connected to a projector or LED wall, even a tablet. Open your event's wall link and leave it running.</p>
+        </details>
+        <details>
+          <summary>Is there a free trial?<svg class="i"><use href="#i-plus"/></svg></summary>
+          <p class="ans">Yes. Every new host gets 1 hour of live wall time for free. Nothing to pay and no card needed. Trial walls show ads. Upgrade to a paid plan to remove them.</p>
+        </details>
+        <details>
+          <summary>Can I see it working before I sign up?<svg class="i"><use href="#i-plus"/></svg></summary>
+          <p class="ans">Yes. <a href="#" data-demo style="color:var(--accent);font-weight:600">Open the live demo</a> on your laptop, then scan the QR code on it with your phone. Your photos appear on the demo wall.</p>
+        </details>
+        <details>
+          <summary>How do I pay?<svg class="i"><use href="#i-plus"/></svg></summary>
+          <p class="ans">By UPI. When you upgrade, you'll see a UPI QR code you can pay from GPay, PhonePe, Paytm or any UPI app. Then enter the UPI reference number, and we switch your plan on as soon as the payment is confirmed. That's usually within a few hours.</p>
+        </details>
+        <details>
+          <summary>What if someone uploads something inappropriate?<svg class="i"><use href="#i-plus"/></svg></summary>
+          <p class="ans">You'll see every upload in your dashboard as it arrives. Hide it from the wall or delete it with one tap.</p>
+        </details>
+        <details>
+          <summary>How do I get the photos after the event?<svg class="i"><use href="#i-plus"/></svg></summary>
+          <p class="ans">From your dashboard, download the whole gallery as a single ZIP file with one click. Then share it with the family, the client, or your photographer.</p>
+        </details>
+      </div>
+    </div>
+  </section>
 
-            // Floating tiles drift in (skipped on mobile / reduced-motion — tiles are hidden there)
-            const tiles = ['#ft1','#ft2','#ft3','#ft4','#ft5','#ft6'];
-            if (!isPerfMode) {
-                tl.to(tiles, { opacity: 0.55, duration: 1.2, ease: 'power2.out', stagger: 0.1 }, 0);
+  <!-- FINAL CTA -->
+  <section class="final">
+    <div class="wrap">
+      <h2 class="reveal">Make your next event<br><span class="accent">the one everyone shares.</span></h2>
+      <p class="reveal">Try it free for an hour. Plans start at ₹49 when you're ready.</p>
+      <div class="hero-ctas reveal">
+        <a href="login.html?plan=trial" class="btn btn-primary">Start your free trial <svg class="i"><use href="#i-arrow"/></svg></a>
+        <a href="mailto:sooperfast.net@yahoo.com" class="btn btn-ghost">Talk to us</a>
+      </div>
+    </div>
+  </section>
+</main>
 
-                // Float animation loops (y + rotation only — orbital uses x + rotationY)
-                tiles.forEach((id, i) => {
-                    gsap.to(id, {
-                        y: `${(i % 2 === 0 ? -1 : 1) * (14 + i * 3)}px`,
-                        rotation: (i % 2 === 0 ? 1 : -1) * (2 + i),
-                        duration: 3.5 + i * 0.4,
-                        ease: 'sine.inOut',
-                        yoyo: true,
-                        repeat: -1,
-                        delay: i * 0.3
-                    });
-                });
-            }
+<footer>
+  <div class="wrap">
+    <a href="#top" class="logo" aria-label="SnapNexus"><img src="logo.png" alt="SnapNexus" width="200" height="22" style="height:20px"></a>
+    <nav class="foot-links" aria-label="Footer">
+      <a href="#how">How it works</a>
+      <a href="#pricing">Pricing</a>
+      <a href="login.html">Host login</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
+      <a href="security.html">Security</a>
+      <a href="mailto:sooperfast.net@yahoo.com">Contact</a>
+    </nav>
+    <p class="copy">© 2026 SnapNexus · A product by <a href="https://soni-tech-solutions.vercel.app/" target="_blank" rel="noopener" style="color:#8a8a96">Soni Tech Solutions</a></p>
+  </div>
+</footer>
 
-            // Badge
-            tl.to('.hero-badge', { opacity: 1, y: 0, duration: 0.6, ease: 'back.out(1.4)' }, 0.2);
+<script>
+(function(){
+  'use strict';
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var root = document.documentElement;
 
-            // Hero h1 parallax (desktop only — avoids extra scroll-linked work on mobile)
-            if (!isPerfMode) {
-                gsap.to('#heroH1', {
-                    y: -60, ease: 'none',
-                    scrollTrigger: { trigger: '#heroSection', start: 'top top', end: 'bottom top', scrub: true }
-                });
-            }
+  /* ---------- colour helpers ---------- */
+  function hexToRgb(hex){
+    var n = parseInt(String(hex).replace('#',''),16);
+    if (isNaN(n)) return [245,179,1];
+    return [(n>>16)&255,(n>>8)&255,n&255];
+  }
+  function luminance(hex){
+    return hexToRgb(hex).map(function(v){ v/=255; return v<=0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055,2.4); })
+      .reduce(function(a,v,i){ return a + v*[0.2126,0.7152,0.0722][i]; },0);
+  }
+  function readableOn(hex){ return luminance(hex) > 0.45 ? '#0b0b10' : '#ffffff'; }
 
-            // Sub + CTAs
-            tl.to('.hero-sub', { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }, 0.85);
-            tl.to('.hero-cta', { opacity: 1, y: 0, duration: 0.5, ease: 'back.out(1.2)' }, 1.0);
-        })();
+  /* ---------- nav background on scroll ---------- */
+  var nav = document.getElementById('nav');
+  function onScroll(){ nav.classList.toggle('scrolled', window.scrollY > 10); }
+  window.addEventListener('scroll', onScroll, {passive:true}); onScroll();
 
-        // ── Orbital tile scroll-driven 3D motion ─────────────────────────
-        (function() {
-            if (isPerfMode) return; // tiles are hidden on mobile / reduced-motion
-            const tileIds = ['#ft1','#ft2','#ft3','#ft4','#ft5','#ft6'];
-            tileIds.forEach((id, i) => {
-                const el = document.querySelector(id);
-                if (!el) return;
-                const startAngle = (i / tileIds.length) * Math.PI * 2;
-                const radius = 200 + (i % 3) * 60;
-                const sweepDir = i % 2 === 0 ? 1 : -1;
-                const sweep = 2.6;
-                ScrollTrigger.create({
-                    trigger: '#heroSection',
-                    start: 'top top',
-                    end: 'bottom top',
-                    scrub: 1.2,
-                    onUpdate: (self) => {
-                        const p = self.progress;
-                        gsap.set(el, {
-                            x: Math.cos(startAngle + sweepDir * p * sweep) * radius * p,
-                            rotationY: sweepDir * p * 120,
-                            scale: Math.max(0.2, 1 - p * 0.8),
-                            opacity: Math.max(0, 0.55 * (1 - p))
-                        });
-                    }
-                });
-            });
-        })();
+  /* ---------- cursor glow ---------- */
+  var glow = document.getElementById('glow');
+  var finePointer = window.matchMedia && window.matchMedia('(pointer: fine)').matches;
+  if (finePointer && !reduceMotion){
+    var tx = innerWidth/2, ty = innerHeight/3, cx = tx, cy = ty, glowRunning = false;
+    function glowStep(){
+      cx += (tx-cx)*0.08; cy += (ty-cy)*0.08;
+      glow.style.transform = 'translate3d('+cx+'px,'+cy+'px,0)';
+      if (Math.abs(tx-cx) > 0.5 || Math.abs(ty-cy) > 0.5) requestAnimationFrame(glowStep); else glowRunning = false;
+    }
+    window.addEventListener('mousemove', function(e){
+      tx = e.clientX; ty = e.clientY;
+      if (!glowRunning){ glowRunning = true; requestAnimationFrame(glowStep); }
+    }, {passive:true});
+    glow.style.transform = 'translate3d('+cx+'px,'+cy+'px,0)';
+  } else {
+    glow.classList.add('ambient');
+  }
 
-        // ── Steps — ScrollTrigger stagger ────────────────────────────────
-        gsap.set(['#step1','#step2','#step3'], { opacity: 0, y: 50, rotationX: 12 });
-        ScrollTrigger.create({
-            trigger: '#stepsGrid',
-            start: 'top 80%',
-            once: true,
-            onEnter: () => gsap.to(['#step1','#step2','#step3'], {
-                opacity: 1, y: 0, rotationX: 0,
-                duration: 0.75, ease: 'power3.out', stagger: 0.15
-            })
-        });
-
-        // ── Custom Cursor ─────────────────────────────────────────────────
-        (function () {
-            if (window.matchMedia('(pointer: coarse)').matches) return;
-            document.body.style.cursor = 'none';
-            const dot = document.getElementById('cursor-dot');
-            const ring = document.getElementById('cursor-ring');
-            let mx = -200, my = -200, rx = -200, ry = -200;
-
-            document.addEventListener('mousemove', e => {
-                mx = e.clientX; my = e.clientY;
-                gsap.set(dot, { x: mx, y: my });
-            });
-
-            (function lerpRing() {
-                rx += (mx - rx) * 0.12;
-                ry += (my - ry) * 0.12;
-                gsap.set(ring, { x: rx, y: ry });
-                requestAnimationFrame(lerpRing);
-            })();
-
-            const hoverEls = document.querySelectorAll('.btn-physics, .glass-card, .theme-swatch, .footer-links a, .nav-links a');
-            hoverEls.forEach(el => {
-                el.addEventListener('mouseenter', () => ring.classList.add('hovered'));
-                el.addEventListener('mouseleave', () => ring.classList.remove('hovered'));
-            });
-
-            document.addEventListener('mousedown', () => ring.classList.add('clicking'));
-            document.addEventListener('mouseup', () => ring.classList.remove('clicking'));
-        })();
-
-        // ── Magnetic Buttons ──────────────────────────────────────────────
-        (function () {
-            if (window.matchMedia('(pointer: coarse)').matches) return;
-            const magnetBtns = document.querySelectorAll('#ctaDemo, #ctaTrial, #ctaPricing');
-            magnetBtns.forEach(btn => {
-                btn.addEventListener('mousemove', e => {
-                    const rect = btn.getBoundingClientRect();
-                    const dx = e.clientX - (rect.left + rect.width / 2);
-                    const dy = e.clientY - (rect.top + rect.height / 2);
-                    gsap.to(btn, { x: dx * 0.32, y: dy * 0.32, duration: 0.4, ease: 'power2.out' });
-                });
-                btn.addEventListener('mouseleave', () => {
-                    gsap.to(btn, { x: 0, y: 0, duration: 0.5, ease: 'elastic.out(1, 0.4)' });
-                });
-            });
-        })();
-
-        // ── Animated Mockup ───────────────────────────────────────────────
-        (function () {
-            // Build sparkline
-            const sparkline = document.getElementById('sparkline');
-            const heights = [30, 55, 40, 70, 50, 85, 60, 90, 75, 95];
-            heights.forEach(h => {
-                const bar = document.createElement('div');
-                bar.className = 'sparkline-bar';
-                bar.style.height = h + '%';
-                sparkline.appendChild(bar);
-            });
-
-            // Animate bars + counter on scroll enter
-            let mockupTriggered = false;
-            ScrollTrigger.create({
-                trigger: '#dashMockup',
-                start: 'top 80%',
-                once: true,
-                onEnter: () => {
-                    if (mockupTriggered) return;
-                    mockupTriggered = true;
-
-                    // Animate bars
-                    document.querySelectorAll('.mockup-bar-fill').forEach((bar, i) => {
-                        gsap.to(bar, {
-                            width: bar.dataset.width + '%',
-                            duration: 1.2,
-                            ease: 'power3.out',
-                            delay: i * 0.15
-                        });
-                    });
-
-                    // Live photo count ticker
-                    const countEl = document.getElementById('mockupCount');
-                    const obj = { val: 0 };
-                    gsap.to(obj, {
-                        val: 247,
-                        duration: 2.5,
-                        ease: 'power2.out',
-                        onUpdate: () => { countEl.textContent = Math.floor(obj.val); }
-                    });
-
-                    // Sparkle bars animate in
-                    gsap.from('.sparkline-bar', {
-                        scaleY: 0,
-                        transformOrigin: 'bottom',
-                        duration: 0.6,
-                        ease: 'back.out(1.4)',
-                        stagger: 0.05
-                    });
-
-                    // Slow live count ticker after initial animation
-                    let liveVal = 247;
-                    setInterval(() => {
-                        if (Math.random() > 0.4) {
-                            liveVal += Math.floor(Math.random() * 3) + 1;
-                            countEl.textContent = liveVal;
-                        }
-                    }, 2200);
-                }
-            });
-        })();
-
-        // ── 3D Card Tilt (Pricing) ────────────────────────────────────────
-        (function () {
-            if (window.matchMedia('(pointer: coarse)').matches) return;
-            document.querySelectorAll('.price-card').forEach(card => {
-                const highlight = card.querySelector('.card-highlight');
-                card.addEventListener('mousemove', e => {
-                    const rect = card.getBoundingClientRect();
-                    const cx = rect.left + rect.width / 2;
-                    const cy = rect.top + rect.height / 2;
-                    const dx = (e.clientX - cx) / (rect.width / 2);
-                    const dy = (e.clientY - cy) / (rect.height / 2);
-                    gsap.to(card, {
-                        rotationX: -dy * 7,
-                        rotationY: dx * 7,
-                        perspective: 900,
-                        ease: 'power2.out',
-                        duration: 0.4
-                    });
-                    if (highlight) {
-                        const rx = ((e.clientX - rect.left) / rect.width) * 100;
-                        const ry = ((e.clientY - rect.top) / rect.height) * 100;
-                        highlight.style.background = `radial-gradient(circle 160px at ${rx}% ${ry}%, rgba(255,255,255,0.08), transparent)`;
-                    }
-                });
-                card.addEventListener('mouseleave', () => {
-                    gsap.to(card, { rotationX: 0, rotationY: 0, duration: 0.6, ease: 'elastic.out(1, 0.5)' });
-                });
-            });
-        })();
-
-        // ── Step Connector SVG ────────────────────────────────────────────
-        (function() {
-            if (window.innerWidth < 768) return;
-            ScrollTrigger.create({
-                trigger: '#stepsGrid',
-                start: 'top 80%',
-                once: true,
-                onEnter: function() {
-                    const grid = document.getElementById('stepsGrid');
-                    const s1 = document.getElementById('step1');
-                    const s2 = document.getElementById('step2');
-                    const s3 = document.getElementById('step3');
-                    if (!s1 || !s2 || !s3 || !grid) return;
-                    const gr = grid.getBoundingClientRect();
-                    const cx = (r) => r.left + r.width / 2 - gr.left;
-                    const cy = (r) => r.top + r.height / 2 - gr.top;
-                    const r1 = s1.getBoundingClientRect();
-                    const r2 = s2.getBoundingClientRect();
-                    const r3 = s3.getBoundingClientRect();
-                    const p1 = { x: cx(r1), y: cy(r1) };
-                    const p2 = { x: cx(r2), y: cy(r2) };
-                    const p3 = { x: cx(r3), y: cy(r3) };
-                    const ns = 'http://www.w3.org/2000/svg';
-                    const svg = document.createElementNS(ns, 'svg');
-                    svg.style.cssText = `position:absolute;top:0;left:0;width:${gr.width}px;height:${gr.height}px;pointer-events:none;z-index:0;overflow:visible;`;
-                    const path = document.createElementNS(ns, 'path');
-                    const m = (p1.x + p2.x) / 2;
-                    const n = (p2.x + p3.x) / 2;
-                    path.setAttribute('d', `M ${p1.x} ${p1.y} C ${m} ${p1.y}, ${m} ${p2.y}, ${p2.x} ${p2.y} C ${n} ${p2.y}, ${n} ${p3.y}, ${p3.x} ${p3.y}`);
-                    path.setAttribute('stroke', 'rgba(59,130,246,0.3)');
-                    path.setAttribute('stroke-width', '1.5');
-                    path.setAttribute('fill', 'none');
-                    path.setAttribute('stroke-linecap', 'round');
-                    svg.appendChild(path);
-                    grid.style.position = 'relative';
-                    grid.appendChild(svg);
-                    const len = path.getTotalLength();
-                    path.style.strokeDasharray = len;
-                    path.style.strokeDashoffset = len;
-                    ScrollTrigger.create({
-                        trigger: '#stepsGrid',
-                        start: 'top 75%',
-                        end: 'bottom 60%',
-                        scrub: 1,
-                        onUpdate: (self) => { path.style.strokeDashoffset = len * (1 - self.progress); }
-                    });
-                }
-            });
-        })();
-
-        // ── Confetti Burst ────────────────────────────────────────────────
-        (function() {
-            const canvas = document.getElementById('confetti-canvas');
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-            resize();
-            window.addEventListener('resize', resize);
-            const COLORS = ['#fbbf24','#f59e0b','#3b82f6','#6366f1','#10b981','#ec4899','#ef4444','#a855f7'];
-            let rafId = null;
-            function burst(ox, oy) {
-                const particles = Array.from({ length: 60 }, () => ({
-                    x: ox, y: oy,
-                    vx: (Math.random() - 0.5) * 16,
-                    vy: (Math.random() - 0.85) * 14,
-                    color: COLORS[Math.floor(Math.random() * COLORS.length)],
-                    life: 1, w: Math.random() * 8 + 4, h: Math.random() * 5 + 3,
-                    angle: Math.random() * Math.PI * 2, spin: (Math.random() - 0.5) * 0.25
-                }));
-                if (rafId) cancelAnimationFrame(rafId);
-                function tick() {
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    let alive = false;
-                    particles.forEach(p => {
-                        if (p.life <= 0) return;
-                        alive = true;
-                        p.vy += 0.45; p.x += p.vx; p.y += p.vy;
-                        p.vx *= 0.985; p.life -= 0.016; p.angle += p.spin;
-                        ctx.save();
-                        ctx.globalAlpha = Math.max(0, p.life);
-                        ctx.translate(p.x, p.y);
-                        ctx.rotate(p.angle);
-                        ctx.fillStyle = p.color;
-                        ctx.beginPath();
-                        if (ctx.roundRect) ctx.roundRect(-p.w / 2, -p.h / 2, p.w, p.h, 2);
-                        else ctx.rect(-p.w / 2, -p.h / 2, p.w, p.h);
-                        ctx.fill();
-                        ctx.restore();
-                    });
-                    if (alive) rafId = requestAnimationFrame(tick);
-                    else { ctx.clearRect(0, 0, canvas.width, canvas.height); rafId = null; }
-                }
-                tick();
-            }
-            document.querySelectorAll('.btn-gold').forEach(btn => {
-                btn.addEventListener('click', e => {
-                    const rect = btn.getBoundingClientRect();
-                    burst(rect.left + rect.width / 2, rect.top + rect.height / 2);
-                });
-            });
-        })();
-
-        // ── Theme Picker ──────────────────────────────────────────────────
-        function setPreviewTheme(theme) {
-            document.documentElement.setAttribute('data-theme', theme);
-            try { localStorage.setItem('snapnexus_theme_preview', theme); } catch (e) {}
-            document.querySelectorAll('#vibePickerGrid .theme-swatch').forEach(el => {
-                el.classList.toggle('active', el.dataset.theme === theme);
-            });
+  /* ---------- procedural "event photos" (no external images needed) ---------- */
+  function rng(seed){ return function(){ seed |= 0; seed = seed + 0x6D2B79F5 | 0; var t = Math.imul(seed ^ seed>>>15, 1|seed); t = t + Math.imul(t ^ t>>>7, 61|t) ^ t; return ((t ^ t>>>14)>>>0)/4294967296; }; }
+  var PALETTES = [
+    ['#3b1d0f','#c2410c','#fbbf24','#fde68a'],  // marigold
+    ['#1e0b2e','#7e22ce','#ec4899','#f9a8d4'],  // neon
+    ['#0b1a2e','#1d4ed8','#22d3ee','#a5f3fc'],  // club blue
+    ['#2a0f14','#be123c','#fb7185','#fecdd3'],  // rose
+    ['#10201a','#047857','#facc15','#fef08a'],  // garden lights
+    ['#1f1407','#92400e','#f59e0b','#fff7ed'],  // warm gold
+    ['#120f24','#4338ca','#f472b6','#fde68a']   // dusk
+  ];
+  function makePhoto(seed){
+    var S = 360, c = document.createElement('canvas'); c.width = c.height = S;
+    var x = c.getContext('2d'); if (!x) return '';
+    var r = rng(seed*977+13), p = PALETTES[seed % PALETTES.length], type = seed % 3, i;
+    var g = x.createLinearGradient(0,0,S*0.3,S);
+    g.addColorStop(0,p[1]); g.addColorStop(0.55,p[0]); g.addColorStop(1,'#07070a');
+    x.fillStyle = g; x.fillRect(0,0,S,S);
+    // bokeh
+    x.globalCompositeOperation = 'lighter';
+    for (i=0;i<26;i++){
+      var bx = r()*S, by = r()*S*0.7, br = 8+r()*34, col = p[2+(i%2)];
+      var rg = x.createRadialGradient(bx,by,0,bx,by,br);
+      rg.addColorStop(0,col); rg.addColorStop(0.6,col+'55'); rg.addColorStop(1,col+'00');
+      x.globalAlpha = 0.15+r()*0.35; x.fillStyle = rg;
+      x.beginPath(); x.arc(bx,by,br,0,Math.PI*2); x.fill();
+    }
+    if (type === 1){ // stage beams
+      for (i=0;i<3;i++){
+        var sx = S*(0.2+0.3*i);
+        var bg = x.createLinearGradient(sx,0,sx,S);
+        bg.addColorStop(0,p[3]+'aa'); bg.addColorStop(1,p[3]+'00');
+        x.globalAlpha = 0.35; x.fillStyle = bg;
+        x.beginPath(); x.moveTo(sx-8,0); x.lineTo(sx+8,0); x.lineTo(sx+70-r()*140,S); x.lineTo(sx-70-r()*40,S); x.closePath(); x.fill();
+      }
+    }
+    if (type === 2){ // string lights
+      x.globalAlpha = 0.9;
+      for (var k=0;k<2;k++){
+        var y0 = 30+k*50+r()*20;
+        for (i=0;i<14;i++){
+          var lx = i*(S/13), ly = y0 + Math.sin(i/13*Math.PI)*28;
+          var lg = x.createRadialGradient(lx,ly,0,lx,ly,9);
+          lg.addColorStop(0,'#fff'); lg.addColorStop(0.3,p[3]); lg.addColorStop(1,p[3]+'00');
+          x.fillStyle = lg; x.beginPath(); x.arc(lx,ly,9,0,Math.PI*2); x.fill();
         }
-        (function initVibePicker() {
-            let current = 'default';
-            try { current = localStorage.getItem('snapnexus_theme_preview') || 'default'; } catch (e) {}
-            document.querySelectorAll('#vibePickerGrid .theme-swatch').forEach(swatch => {
-                if (swatch.dataset.theme === current) swatch.classList.add('active');
-                swatch.addEventListener('click', () => setPreviewTheme(swatch.dataset.theme));
-            });
-        })();
+      }
+    }
+    x.globalCompositeOperation = 'source-over'; x.globalAlpha = 1;
+    // people silhouettes
+    var people = type === 1 ? 7 + Math.floor(r()*4) : 1 + Math.floor(r()*4);
+    var small = type === 1;
+    for (i=0;i<people;i++){
+      var px = small ? (i+0.5)*(S/people) + (r()-0.5)*20 : S*(0.5 + (i-(people-1)/2)*0.24) + (r()-0.5)*16;
+      var hr = small ? 14+r()*7 : 26+r()*12;
+      var bodyH = small ? 40+r()*20 : 90+r()*50;
+      var hy = S - bodyH - hr*0.75 - (small ? r()*6 : r()*20);
+      x.fillStyle = 'rgba(8,6,12,0.94)';
+      x.beginPath(); x.arc(px,hy,hr,0,Math.PI*2); x.fill();
+      x.beginPath(); x.ellipse(px,S+6,hr*2.3,bodyH+hr*0.2,0,Math.PI,Math.PI*2); x.fill();
+      x.strokeStyle = p[3]; x.globalAlpha = 0.35; x.lineWidth = 2;
+      x.beginPath(); x.arc(px,hy,hr,Math.PI*1.05,Math.PI*1.7); x.stroke();
+      x.globalAlpha = 1;
+      if (!small && r() > 0.55){ // raised hand
+        x.strokeStyle = 'rgba(8,6,12,0.94)'; x.lineWidth = hr*0.5; x.lineCap = 'round';
+        x.beginPath(); x.moveTo(px+hr*1.4,S-bodyH*0.7); x.lineTo(px+hr*1.9,hy-hr*1.3); x.stroke();
+      }
+    }
+    // vignette
+    var v = x.createRadialGradient(S/2,S/2,S*0.3,S/2,S/2,S*0.75);
+    v.addColorStop(0,'rgba(0,0,0,0)'); v.addColorStop(1,'rgba(0,0,0,0.55)');
+    x.fillStyle = v; x.fillRect(0,0,S,S);
+    try { return c.toDataURL('image/jpeg',0.82); } catch(e){ return ''; }
+  }
+  var PHOTOS = [];
+  for (var n=0;n<21;n++) PHOTOS.push(makePhoto(n+1));
 
-        // ── Demo launch ───────────────────────────────────────────────────
-        function launchDemo() {
-            const demoId = "demo_" + Math.random().toString(36).substring(2, 8);
-            window.location.href = `tv.html?event=${demoId}&isDemo=true`;
-        }
-        window.launchDemo = launchDemo;
+  /* ---------- fake QR (decorative) ---------- */
+  (function(){
+    var svg = document.getElementById('qr'); if (!svg) return;
+    var N = 25, r = rng(42), out = '<rect width="25" height="25" fill="#fff"/>';
+    function finder(x,y){ return '<rect x="'+x+'" y="'+y+'" width="7" height="7" fill="#0b0b10"/><rect x="'+(x+1)+'" y="'+(y+1)+'" width="5" height="5" fill="#fff"/><rect x="'+(x+2)+'" y="'+(y+2)+'" width="3" height="3" fill="#0b0b10"/>'; }
+    function inFinder(x,y){ return (x<8&&y<8)||(x>N-9&&y<8)||(x<8&&y>N-9); }
+    for (var y=0;y<N;y++) for (var x=0;x<N;x++){
+      if (inFinder(x,y)) continue;
+      if (x>=10&&x<=14&&y>=10&&y<=14) continue;
+      if (r()>0.52) out += '<rect x="'+x+'" y="'+y+'" width="1" height="1" fill="#0b0b10"/>';
+    }
+    out += finder(0,0)+finder(N-7,0)+finder(0,N-7);
+    out += '<rect x="10" y="10" width="5" height="5" rx="1.2" fill="var(--accent)"/>';
+    svg.innerHTML = out;
+  })();
 
-        // ── Appwrite & Razorpay ───────────────────────────────────────────
-        const cfg = window.SnapNexus;
-        const client = new Appwrite.Client().setEndpoint(cfg.ENDPOINT).setProject(cfg.PROJECT_ID);
-        const account = new Appwrite.Account(client);
-        const databases = new Appwrite.Databases(client);
+  /* ---------- hero live-wall animation ---------- */
+  var stage = document.getElementById('stage');
+  var grid = document.getElementById('tvGrid');
+  var phImg = document.getElementById('phImg');
+  var phView = document.getElementById('phView');
+  var flash = document.getElementById('flash');
+  var shutter = document.getElementById('shutter');
+  var countEl = document.getElementById('count');
+  var toast = document.getElementById('toast');
+  var toastTxt = document.getElementById('toastTxt');
+  var toastAv = document.getElementById('toastAv');
+  var NAMES = ['Priya','Aarav','Meera','Kabir','Ananya','Rohan','Isha','Vihaan','Diya','Arjun','Sana','Neel','Tara','Zoya'];
+  var tiles = [], photoIdx = 12, nameIdx = 0, count = 128, lastTile = -1;
 
-        let currentUser = null;
-        let currentTier = 'starter';
+  for (var t=0;t<9;t++){
+    var d = document.createElement('div'); d.className = 'tile';
+    var im = document.createElement('img'); im.alt = ''; im.src = PHOTOS[t]; im.decoding = 'async';
+    d.appendChild(im); grid.appendChild(d); tiles.push(d);
+  }
+  phImg.src = PHOTOS[photoIdx % PHOTOS.length];
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            try {
-                currentUser = await account.get();
-                document.getElementById('navLoginBtn').innerText = 'Dashboard';
-                const prefs = await account.getPrefs();
-                currentTier = (prefs && prefs.tier) ? prefs.tier : 'starter';
-                const ind = document.getElementById(`ind-${currentTier}`);
-                if (ind) ind.style.display = 'block';
-            } catch(e) {}
+  var running = false, timers = [], visible = true;
+  function later(fn,ms){ timers.push(setTimeout(fn,ms)); }
+  function clearTimers(){ timers.forEach(clearTimeout); timers = []; }
 
-            // Record Page Visit Anonymously
-            try {
-                if (!sessionStorage.getItem('visited') && cfg.PROJECT_ID !== 'default') {
-                    const visitEmail = (currentUser && currentUser.email) ? currentUser.email : 'anonymous';
-                    databases.createDocument(cfg.DATABASE_ID, cfg.COLLECTION_ID, Appwrite.ID.unique(), {
-                        eventId: 'visit_' + Date.now(),
-                        status: 'visit',
-                        eventName: 'Page Visit',
-                        hostEmail: visitEmail,
-                        tier: 'none'
-                    }).then(() => {
-                        sessionStorage.setItem('visited', 'true');
-                    }).catch(e => { console.log('Telemetry skipped'); });
-                }
-            } catch(e) {}
-        });
+  function relRect(el){
+    var a = el.getBoundingClientRect(), b = stage.getBoundingClientRect();
+    return {x:a.left-b.left, y:a.top-b.top, w:a.width, h:a.height};
+  }
 
-        async function handlePlan(planId) {
-            if (!currentUser) { window.location.href = `login.html?plan=${planId}`; return; }
-            if (planId === 'starter') { window.location.href = `login.html`; return; }
-            if (currentTier === planId) { alert('You are already on this plan!'); window.location.href = `login.html`; return; }
+  function cycle(){
+    if (!running) return;
+    var src = PHOTOS[photoIdx % PHOTOS.length];
+    // 1. shutter + flash
+    later(function(){
+      shutter.classList.add('press');
+      flash.classList.remove('go'); void flash.offsetWidth; flash.classList.add('go');
+      later(function(){ shutter.classList.remove('press'); }, 180);
+    }, 700);
+    // 2. photo flies to wall
+    later(function(){
+      var target; do { target = Math.floor(Math.random()*tiles.length); } while (target === lastTile);
+      lastTile = target;
+      var from = relRect(phView), to = relRect(tiles[target]);
+      var fly = document.createElement('div'); fly.className = 'fly';
+      var fi = document.createElement('img'); fi.src = src; fi.alt = ''; fly.appendChild(fi);
+      fly.style.left = from.x+'px'; fly.style.top = from.y+'px'; fly.style.width = from.w+'px'; fly.style.height = from.h+'px';
+      stage.appendChild(fly);
+      var midX = (from.x+to.x)/2, midY = Math.min(from.y,to.y) - stage.clientWidth*0.06;
+      var finish = function(){
+        if (fly.parentNode) fly.parentNode.removeChild(fly);
+        var tile = tiles[target], img = tile.querySelector('img');
+        img.src = src;
+        tile.classList.remove('pop'); void tile.offsetWidth; tile.classList.add('pop');
+        count++; countEl.textContent = count;
+        var name = NAMES[nameIdx++ % NAMES.length];
+        toastTxt.textContent = name + ' added a photo'; toastAv.textContent = name.charAt(0);
+        toast.classList.add('show');
+        later(function(){ toast.classList.remove('show'); }, 1700);
+      };
+      if (fly.animate){
+        var anim = fly.animate([
+          {left:from.x+'px', top:from.y+'px', width:from.w+'px', height:from.h+'px', transform:'rotate(0deg)', offset:0},
+          {left:midX+'px', top:midY+'px', width:(from.w+to.w)/2+'px', height:(from.h+to.h)/2+'px', transform:'rotate(-5deg)', offset:0.5},
+          {left:to.x+'px', top:to.y+'px', width:to.w+'px', height:to.h+'px', transform:'rotate(0deg)', offset:1}
+        ], {duration:950, easing:'cubic-bezier(.45,0,.25,1)', fill:'forwards'});
+        anim.onfinish = finish;
+      } else { finish(); }
+      // queue next photo in the viewfinder
+      photoIdx++;
+      later(function(){
+        phImg.style.opacity = 0;
+        later(function(){ phImg.src = PHOTOS[photoIdx % PHOTOS.length]; phImg.style.opacity = 1; }, 300);
+      }, 350);
+    }, 950);
+    later(cycle, 2900);
+  }
+  function start(){ if (running || reduceMotion) return; running = true; cycle(); }
+  function stop(){ running = false; clearTimers(); toast.classList.remove('show'); }
 
-            alert("Please upgrade from your Host Dashboard.");
-            window.location.href = 'login.html';
-        }
-        window.handlePlan = handlePlan;
-      }); // end DOMContentLoaded
-    </script>
+  if (!reduceMotion){
+    if ('IntersectionObserver' in window){
+      new IntersectionObserver(function(es){
+        visible = es[0].isIntersecting;
+        if (visible && !document.hidden) start(); else stop();
+      }, {threshold:0.15}).observe(stage);
+    } else { start(); }
+    document.addEventListener('visibilitychange', function(){ if (document.hidden) stop(); else if (visible) start(); });
+  }
+
+  /* ---------- design studio ---------- */
+  var mock = document.getElementById('mock');
+  var mTitle = document.getElementById('mTitle');
+  var nameIn = document.getElementById('nameIn');
+  var bgPick = document.getElementById('bgPick'), acPick = document.getElementById('acPick');
+  var bgHex = document.getElementById('bgHex'), acHex = document.getElementById('acHex');
+  var fontPick = document.getElementById('fontPick');
+  var presetBtns = Array.prototype.slice.call(document.querySelectorAll('.preset'));
+  var DEFAULT = {bg:'#061022', accent:'#f5b301', font:"'Syne', sans-serif", name:'Riya & Arjun'};
+
+  // fill mock gallery with generated photos
+  var mCells = document.querySelectorAll('#mGrid > div');
+  Array.prototype.forEach.call(mCells, function(cell,i){
+    if (!PHOTOS[i+4]) return;
+    var im = document.createElement('img'); im.src = PHOTOS[i+4]; im.alt = '';
+    cell.parentNode.replaceChild(im, cell);
+  });
+
+  function setBg(hex){
+    bgHex.textContent = hex; bgPick.value = hex;
+    mock.style.setProperty('--m-bg', hex);
+    mock.style.setProperty('--m-text', luminance(hex) > 0.4 ? '#111114' : '#ffffff');
+  }
+  function setAccent(hex){
+    acHex.textContent = hex; acPick.value = hex;
+    var on = readableOn(hex), rgb = hexToRgb(hex).join(',');
+    mock.style.setProperty('--m-accent', hex);
+    mock.style.setProperty('--m-on', on);
+    // sync the whole landing page, but keep it legible on the dark site
+    var lum = luminance(hex);
+    if (lum > 0.03){
+      root.style.setProperty('--accent', hex);
+      root.style.setProperty('--accent-rgb', rgb);
+      root.style.setProperty('--on-accent', on);
+    }
+  }
+  function setFont(f){
+    fontPick.value = f;
+    mock.style.setProperty('--m-font', f);
+  }
+  function markPreset(btn){
+    presetBtns.forEach(function(b){ b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'); });
+  }
+
+  nameIn.addEventListener('input', function(){
+    var v = nameIn.value.trim();
+    mTitle.textContent = v || 'Your event';
+  });
+  bgPick.addEventListener('input', function(e){ setBg(e.target.value); markPreset(null); });
+  acPick.addEventListener('input', function(e){ setAccent(e.target.value); markPreset(null); });
+  fontPick.addEventListener('change', function(e){ setFont(e.target.value); markPreset(null); });
+  presetBtns.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      setBg(btn.dataset.bg); setAccent(btn.dataset.accent); setFont(btn.dataset.font); markPreset(btn);
+    });
+  });
+  document.getElementById('resetBtn').addEventListener('click', function(){
+    setBg(DEFAULT.bg); setAccent(DEFAULT.accent); setFont(DEFAULT.font);
+    nameIn.value = DEFAULT.name; mTitle.textContent = DEFAULT.name;
+    markPreset(presetBtns[0]);
+  });
+
+  /* ---------- visit counter for admin stats (same record format as the previous site) ---------- */
+  (function(){
+    try {
+      var C = window.SnapNexus;
+      if (!C || location.protocol === 'file:' || sessionStorage.getItem('visited') || localStorage.getItem('sn_mock') === '1') return;
+      var id = 'visit_' + Date.now();
+      fetch(C.ENDPOINT + '/databases/' + C.DATABASE_ID + '/collections/' + C.COLLECTION_ID + '/documents', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Appwrite-Project': C.PROJECT_ID },
+        body: JSON.stringify({ documentId: id, data: { eventId: id, status: 'visit', eventName: 'Page Visit', hostEmail: 'anonymous', tier: 'none' } })
+      }).then(function(r){ if (r.ok) sessionStorage.setItem('visited', 'true'); }).catch(function(){});
+    } catch (e) {}
+  })();
+
+  /* ---------- live demo (same behaviour as the previous site) ---------- */
+  Array.prototype.forEach.call(document.querySelectorAll('[data-demo]'), function(a){
+    a.addEventListener('click', function(e){
+      e.preventDefault();
+      var id = 'demo_' + Math.random().toString(36).substring(2, 8);
+      window.location.href = 'tv.html?event=' + id + '&isDemo=true';
+    });
+  });
+
+  /* ---------- scroll reveal ---------- */
+  var reveals = Array.prototype.slice.call(document.querySelectorAll('.reveal'));
+  function showAll(){ reveals.forEach(function(el){ el.classList.add('in'); }); }
+  if (reduceMotion || !('IntersectionObserver' in window)){ showAll(); }
+  else {
+    var ro = new IntersectionObserver(function(es){
+      es.forEach(function(e){ if (e.isIntersecting){ e.target.classList.add('in'); ro.unobserve(e.target); } });
+    }, {threshold:0.08, rootMargin:'0px 0px -40px 0px'});
+    reveals.forEach(function(el){ ro.observe(el); });
+    // failsafe: never leave content hidden
+    setTimeout(function(){ reveals.forEach(function(el){ if (el.getBoundingClientRect().top < innerHeight) el.classList.add('in'); }); }, 400);
+  }
+})();
+</script>
 </body>
 </html>
