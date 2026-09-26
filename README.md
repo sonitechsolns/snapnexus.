@@ -20,7 +20,7 @@ To change the logo, replace `logo.png`. To change settings, edit `config.js`.
 
 ## Analytics (PostHog)
 The same PostHog project as before (`assets/analytics.js`). Hosts are identified by their Appwrite user ID only; no emails are sent. The site sends these events:
-`host_signed_up`, `host_signed_in`, `event_created`, `checkout_opened`, `payment_submitted`, `theme_saved`, `zip_downloaded`, `upload_deleted`, `logo_uploaded`, `event_ended`, `wall_opened`, `guest_upload`, `group_created`, `group_joined`, `password_reset_requested`, `password_reset_done`.
+`host_signed_up`, `host_signed_in`, `event_created`, `checkout_opened`, `payment_submitted`, `theme_saved`, `zip_downloaded`, `upload_deleted`, `logo_uploaded`, `event_ended`, `wall_opened`, `guest_upload`, `group_created`, `group_joined`, `wall_layout_saved`, `password_reset_requested`, `password_reset_done`.
 Test mode (`?mock=1`) sends nothing.
 
 ## Test without touching live data
@@ -43,7 +43,7 @@ Add `?mock=1` to any page URL. Everything runs on fake data stored in your brows
 | `tv_2.html`, `vip_dashboard.html` | Redirects so old links keep working |
 
 ## How data is stored (no new Appwrite collections needed)
-- Events: `EventsTable` docs with `status` `active`/`ended`. `theme` is either a preset name or `c:BG:ACCENT:FONT`.
+- Events: `EventsTable` docs with `status` `active`/`ended`. `theme` is `<look>|w:<layout>:<secs>:<qr>:<media>`, where look is a preset name or `c:BG:ACCENT:FONT` and layout is `auto|spotlight|slideshow|split|grid`, e.g. `wedding|w:slideshow:10:corner:all`. Older events without the `|w:` part use Auto, 6s, sidebar QR and photos plus videos.
 - Payment requests: `EventsTable` docs with `status` `payment_pending|payment_done|payment_rejected`, where `eventName` is `plan|amount|UTR|eventId`.
 - Pro subscriptions: `EventsTable` docs with `status` `subscription`, where `eventName` is `until|<ms timestamp>`.
 - Uploads/groups: same fields as before (`file_id`, `event_id`, `file_url`, `is_public_wall_allowed`, `group_id`, `is_pinned`).

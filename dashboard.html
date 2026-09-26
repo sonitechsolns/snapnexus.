@@ -2630,7 +2630,7 @@ window.SN_INLINE_ICONS = true;
     return 'c:' + t.bg.replace('#', '').toLowerCase() + ':' + t.accent.replace('#', '').toLowerCase() + ':' + (t.font || 0);
   };
   T.parse = function (str) {
-    str = String(str || 'default');
+    str = String(str || 'default').split('|')[0] || 'default';
     var base;
     if (str.indexOf('c:') === 0) {
       var p = str.split(':');
@@ -2688,6 +2688,35 @@ window.SN_INLINE_ICONS = true;
     }
     T.loadFonts(theme);
   };
+
+  /* ---------------------------------------------------- wall layout options */
+  // Stored after the theme in the same Events "theme" attribute:  '<theme>|w:<layout>:<secs>:<qr>:<media>'
+  // e.g. 'wedding|w:slideshow:10:corner:all'. Events without it use the defaults below.
+  var W = SN.wall = {};
+  W.LAYOUTS = [
+    { key: 'auto', label: 'Auto', hint: 'Slideshow at first, then Spotlight or Grid as photos pile up' },
+    { key: 'spotlight', label: 'Spotlight', hint: 'One big photo with the latest 8 around it' },
+    { key: 'slideshow', label: 'Slideshow', hint: 'One photo at a time, edge to edge' },
+    { key: 'split', label: 'Split', hint: 'Two photos side by side' },
+    { key: 'grid', label: 'Grid', hint: 'Equal tiles that swap one at a time' }
+  ];
+  W.SECS = [4, 6, 10, 15];
+  W.QR = [{ key: 'side', label: 'Sidebar' }, { key: 'corner', label: 'Corner' }, { key: 'hidden', label: 'Hidden' }];
+  W.DEFAULT = { layout: 'auto', secs: 6, qr: 'side', media: 'all' };
+  W.parse = function (str) {
+    var out = Object.assign({}, W.DEFAULT), part = String(str || '').split('|')[1] || '';
+    var p = part.split(':');
+    if (p[0] !== 'w') return out;
+    if (W.LAYOUTS.some(function (l) { return l.key === p[1]; })) out.layout = p[1];
+    if (W.SECS.indexOf(+p[2]) !== -1) out.secs = +p[2];
+    if (W.QR.some(function (q) { return q.key === p[3]; })) out.qr = p[3];
+    if (p[4] === 'photos' || p[4] === 'all') out.media = p[4];
+    return out;
+  };
+  W.encode = function (o) { return 'w:' + o.layout + ':' + o.secs + ':' + o.qr + ':' + o.media; };
+  // Combine a theme string (preset or custom) with wall options into what's stored
+  W.join = function (themeStr, opts) { return String(themeStr || 'default').split('|')[0] + '|' + W.encode(opts); };
+  W.themePart = function (str) { return String(str || 'default').split('|')[0] || 'default'; };
 
   /* ----------------------------------------------------------------- UI */
   var U = SN.ui = {};
@@ -3266,6 +3295,21 @@ window.SN_INLINE_ICONS = true;
   .preview .p-k{font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700}
   .preview .p-t{font-family:var(--head);color:var(--accent);font-size:1.5rem;font-weight:700;margin:4px 0 12px;word-break:break-word}
   .preview .p-b{display:inline-grid;place-items:center;width:60px;height:60px;border-radius:50%;background:var(--accent);color:var(--on-accent);box-shadow:0 0 0 4px var(--bg),0 0 0 7px var(--accent)}
+  .lays{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-bottom:10px}
+  .lay{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;border:1px solid var(--line-2);border-radius:12px;padding:6px 3px 7px;cursor:pointer;background:none;display:flex;flex-direction:column;gap:6px;align-items:center;font-size:.64rem;letter-spacing:-.01em;font-weight:600;color:var(--muted)}
+  .lay[aria-pressed=true]{border-color:var(--accent);color:var(--text);background:rgba(var(--accent-rgb),.08)}
+  .dia{width:100%;aspect-ratio:16/10;border-radius:6px;background:rgba(255,255,255,.05);display:grid;gap:2px;padding:3px}
+  .dia i{display:block;border-radius:2px;background:rgba(var(--accent-rgb),.55)}
+  .dia.d-auto{place-items:center;color:var(--accent)} .dia.d-auto .i{width:18px;height:18px}
+  .dia.d-spotlight{grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(3,1fr)} .dia.d-spotlight i:first-child{grid-column:span 2;grid-row:span 2;background:var(--accent)}
+  .dia.d-slideshow{grid-template-rows:1fr} .dia.d-slideshow i{background:var(--accent)}
+  .dia.d-split{grid-template-columns:1fr 1fr;grid-template-rows:1fr}
+  .dia.d-grid{grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(3,1fr)}
+  .lay-hint{font-size:.84rem;color:var(--muted);min-height:2.4em;margin-bottom:14px}
+  .opt-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+  .opt-row>span{font-size:.86rem;font-weight:600;color:var(--muted)}
+  .opt-row .seg button{padding:7px 11px;font-size:.8rem}
+  @media(max-width:460px){.lays{grid-template-columns:repeat(3,minmax(0,1fr))}}
   .groups{display:flex;flex-wrap:wrap;gap:8px}
   .chip{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:99px;border:1px solid var(--line-2);font-size:.85rem;font-weight:600}
   .chip .i{width:14px;height:14px;color:var(--accent)}
@@ -3419,6 +3463,18 @@ window.SN_INLINE_ICONS = true;
           <button class="btn btn-primary btn-block" id="saveLook" disabled>Save look</button>
         </section>
 
+        <section class="card card-pad" id="wallCard">
+          <h2 class="card-h"><span id="icWall"></span>Wall layout</h2>
+          <p class="card-sub">How photos show on the big screen. A wall that's already running switches within a few seconds.</p>
+          <div class="lays" id="lays"></div>
+          <p class="lay-hint" id="layHint"></p>
+          <div class="opt-row"><span>Each photo stays</span><div class="seg" id="optSecs"></div></div>
+          <div class="opt-row"><span>QR code</span><div class="seg" id="optQr"></div></div>
+          <div class="opt-row"><span>Show</span><div class="seg" id="optMedia"><button data-v="all" aria-pressed="true">Photos &amp; videos</button><button data-v="photos" aria-pressed="false">Photos only</button></div></div>
+          <div class="row" style="margin-top:14px"><a class="btn btn-ghost" style="flex:1" id="prevWall" target="_blank" rel="noopener">Preview</a><button class="btn btn-primary" style="flex:1" id="saveWall" disabled>Save layout</button></div>
+          <p class="dim" style="font-size:.78rem;margin-top:10px">On the wall: press <span class="kbd">L</span> to switch layout and <span class="kbd">Q</span> to move the QR code for just that screen.</p>
+        </section>
+
         <section class="card card-pad">
           <h2 class="card-h"><span id="icDl"></span>Download</h2>
           <p class="card-sub" id="dlInfo">Every photo and video, sorted into folders.</p>
@@ -3488,7 +3544,7 @@ window.SN_INLINE_ICONS = true;
   S.$('#aGuest').innerHTML = I('smartphone') + 'Guest page';
   S.$('#aEnd').innerHTML = I('power') + 'End event';
   S.$('#gRefresh').innerHTML = I('refresh-cw');
-  S.$('#icLook').innerHTML = I('palette'); S.$('#icDl').innerHTML = I('download'); S.$('#icGrp').innerHTML = I('folder-lock'); S.$('#icLogo').innerHTML = I('image');
+  S.$('#icLook').innerHTML = I('palette'); S.$('#icWall').innerHTML = I('monitor'); S.$('#icDl').innerHTML = I('download'); S.$('#icGrp').innerHTML = I('folder-lock'); S.$('#icLogo').innerHTML = I('image');
   S.$('#pvIcon').innerHTML = I('camera');
   S.$('#dlZip').innerHTML = I('download') + 'Download all (ZIP)';
   S.$('#qrPrintBtn').innerHTML = I('printer') + 'Print';
@@ -3641,7 +3697,7 @@ window.SN_INLINE_ICONS = true;
     S.$$('#looks .look').forEach(function (b) { b.setAttribute('aria-pressed', String(!th.custom && th.preset === b.dataset.look)); });
     S.$('#cBg').value = th.bg; S.$('#cAc').value = th.accent; S.$('#cFont').value = String(th.head);
     S.theme.apply(th, S.$('#preview'));
-    S.$('#saveLook').disabled = draft === (ev.theme || 'default');
+    S.$('#saveLook').disabled = draft === S.wall.themePart(ev.theme);
     if (th.custom) S.$('#custBox').open = true;
   }
   S.$('#looks').addEventListener('click', function (e) { var b = e.target.closest('[data-look]'); if (!b) return; draft = b.dataset.look; syncLookUi(); });
@@ -3649,9 +3705,37 @@ window.SN_INLINE_ICONS = true;
   S.$('#cBg').addEventListener('input', custom); S.$('#cAc').addEventListener('input', custom); S.$('#cFont').addEventListener('change', custom);
   S.$('#saveLook').addEventListener('click', async function () {
     var b = this; S.ui.busy(b, true, 'Saving…');
-    try { await S.api.updateEvent(ev.$id, { theme: draft }); ev.theme = draft; S.ui.toast('Look saved. Guests and the wall update within a few seconds.', 'ok'); S.track('theme_saved', { custom: draft.indexOf('c:') === 0 }); }
+    var full = S.wall.join(draft, S.wall.parse(ev.theme));
+    try { await S.api.updateEvent(ev.$id, { theme: full }); ev.theme = full; S.ui.toast('Look saved. Guests and the wall update within a few seconds.', 'ok'); S.track('theme_saved', { custom: draft.indexOf('c:') === 0 }); }
     catch (err) { S.ui.toast('Couldn\'t save the look: ' + S.errMsg(err), 'err'); }
     S.ui.busy(b, false); syncLookUi();
+  });
+
+  /* ---------------- wall layout ---------------- */
+  var wallDraft = null, W = S.wall;
+  S.$('#lays').innerHTML = W.LAYOUTS.map(function (l) {
+    var dia = l.key === 'auto' ? I('sparkles') : l.key === 'spotlight' ? '<i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>' : l.key === 'slideshow' ? '<i></i>' : l.key === 'split' ? '<i></i><i></i>' : new Array(13).join('<i></i>');
+    return '<button type="button" class="lay" data-l="' + l.key + '" aria-pressed="false" title="' + esc(l.hint) + '"><span class="dia d-' + l.key + '">' + dia + '</span>' + esc(l.label) + '</button>';
+  }).join('');
+  S.$('#optSecs').innerHTML = W.SECS.map(function (n) { return '<button data-v="' + n + '" aria-pressed="false">' + n + 's</button>'; }).join('');
+  S.$('#optQr').innerHTML = W.QR.map(function (q) { return '<button data-v="' + q.key + '" aria-pressed="false">' + esc(q.label) + '</button>'; }).join('');
+  function renderWall() {
+    if (!wallDraft) return;
+    S.$$('#lays .lay').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.l === wallDraft.layout)); });
+    S.$('#layHint').textContent = W.LAYOUTS.find(function (l) { return l.key === wallDraft.layout; }).hint + '.';
+    [['#optSecs', 'secs'], ['#optQr', 'qr'], ['#optMedia', 'media']].forEach(function (p) { S.$$(p[0] + ' button').forEach(function (b) { b.setAttribute('aria-pressed', String(String(wallDraft[p[1]]) === b.dataset.v)); }); });
+    S.$('#saveWall').disabled = W.encode(wallDraft) === W.encode(W.parse(ev.theme));
+    S.$('#prevWall').href = 'tv.html?event=' + encodeURIComponent(ev.eventId) + '&layout=' + wallDraft.layout + '&secs=' + wallDraft.secs + '&qr=' + wallDraft.qr + '&media=' + wallDraft.media;
+  }
+  S.$('#lays').addEventListener('click', function (e) { var b = e.target.closest('[data-l]'); if (!b) return; wallDraft.layout = b.dataset.l; renderWall(); });
+  [['#optSecs', 'secs'], ['#optQr', 'qr'], ['#optMedia', 'media']].forEach(function (p) {
+    S.$(p[0]).addEventListener('click', function (e) { var b = e.target.closest('button[data-v]'); if (!b) return; wallDraft[p[1]] = p[1] === 'secs' ? +b.dataset.v : b.dataset.v; renderWall(); });
+  });
+  S.$('#saveWall').addEventListener('click', async function () {
+    var b = this, full = W.join(W.themePart(ev.theme), wallDraft); S.ui.busy(b, true, 'Saving…');
+    try { await S.api.updateEvent(ev.$id, { theme: full }); ev.theme = full; S.ui.toast('Layout saved. The wall switches within a few seconds.', 'ok'); S.track('wall_layout_saved', { layout: wallDraft.layout, secs: wallDraft.secs, qr: wallDraft.qr, media: wallDraft.media }); }
+    catch (err) { S.ui.toast('Couldn\'t save the layout: ' + S.errMsg(err), 'err'); }
+    S.ui.busy(b, false); renderWall();
   });
 
   /* ---------------- download ---------------- */
@@ -3731,7 +3815,8 @@ window.SN_INLINE_ICONS = true;
       var hd = await S.api.hostData(ev.hostEmail); proUntil = S.api.proUntil(hd.subs, prefs);
       window.__pend = hd.payments.filter(function (p) { return p.status === 'payment_pending' && S.api.parsePayment(p).target === ev.eventId; }).length;
     } catch (e) { }
-    draft = ev.theme || 'default';
+    draft = S.wall.themePart(ev.theme);
+    wallDraft = S.wall.parse(ev.theme); renderWall();
     S.$('#vLoad').hidden = true; S.$('#vDash').hidden = false;
     renderHead(); syncLookUi(); await loadGallery(true);
     if (S.qs('pay') === 'single' && tier() === 'unpaid') S.pay.open({ plan: 'single', event: ev, user: user, onDone: function () { window.__pend = 1; renderHead(); } });

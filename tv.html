@@ -2615,7 +2615,7 @@ window.SN_INLINE_ICONS = true;
     return 'c:' + t.bg.replace('#', '').toLowerCase() + ':' + t.accent.replace('#', '').toLowerCase() + ':' + (t.font || 0);
   };
   T.parse = function (str) {
-    str = String(str || 'default');
+    str = String(str || 'default').split('|')[0] || 'default';
     var base;
     if (str.indexOf('c:') === 0) {
       var p = str.split(':');
@@ -2673,6 +2673,35 @@ window.SN_INLINE_ICONS = true;
     }
     T.loadFonts(theme);
   };
+
+  /* ---------------------------------------------------- wall layout options */
+  // Stored after the theme in the same Events "theme" attribute:  '<theme>|w:<layout>:<secs>:<qr>:<media>'
+  // e.g. 'wedding|w:slideshow:10:corner:all'. Events without it use the defaults below.
+  var W = SN.wall = {};
+  W.LAYOUTS = [
+    { key: 'auto', label: 'Auto', hint: 'Slideshow at first, then Spotlight or Grid as photos pile up' },
+    { key: 'spotlight', label: 'Spotlight', hint: 'One big photo with the latest 8 around it' },
+    { key: 'slideshow', label: 'Slideshow', hint: 'One photo at a time, edge to edge' },
+    { key: 'split', label: 'Split', hint: 'Two photos side by side' },
+    { key: 'grid', label: 'Grid', hint: 'Equal tiles that swap one at a time' }
+  ];
+  W.SECS = [4, 6, 10, 15];
+  W.QR = [{ key: 'side', label: 'Sidebar' }, { key: 'corner', label: 'Corner' }, { key: 'hidden', label: 'Hidden' }];
+  W.DEFAULT = { layout: 'auto', secs: 6, qr: 'side', media: 'all' };
+  W.parse = function (str) {
+    var out = Object.assign({}, W.DEFAULT), part = String(str || '').split('|')[1] || '';
+    var p = part.split(':');
+    if (p[0] !== 'w') return out;
+    if (W.LAYOUTS.some(function (l) { return l.key === p[1]; })) out.layout = p[1];
+    if (W.SECS.indexOf(+p[2]) !== -1) out.secs = +p[2];
+    if (W.QR.some(function (q) { return q.key === p[3]; })) out.qr = p[3];
+    if (p[4] === 'photos' || p[4] === 'all') out.media = p[4];
+    return out;
+  };
+  W.encode = function (o) { return 'w:' + o.layout + ':' + o.secs + ':' + o.qr + ':' + o.media; };
+  // Combine a theme string (preset or custom) with wall options into what's stored
+  W.join = function (themeStr, opts) { return String(themeStr || 'default').split('|')[0] + '|' + W.encode(opts); };
+  W.themePart = function (str) { return String(str || 'default').split('|')[0] || 'default'; };
 
   /* ----------------------------------------------------------------- UI */
   var U = SN.ui = {};
@@ -3098,29 +3127,50 @@ window.SN_INLINE_ICONS = true;
     radial-gradient(60vw 50vh at 10% 0%,rgba(var(--glow-rgb,47,111,228),.28),transparent 70%),
     radial-gradient(50vw 50vh at 100% 100%,rgba(var(--accent-rgb),.12),transparent 70%)}
   .tv{position:relative;z-index:1;height:100vh;display:grid;grid-template-columns:1fr auto;grid-template-rows:1fr auto;gap:1.6vh;padding:1.8vh}
-  .wall{grid-column:1;grid-row:1;position:relative;min-height:0;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(3,1fr);gap:1.2vh}
+  body.qr-corner .tv,body.qr-hidden .tv{grid-template-columns:1fr}
+  body.qr-corner .side,body.qr-hidden .side{display:none}
+  body.lay-slideshow.qr-corner .tv,body.lay-slideshow.qr-hidden .tv{padding:0;gap:0}
+  body.lay-slideshow.qr-corner .ads,body.lay-slideshow.qr-hidden .ads{border-radius:0}
+
+  /* ---------- wall (shared) ---------- */
+  .wall{grid-column:1;grid-row:1;position:relative;min-height:0;min-width:0}
   .tile{position:relative;overflow:hidden;border-radius:1.6vh;background:var(--surface);border:1px solid var(--line)}
-  .tile img,.tile video{width:100%;height:100%;object-fit:cover}
-  .tile.spot{grid-column:span 2;grid-row:span 2;border-radius:2.2vh;box-shadow:0 2vh 6vh rgba(0,0,0,.35)}
-  .tile.spot img,.tile.spot video{position:absolute;inset:0;transition:opacity 1s}
-  .tile.spot .bgblur{position:absolute;inset:-5%;background-size:cover;background-position:center;filter:blur(3vh) brightness(.6);transform:scale(1.1)}
-  .tile.spot .fit{object-fit:contain}
+  .tile img,.tile video{width:100%;height:100%;object-fit:cover;display:block}
   .tile.new{animation:pop .9s cubic-bezier(.2,1.4,.4,1)}
-  .tile.new::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 .5vh var(--accent);animation:ring 1.8s ease-out forwards}
+  .tile.new::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 .5vh var(--accent);animation:ring 1.8s ease-out forwards;pointer-events:none}
   @keyframes pop{from{transform:scale(.6);filter:brightness(2)}to{transform:none;filter:none}}
   @keyframes ring{from{opacity:1}to{opacity:0}}
-  .tile .pin{position:absolute;top:1vh;left:1vh;background:var(--accent);color:var(--on-accent);border-radius:99px;padding:.4vh 1vh;font-size:1.3vh;font-weight:700;display:flex;gap:.5vh;align-items:center}
+  .pin{position:absolute;top:1vh;left:1vh;z-index:2;background:var(--accent);color:var(--on-accent);border-radius:99px;padding:.4vh 1vh;font-size:1.3vh;font-weight:700;display:flex;gap:.5vh;align-items:center}
   .ph{background:linear-gradient(135deg,rgba(255,255,255,.04),rgba(255,255,255,.01))}
+  .bgblur{position:absolute;inset:-6%;background-size:cover;background-position:center;filter:blur(3vh) brightness(.55);transform:scale(1.1)}
+  .fit{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
 
-  .side{grid-column:2;grid-row:1 / span 2;width:24vw;min-width:260px;max-width:460px;display:flex;flex-direction:column;gap:2vh;padding:3vh 2.4vh;border-radius:2.2vh;background:var(--surface);border:1px solid var(--line);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);transition:width .4s,padding .4s,opacity .4s}
-  body.noside .side{display:none}
-  body.noside .tv{grid-template-columns:1fr}
-  body.noside .ads{grid-column:1}
+  /* spotlight: one big + 8 */
+  .wall.spotlight{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(3,1fr);gap:1.2vh}
+  .tile.spot{grid-column:span 2;grid-row:span 2;border-radius:2.2vh;box-shadow:0 2vh 6vh rgba(0,0,0,.35)}
+  .tile.spot .layer{position:absolute;inset:0;transition:opacity .8s}
+
+  /* grid: equal tiles */
+  .wall.grid{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(3,1fr);gap:1.2vh}
+  .wall.grid .tile .layer{position:absolute;inset:0;transition:opacity .8s}
+
+  /* slideshow + split: cross-fading layers */
+  .wall.slideshow,.pane{position:relative;overflow:hidden;border-radius:2.2vh;background:#000}
+  body.lay-slideshow.qr-corner .wall.slideshow,body.lay-slideshow.qr-hidden .wall.slideshow{border-radius:0}
+  .wall.split{display:grid;grid-template-columns:1fr 1fr;gap:1.2vh}
+  .slide{position:absolute;inset:0;opacity:0;transition:opacity 1.2s ease}
+  .slide.on{opacity:1}
+  .slide.kb .fit{animation:kb var(--kbd,8s) ease-out forwards}
+  @keyframes kb{from{transform:scale(1) translate(0,0)}to{transform:scale(1.07) translate(var(--kx,0),var(--ky,0))}}
+  .slide .pin{top:2vh;left:2vh;font-size:1.6vh}
+
+  /* ---------- sidebar ---------- */
+  .side{grid-column:2;grid-row:1 / span 2;width:24vw;min-width:260px;max-width:460px;display:flex;flex-direction:column;gap:2vh;padding:3vh 2.4vh;border-radius:2.2vh;background:var(--surface);border:1px solid var(--line);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
   .side .logo-slot img{max-height:9vh;max-width:100%;object-fit:contain;margin:0 auto}
   .ev-kicker{font-size:1.3vh;letter-spacing:.2em;text-transform:uppercase;font-weight:700;color:var(--muted);text-align:center}
   .ev-title{font-family:var(--head);font-size:clamp(20px,3.6vh,52px);font-weight:700;color:var(--accent);text-align:center;line-height:1.1;word-break:break-word}
   .qr{background:#fff;border-radius:2vh;padding:1.6vh;margin:0 auto;width:100%;max-width:30vh;box-shadow:0 2vh 5vh rgba(0,0,0,.35)}
-  .qr svg,.qr img{width:100%;height:auto;display:block}
+  .qr svg,.qr img,.qrc svg,.qrc img{width:100%;height:auto;display:block}
   .scan{text-align:center}
   .scan b{display:block;font-family:var(--head);font-size:2.6vh;margin-bottom:.4vh}
   .scan span{color:var(--muted);font-size:1.6vh}
@@ -3131,6 +3181,17 @@ window.SN_INLINE_ICONS = true;
   @keyframes blink{50%{opacity:.25}}
   .brand-foot{text-align:center;font-size:1.3vh;color:var(--muted)} .brand-foot b{color:var(--text)}
 
+  /* ---------- corner QR ---------- */
+  .corner{position:fixed;right:3vh;bottom:calc(var(--adh,0px) + 3vh);z-index:6;display:none;align-items:center;gap:1.6vh;padding:1.4vh;padding-right:2.2vh;border-radius:2vh;background:rgba(6,10,20,.78);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.15);color:#fff;max-width:40vw}
+  body.qr-corner .corner{display:flex}
+  .qrc{width:13vh;background:#fff;border-radius:1.2vh;padding:.8vh;flex:none}
+  .corner b{display:block;font-family:var(--head);font-size:2.3vh;line-height:1.15}
+  .corner .ct{font-size:1.5vh;opacity:.75;margin-top:.4vh}
+  .corner .cl{display:inline-flex;align-items:center;gap:.6vh;margin-top:1vh;font-size:1.3vh;font-weight:700;letter-spacing:.12em;color:#fecdd3}
+  .corner .cl i{width:.9vh;height:.9vh;border-radius:50%;background:#f43f5e;animation:blink 1.4s infinite}
+  .corner img.cl-logo{max-height:5vh;max-width:18vh;object-fit:contain;margin-bottom:.8vh;display:block}
+
+  /* ---------- ads ---------- */
   .ads{grid-column:1;grid-row:2;height:10vh;border-radius:1.6vh;overflow:hidden;position:relative;background:linear-gradient(90deg,#0b2a6b,#123b91);border:1px solid rgba(255,255,255,.1)}
   .ad{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:2vh;padding:0 3vh;opacity:0;transform:translateY(20%);transition:opacity .7s,transform .7s;color:#fff;font-weight:600;font-size:2.2vh;text-align:center}
   .ad.on{opacity:1;transform:none}
@@ -3138,17 +3199,19 @@ window.SN_INLINE_ICONS = true;
   .ad .tag{position:absolute;right:1.2vh;top:.8vh;font-size:1.1vh;letter-spacing:.14em;text-transform:uppercase;opacity:.6;z-index:1}
   .ad .yl{color:#ffd34d}
 
-  .toast-new{position:absolute;left:2vh;bottom:2vh;z-index:5;display:flex;align-items:center;gap:1.2vh;padding:1vh 2vh 1vh 1vh;border-radius:99px;background:rgba(6,10,20,.8);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#fff;font-weight:600;font-size:1.8vh;border:1px solid rgba(255,255,255,.15);opacity:0;transform:translateY(40%);transition:.4s}
+  .toast-new{position:fixed;left:3vh;bottom:calc(var(--adh,0px) + 3vh);z-index:7;display:flex;align-items:center;gap:1.2vh;padding:1vh 2vh 1vh 1vh;border-radius:99px;background:rgba(6,10,20,.8);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#fff;font-weight:600;font-size:1.8vh;border:1px solid rgba(255,255,255,.15);opacity:0;transform:translateY(40%);transition:.4s}
   .toast-new.show{opacity:1;transform:none}
   .toast-new .av{width:3.4vh;height:3.4vh;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--on-accent)}
   .toast-new .av .i{width:1.8vh;height:1.8vh}
+  .hint{position:fixed;top:2vh;right:2vh;z-index:31;background:rgba(6,10,20,.85);color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:99px;padding:.9vh 2vh;font-weight:700;font-size:1.7vh;opacity:0;transition:opacity .3s}
+  .hint.show{opacity:1}
 
   .over{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.4vh;text-align:center;padding:4vh;background:var(--bg)}
   .over .big{width:12vh;height:12vh;border-radius:3vh;display:grid;place-items:center;background:var(--surface);border:1px solid var(--line);color:var(--accent)}
   .over .big .i{width:6vh;height:6vh}
   .over h1{font-size:clamp(28px,6vh,80px)}
   .over p{color:var(--muted);font-size:clamp(16px,2.4vh,30px);max-width:60vw}
-  .waiting{grid-column:1 / -1;grid-row:1 / -1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2vh;text-align:center;border:2px dashed var(--line-2);border-radius:2.2vh}
+  .waiting{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2vh;text-align:center;border:2px dashed var(--line-2);border-radius:2.2vh;background:var(--bg)}
   .waiting h2{font-size:clamp(24px,5vh,64px)}
   .waiting p{color:var(--muted);font-size:clamp(14px,2.2vh,28px)}
   .waiting .i{width:8vh;height:8vh;color:var(--accent)}
@@ -3159,17 +3222,17 @@ window.SN_INLINE_ICONS = true;
   .demo-flag{position:fixed;top:2vh;left:50%;transform:translateX(-50%);z-index:25;background:var(--accent);color:var(--on-accent);font-weight:700;border-radius:99px;padding:.8vh 2vh;font-size:1.6vh}
 
   @media (orientation: portrait){
-    body{font-size:1.2vh;overflow:auto}
-    html,body{height:auto}
-    .tv{height:auto;min-height:100vh;grid-template-columns:1fr;grid-template-rows:auto auto auto}
-    .wall{grid-template-columns:repeat(2,1fr);grid-template-rows:none;grid-auto-rows:22vw}
-    .tile.spot{grid-column:span 2;grid-row:span 2}
-    .side{grid-column:1;grid-row:3;width:auto;max-width:none}
-    .ads{grid-row:2;height:12vw}
+    .tv{grid-template-columns:1fr!important;grid-template-rows:1fr auto auto}
+    .side{grid-column:1;grid-row:3;width:auto;max-width:none;flex-direction:row;flex-wrap:wrap;align-items:center;padding:2vh}
+    .side .qr{width:18vh}
+    .wall.spotlight,.wall.grid{grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(4,1fr)}
+    .wall.split{grid-template-columns:1fr;grid-template-rows:1fr 1fr}
+    .ads{grid-row:2;height:7vh}
   }
+  @media (prefers-reduced-motion: reduce){ .slide.kb .fit{animation:none} }
 </style>
 </head>
-<body>
+<body class="qr-side lay-spotlight">
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true" id="sn-sprite">
 <symbol id="camera" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z"/> <circle cx="12" cy="13" r="3"/></symbol>
 <symbol id="qr-code" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="5" height="5" x="3" y="3" rx="1"/> <rect width="5" height="5" x="16" y="3" rx="1"/> <rect width="5" height="5" x="3" y="16" rx="1"/> <path d="M21 16h-3a2 2 0 0 0-2 2v3"/> <path d="M21 21v.01"/> <path d="M12 7v3a2 2 0 0 1-2 2H7"/> <path d="M3 12h.01"/> <path d="M12 3h.01"/> <path d="M12 16v.01"/> <path d="M16 12h1"/> <path d="M21 12v.01"/> <path d="M12 21v-1"/></symbol>
@@ -3239,12 +3302,19 @@ window.SN_INLINE_ICONS = true;
     <p class="brand-foot" id="brandFoot">Powered by <b>SnapNexus</b></p>
   </aside>
   <section class="ads" id="ads" hidden></section>
-  <div class="toast-new" id="toastNew"><span class="av" id="toastIcon"></span><span id="toastTxt">New photo!</span></div>
 </div>
+
+<div class="corner" id="corner">
+  <div class="qrc" id="qrc"></div>
+  <div><img class="cl-logo" id="cLogo" alt="" hidden><b>Scan to share</b><div class="ct" id="cTitle"></div><div class="cl"><i></i>LIVE · <span id="cCount">0</span></div></div>
+</div>
+<div class="toast-new" id="toastNew"><span class="av" id="toastIcon"></span><span id="toastTxt">New photo!</span></div>
+<div class="hint" id="hint"></div>
 
 <div class="controls" id="controls">
   <button class="btn btn-sm" id="btnFs"></button>
-  <button class="btn btn-sm" id="btnSide"></button>
+  <button class="btn btn-sm" id="btnLayout"></button>
+  <button class="btn btn-sm" id="btnQr"></button>
 </div>
 
 <div class="over" id="over" hidden>
@@ -3256,13 +3326,14 @@ window.SN_INLINE_ICONS = true;
 <script>
 (function () {
   'use strict';
-  var S = window.SN, C = S.cfg, I = S.icon, esc = S.esc;
+  var S = window.SN, C = S.cfg, I = S.icon, esc = S.esc, W = S.wall;
   var eventId = S.qs('event');
   var isDemo = !!eventId && eventId.indexOf('demo_') === 0;
-  var ev = null, items = [], known = {}, spotIdx = 0, firstLoad = true, timers = [];
+  var ev = null, all = [], items = [], known = {}, firstLoad = true;
+  var opts = Object.assign({}, W.DEFAULT), local = {};   // saved options + on-the-spot overrides (keyboard)
+  var queue = [], cursor = 0, cur = null, timer = null, layoutKey = null;
 
   S.$('#btnFs').innerHTML = I('maximize') + '<span>Fullscreen</span>';
-  S.$('#btnSide').innerHTML = I('qr-code') + '<span>Hide QR</span>';
   S.$('#toastIcon').innerHTML = I('camera');
 
   function overlay(kind) {
@@ -3279,37 +3350,47 @@ window.SN_INLINE_ICONS = true;
     S.$('#over').hidden = false;
   }
   function clearOverlay() { S.$('#over').hidden = true; }
+  function eff() { return Object.assign({}, opts, local); }
 
-  /* ----- event + chrome ----- */
+  /* ================= event + chrome ================= */
   async function loadEvent() {
     if (!eventId) { overlay('missing'); return false; }
     if (isDemo) {
-      ev = { eventId: eventId, eventName: 'Live Demo', tier: 'starter', status: 'active', theme: 'default', $createdAt: new Date().toISOString() };
+      ev = { eventId: eventId, eventName: 'Live Demo', tier: 'starter', status: 'active', theme: S.qs('look') || 'default', $createdAt: new Date().toISOString() };
     } else {
       var fresh;
       try { fresh = await S.api.getEvent(eventId); } catch (e) { if (!ev) overlay('error'); return !!ev; }
       if (!fresh) { overlay('missing'); return false; }
-      var themeChanged = !ev || ev.theme !== fresh.theme || ev.eventName !== fresh.eventName || ev.customWatermark !== fresh.customWatermark || ev.tier !== fresh.tier;
+      var changed = !ev || ev.theme !== fresh.theme || ev.eventName !== fresh.eventName || ev.tier !== fresh.tier;
       ev = fresh;
-      if (!themeChanged) { applyState(); return true; }
+      if (!changed) { applyState(); return true; }
     }
     S.theme.apply(S.theme.parse(ev.theme));
+    var newOpts = W.parse(ev.theme);
+    if (JSON.stringify(newOpts) !== JSON.stringify(opts)) {
+      opts = newOpts;
+      if (window.__optsLoaded) local = {};   // host saved new settings: they win over keyboard tweaks
+      window.__optsLoaded = true;
+      applyOptions(true);
+    } else window.__optsLoaded = true;
     document.title = ev.eventName + ' · Live Wall';
     S.$('#evTitle').textContent = ev.eventName;
+    S.$('#cTitle').textContent = ev.eventName;
     var joinUrl = C.resolveUrl('app.html?event=' + encodeURIComponent(ev.eventId));
     S.$('#qr').innerHTML = S.ui.qrSvg(joinUrl, { margin: 1 });
+    S.$('#qrc').innerHTML = S.ui.qrSvg(joinUrl, { margin: 1 });
     var pro = S.plans.norm(ev.tier) === 'pro';
-    S.$('#logoSlot').hidden = true;
+    S.$('#logoSlot').hidden = true; S.$('#cLogo').hidden = true;
     if (pro) {
-      var lu = S.api.logoUrl(ev), li = S.$('#logoImg');
-      li.onload = function () { S.$('#logoSlot').hidden = false; };
-      li.onerror = function () { S.$('#logoSlot').hidden = true; };
+      var lu = S.api.logoUrl(ev), li = S.$('#logoImg'), cl = S.$('#cLogo');
+      li.onload = function () { S.$('#logoSlot').hidden = false; cl.src = li.src; cl.hidden = false; };
+      li.onerror = function () { S.$('#logoSlot').hidden = true; cl.hidden = true; };
       if (lu) li.src = lu + (lu.indexOf('data:') === 0 ? '' : (lu.indexOf('?') > -1 ? '&' : '?') + 't=' + Math.floor(Date.now() / 300000));
     }
     S.$('#brandFoot').hidden = pro;
     setupAds(isDemo || S.plans.hasAds(ev));
     applyState();
-    if (!window.__tracked) { window.__tracked = 1; S.track('wall_opened', { plan: S.plans.norm(ev.tier), demo: isDemo }); }
+    if (!window.__tracked) { window.__tracked = 1; S.track('wall_opened', { plan: S.plans.norm(ev.tier), demo: isDemo, layout: opts.layout }); }
     return true;
   }
   function applyState() {
@@ -3318,11 +3399,12 @@ window.SN_INLINE_ICONS = true;
     return st;
   }
 
-  /* ----- ads (free trial + unpaid) ----- */
+  /* ================= ads (free trial + unpaid) ================= */
   var adTimer = null, adsOn = null;
   function setupAds(on) {
     if (adsOn === on) return; adsOn = on;
     var box = S.$('#ads'); box.hidden = !on; clearInterval(adTimer);
+    document.documentElement.style.setProperty('--adh', on ? 'calc(10vh + 1.8vh)' : '0px');
     if (!on) return;
     var text = [
       '<span>Host your own live photo wall at <b class="yl">snapnexus.in</b>. Free for 1 hour.</span>',
@@ -3332,7 +3414,6 @@ window.SN_INLINE_ICONS = true;
     box.innerHTML = '';
     var slides = [];
     function addSlide(html) { var d = document.createElement('div'); d.className = 'ad'; d.innerHTML = '<span class="tag">Ad</span>' + html; box.appendChild(d); slides.push(d); }
-    // try sponsor image ads uploaded from the admin page (global_ad_1..3)
     var pending = 3, imgs = [];
     for (var n = 1; n <= 3; n++) (function (n) {
       var u = S.api.adUrl(n); if (!u) { if (--pending === 0) done(); return; }
@@ -3349,73 +3430,212 @@ window.SN_INLINE_ICONS = true;
     }
   }
 
-  /* ----- photos ----- */
+  /* ================= photos + playlist ================= */
   var demoSeed = [];
   if (isDemo) for (var k = 1; k <= 11; k++) demoSeed.push({ $id: 'demo' + k, file_url: S.samplePhoto(k, 640), $createdAt: new Date(Date.now() - k * 60000).toISOString(), is_pinned: false, demo: true });
+  function isPinned(d) { return d.is_pinned === true || d.is_pinned === 'true'; }
+  function isVid(d) { return S.isVideoUrl(d.file_url); }
+  function filterMedia() { items = eff().media === 'photos' ? all.filter(function (d) { return !isVid(d); }) : all.slice(); }
+  // Newest first; pinned photos (Pro) come back every 3 items so they get extra screen time
+  function playlist() {
+    var pinned = items.filter(isPinned), rest = items.filter(function (d) { return !isPinned(d); });
+    if (!pinned.length) return rest;
+    var out = [], p = 0;
+    rest.forEach(function (d, i) { out.push(d); if (i % 3 === 2) out.push(pinned[p++ % pinned.length]); });
+    if (!rest.length) return pinned;
+    return out.length ? out : pinned;
+  }
+  function nextItem(exclude) {
+    exclude = exclude || {};
+    while (queue.length) { var q = queue.shift(); if (items.indexOf(q) !== -1 && !exclude[q.$id]) return q; }
+    var pl = playlist(); if (!pl.length) return null;
+    for (var i = 0; i < pl.length; i++) { var d = pl[cursor++ % pl.length]; if (!exclude[d.$id]) return d; }
+    return pl[cursor++ % pl.length];
+  }
 
   async function loadPhotos() {
     var docs;
     try { docs = await S.api.uploads(eventId, { publicOnly: true, limit: 100 }); } catch (e) { return; }
     docs = docs.filter(S.api.isPublic).concat(demoSeed);
     docs.sort(function (a, b) { return new Date(b.$createdAt) - new Date(a.$createdAt); });
-    var fresh = docs.filter(function (d) { return !known[d.$id]; });
+    var fresh = firstLoad ? [] : docs.filter(function (d) { return !known[d.$id]; });
     docs.forEach(function (d) { known[d.$id] = true; });
-    var changed = fresh.length || docs.length !== items.length;
-    items = docs;
-    S.$('#count').textContent = items.length;
-    if (!changed && !firstLoad) return;
-    if (!firstLoad && fresh.length) { spotIdx = 0; showToast(fresh.length); }
-    render(firstLoad ? {} : fresh.reduce(function (m, d) { m[d.$id] = true; return m; }, {}));
-    firstLoad = false;
+    var removed = all.some(function (d) { return !docs.some(function (x) { return x.$id === d.$id; }); });
+    var pinChange = docs.some(function (d) { var o = all.find(function (x) { return x.$id === d.$id; }); return o && isPinned(o) !== isPinned(d); });
+    all = docs; filterMedia();
+    S.$('#count').textContent = items.length; S.$('#cCount').textContent = items.length;
+    var freshShown = fresh.filter(function (d) { return items.indexOf(d) !== -1; });
+    if (firstLoad) { firstLoad = false; mount(); return; }
+    if (resolveLayout() !== layoutKey || removed || pinChange || (!items.length) !== (!layout || !!layout.empty)) { mount(freshShown); if (freshShown.length) showToast(freshShown.length); return; }
+    if (freshShown.length) { showToast(freshShown.length); queue = freshShown.concat(queue); if (layout && layout.onNew) layout.onNew(freshShown); }
   }
 
-  function media(d, cls) {
+  /* ================= layouts ================= */
+  function resolveLayout() {
+    var l = eff().layout;
+    if (l !== 'auto') return l;
+    var n = items.length;
+    return n < 6 ? 'slideshow' : n <= 24 ? 'spotlight' : 'grid';
+  }
+  function mediaHtml(d, cls, loop) {
     var u = esc(d.file_url || '');
-    return S.isVideoUrl(d.file_url) ? '<video class="' + (cls || '') + '" src="' + u + '" autoplay muted loop playsinline></video>' : '<img class="' + (cls || '') + '" src="' + u + '" alt="">';
+    return isVid(d) ? '<video class="' + (cls || '') + '" src="' + u + '" autoplay muted playsinline' + (loop ? ' loop' : '') + '></video>' : '<img class="' + (cls || '') + '" src="' + u + '" alt="">';
   }
-  function spotlightOrder() {
-    // pinned photos first (Pro), then newest
-    var pinned = items.filter(function (d) { return d.is_pinned === true || d.is_pinned === 'true'; });
-    var rest = items.filter(function (d) { return pinned.indexOf(d) === -1; });
-    return pinned.concat(rest);
+  function fitHtml(d, loop) {
+    var bg = isVid(d) ? '' : '<div class="bgblur" style="background-image:url(&quot;' + esc(d.file_url) + '&quot;)"></div>';
+    return bg + mediaHtml(d, 'fit', loop) + (isPinned(d) ? '<span class="pin">' + I('pin') + 'Pinned</span>' : '');
   }
-  function render(newIds) {
-    var wall = S.$('#wall');
-    if (!items.length) {
-      wall.innerHTML = '<div class="waiting">' + I('camera') + '<h2>Be the first to share!</h2><p>Scan the QR code and your photo shows up here in seconds.</p></div>';
-      return;
-    }
-    var order = spotlightOrder(), spot = order[spotIdx % order.length];
-    var rest = items.filter(function (d) { return d !== spot; }).slice(0, 8);
-    var html = '<div class="tile spot' + (newIds[spot.$id] ? ' new' : '') + '" id="spot">' + spotInner(spot) + '</div>';
-    rest.forEach(function (d) {
-      html += '<div class="tile' + (newIds[d.$id] ? ' new' : '') + '">' + media(d) + ((d.is_pinned === true || d.is_pinned === 'true') ? '<span class="pin">' + I('pin') + 'Pinned</span>' : '') + '</div>';
-    });
-    for (var i = rest.length; i < 8; i++) html += '<div class="tile ph"></div>';
-    wall.innerHTML = html;
-  }
-  function spotInner(d) {
-    var bg = S.isVideoUrl(d.file_url) ? '' : '<div class="bgblur" style="background-image:url(&quot;' + esc(d.file_url) + '&quot;)"></div>';
-    return bg + media(d, 'fit');
-  }
-  function rotateSpot() {
-    if (items.length < 2 || document.hidden) return;
-    spotIdx++;
-    var order = spotlightOrder(), d = order[spotIdx % order.length], el = S.$('#spot');
-    if (!el) return;
-    el.style.transition = 'opacity .5s'; el.style.opacity = '0';
-    setTimeout(function () { el.innerHTML = spotInner(d); el.style.opacity = '1'; }, 500);
-  }
-  var toastT;
-  function showToast(n) {
-    S.$('#toastTxt').textContent = n > 1 ? n + ' new photos just arrived!' : 'New photo just arrived!';
-    var t = S.$('#toastNew'); t.classList.add('show'); clearTimeout(toastT);
-    toastT = setTimeout(function () { t.classList.remove('show'); }, 3500);
+  function pinTag(d) { return isPinned(d) ? '<span class="pin">' + I('pin') + 'Pinned</span>' : ''; }
+  var layout = null;
+  function schedule(ms) { clearTimeout(timer); timer = setTimeout(step, ms); }
+  function step() { if (!layout || document.hidden) { schedule(1500); return; } layout.step(); }
+  function secs() { return eff().secs * 1000; }
+
+  function waiting(wall) {
+    wall.innerHTML = '<div class="waiting">' + I('camera') + '<h2>Be the first to share!</h2><p>Scan the QR code and your photo shows up here in seconds.</p></div>';
   }
 
-  /* ----- controls ----- */
+  // A cross-fading "stage" used by Slideshow (one) and Split (two)
+  function Stage(el, opts2) {
+    var layers = [document.createElement('div'), document.createElement('div')], front = 0, shownId = null;
+    layers.forEach(function (l) { l.className = 'slide'; el.appendChild(l); });
+    return {
+      get id() { return shownId; },
+      show: function (d, onDone) {
+        var back = layers[1 - front], vid = isVid(d);
+        back.className = 'slide' + (vid ? '' : ' kb');
+        back.style.setProperty('--kbd', (eff().secs + 2) + 's');
+        back.style.setProperty('--kx', (Math.random() * 3 - 1.5).toFixed(2) + '%');
+        back.style.setProperty('--ky', (Math.random() * 3 - 1.5).toFixed(2) + '%');
+        back.innerHTML = fitHtml(d, !opts2.waitVideo);
+        var old = layers[front];
+        requestAnimationFrame(function () { back.classList.add('on'); old.classList.remove('on'); });
+        setTimeout(function () { var v = old.querySelector('video'); if (v) v.pause(); if (!old.classList.contains('on')) old.innerHTML = ''; }, 1400);
+        front = 1 - front; shownId = d.$id;
+        if (!onDone) return;
+        var v = back.querySelector('video');
+        if (vid && v && opts2.waitVideo) {
+          var fired = false, finish = function () { if (fired) return; fired = true; onDone(400); };
+          v.addEventListener('ended', finish); v.addEventListener('error', function () { finish(); });
+          setTimeout(finish, 30000); // never get stuck on a long clip
+        } else onDone(secs());
+      }
+    };
+  }
+
+  var LAYOUTS = {
+    slideshow: function (wall) {
+      wall.className = 'wall slideshow';
+      var st = Stage(wall, { waitVideo: true }), lastShow = 0;
+      function next() { clearTimeout(timer); var d = nextItem(st.id ? (function () { var o = {}; o[st.id] = 1; return items.length > 1 ? o : {}; })() : null); if (!d) return schedule(2000); lastShow = Date.now(); st.show(d, schedule); }
+      return { step: next, start: next, onNew: function () { if (Date.now() - lastShow > 2500) next(); } };
+    },
+    split: function (wall) {
+      wall.className = 'wall split';
+      var panes = [0, 1].map(function () { var p = document.createElement('div'); p.className = 'pane'; wall.appendChild(p); return Stage(p, { waitVideo: false }); });
+      var side = 0;
+      function vis() { var o = {}; panes.forEach(function (p) { if (p.id) o[p.id] = 1; }); return o; }
+      function next() { var ex = items.length > 2 ? vis() : {}; var d = nextItem(ex); if (!d) return schedule(2000); panes[side].show(d); side = 1 - side; schedule(secs()); }
+      function start() { var a = nextItem(); if (!a) return schedule(2000); panes[0].show(a); var o = {}; o[a.$id] = 1; var b = nextItem(items.length > 1 ? o : {}); if (b) panes[1].show(b); schedule(secs()); }
+      return { step: next, start: start, onNew: function () { next(); } };
+    },
+    spotlight: function (wall, newIds) {
+      wall.className = 'wall spotlight';
+      var spotD = null, tiles = [];
+      function render(ids) {
+        ids = ids || {};
+        spotD = spotD && items.indexOf(spotD) !== -1 ? spotD : nextItem();
+        var rest = items.filter(function (d) { return d !== spotD; }).slice(0, 8);
+        var html = '<div class="tile spot' + (ids[spotD.$id] ? ' new' : '') + '" id="spot"><div class="layer">' + fitHtml(spotD, true) + '</div></div>';
+        rest.forEach(function (d) { html += '<div class="tile' + (ids[d.$id] ? ' new' : '') + '">' + mediaHtml(d, '', true) + pinTag(d) + '</div>'; });
+        for (var i = rest.length; i < 8; i++) html += '<div class="tile ph"></div>';
+        wall.innerHTML = html;
+      }
+      function rotate() {
+        if (items.length < 2) return schedule(secs());
+        var ex = {}; ex[spotD.$id] = 1; var d = nextItem(ex), el = S.$('#spot .layer');
+        spotD = d; if (!el) { render(); return schedule(secs()); }
+        el.style.opacity = '0';
+        setTimeout(function () { el.innerHTML = fitHtml(d, true); el.style.opacity = '1'; }, 800);
+        schedule(secs());
+      }
+      return {
+        start: function () { if (newIds && Object.keys(newIds).length) { spotD = items.find(function (d) { return newIds[d.$id]; }) || null; queue = queue.filter(function (q) { return q !== spotD; }); } render(newIds); schedule(secs()); },
+        step: rotate,
+        onNew: function (fresh) { var ids = {}; fresh.forEach(function (d) { ids[d.$id] = 1; }); spotD = fresh[0]; queue = queue.filter(function (q) { return fresh.indexOf(q) === -1; }); render(ids); schedule(secs()); }
+      };
+    },
+    grid: function (wall, newIds) {
+      wall.className = 'wall grid';
+      var portrait = window.matchMedia('(orientation: portrait)').matches, N = portrait ? 8 : 12, cells = [], shown = [], lastSwap = -1;
+      for (var i = 0; i < N; i++) { var t = document.createElement('div'); t.className = 'tile ph'; t.innerHTML = '<div class="layer"></div>'; wall.appendChild(t); cells.push(t); }
+      function put(i, d, isNew) {
+        shown[i] = d; var c = cells[i], l = c.querySelector('.layer');
+        c.className = 'tile'; l.style.opacity = '0';
+        setTimeout(function () { l.innerHTML = mediaHtml(d, '', true) + pinTag(d); l.style.opacity = '1'; if (isNew) { c.classList.remove('new'); void c.offsetWidth; c.classList.add('new'); } }, isNew ? 0 : 700);
+      }
+      function vis() { var o = {}; shown.forEach(function (d) { if (d) o[d.$id] = 1; }); return o; }
+      function fill(ids) {
+        var list = playlist().slice(0, N);
+        // newest uploads first so they're visible straight away
+        list.forEach(function (d, i) { shown[i] = d; var c = cells[i]; c.className = 'tile' + (ids && ids[d.$id] ? ' new' : ''); c.querySelector('.layer').innerHTML = mediaHtml(d, '', true) + pinTag(d); });
+        cursor = list.length;
+      }
+      function swap() {
+        if (items.length <= shown.filter(Boolean).length && !queue.length) return schedule(secs());
+        var d = nextItem(vis()); if (!d || vis()[d.$id]) return schedule(secs());
+        var i; do { i = Math.floor(Math.random() * Math.min(N, Math.max(1, shown.length))); } while (i === lastSwap && N > 1);
+        lastSwap = i; put(i, d); schedule(secs());
+      }
+      return {
+        start: function () { fill(newIds); queue = []; schedule(secs()); },
+        step: swap,
+        onNew: function (fresh) {
+          fresh.forEach(function (d) {
+            var i = shown.length < N ? shown.length : (function () { var oldest = 0; shown.forEach(function (s, j) { if (new Date(s.$createdAt) < new Date(shown[oldest].$createdAt)) oldest = j; }); return oldest; })();
+            put(i, d, true);
+          });
+          queue = queue.filter(function (q) { return fresh.indexOf(q) === -1; });
+          schedule(secs());
+        }
+      };
+    }
+  };
+
+  function mount(fresh) {
+    clearTimeout(timer);
+    var wall = S.$('#wall'); wall.innerHTML = '';
+    layoutKey = resolveLayout();
+    document.body.className = document.body.className.replace(/\blay-\w+/g, '').trim() + ' lay-' + layoutKey;
+    if (!items.length) { wall.className = 'wall'; waiting(wall); layout = { empty: true, step: function () { schedule(3000); } }; return; }
+    var ids = {}; (fresh || []).forEach(function (d) { ids[d.$id] = 1; });
+    layout = LAYOUTS[layoutKey](wall, ids);
+    layout.start();
+  }
+
+  /* ================= options: QR placement + controls ================= */
+  function applyOptions(remount) {
+    var o = eff();
+    document.body.classList.remove('qr-side', 'qr-corner', 'qr-hidden');
+    document.body.classList.add('qr-' + o.qr);
+    S.$('#btnLayout').innerHTML = I('images') + '<span>' + W.LAYOUTS.find(function (l) { return l.key === o.layout; }).label + '</span>';
+    S.$('#btnQr').innerHTML = I('qr-code') + '<span>QR: ' + W.QR.find(function (q) { return q.key === o.qr; }).label + '</span>';
+    if (remount && !firstLoad) { filterMedia(); S.$('#count').textContent = items.length; mount(); }
+  }
+  var hintT;
+  function hint(t) { var h = S.$('#hint'); h.textContent = t; h.classList.add('show'); clearTimeout(hintT); hintT = setTimeout(function () { h.classList.remove('show'); }, 1800); }
+  function cycleLayout() {
+    var keys = W.LAYOUTS.map(function (l) { return l.key; }), i = keys.indexOf(eff().layout);
+    local.layout = keys[(i + 1) % keys.length]; applyOptions(true);
+    hint('Layout: ' + W.LAYOUTS.find(function (l) { return l.key === local.layout; }).label + (local.layout === 'auto' ? ' (' + resolveLayout() + ')' : ''));
+  }
+  function cycleQr() {
+    var keys = W.QR.map(function (q) { return q.key; }), i = keys.indexOf(eff().qr);
+    local.qr = keys[(i + 1) % keys.length]; applyOptions(false); hint('QR code: ' + W.QR.find(function (q) { return q.key === local.qr; }).label);
+  }
   S.$('#btnFs').addEventListener('click', toggleFs);
-  S.$('#btnSide').addEventListener('click', toggleSide);
+  S.$('#btnLayout').addEventListener('click', cycleLayout);
+  S.$('#btnQr').addEventListener('click', cycleQr);
   function toggleFs() {
     if (!document.fullscreenElement) { (document.documentElement.requestFullscreen || function () { }).call(document.documentElement); }
     else document.exitFullscreen();
@@ -3423,31 +3643,43 @@ window.SN_INLINE_ICONS = true;
   document.addEventListener('fullscreenchange', function () {
     S.$('#btnFs').innerHTML = document.fullscreenElement ? I('minimize') + '<span>Exit fullscreen</span>' : I('maximize') + '<span>Fullscreen</span>';
   });
-  function toggleSide() {
-    document.body.classList.toggle('noside');
-    S.$('#btnSide').innerHTML = I('qr-code') + '<span>' + (document.body.classList.contains('noside') ? 'Show QR' : 'Hide QR') + '</span>';
-  }
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'f' || e.key === 'F') toggleFs();
-    if (e.key === 'q' || e.key === 'Q') toggleSide();
+    var k = e.key.toLowerCase();
+    if (k === 'f') toggleFs();
+    if (k === 'q') cycleQr();
+    if (k === 'l') cycleLayout();
+    if (k === 'arrowright' && layout && !layout.empty) { clearTimeout(timer); step(); }
   });
   var idleT;
   function wake() { document.body.classList.remove('idle'); clearTimeout(idleT); idleT = setTimeout(function () { document.body.classList.add('idle'); }, 3000); }
   ['mousemove', 'touchstart', 'keydown'].forEach(function (t) { document.addEventListener(t, wake, { passive: true }); });
   wake();
+  var toastT;
+  function showToast(n) {
+    S.$('#toastTxt').textContent = n > 1 ? n + ' new photos just arrived!' : 'New photo just arrived!';
+    var t = S.$('#toastNew'); t.classList.add('show'); clearTimeout(toastT);
+    toastT = setTimeout(function () { t.classList.remove('show'); }, 3500);
+  }
+  // re-layout on rotate (portrait/landscape changes the grid size)
+  window.matchMedia('(orientation: portrait)').addEventListener && window.matchMedia('(orientation: portrait)').addEventListener('change', function () { if (!firstLoad) mount(); });
 
   if (isDemo) { var f = document.createElement('div'); f.className = 'demo-flag'; f.textContent = 'Live demo · scan the QR with your phone to try it'; document.body.appendChild(f); }
 
-  /* ----- boot ----- */
+  /* ================= boot ================= */
   (async function boot() {
     try { S.api.ready(); } catch (e) { overlay('error'); return; }
+    // preview options from the dashboard's "Preview" button (not saved)
+    if (W.LAYOUTS.some(function (l) { return l.key === S.qs('layout'); })) local.layout = S.qs('layout');
+    if (W.SECS.indexOf(+S.qs('secs')) !== -1) local.secs = +S.qs('secs');
+    if (W.QR.some(function (q) { return q.key === S.qs('qr'); })) local.qr = S.qs('qr');
+    if (S.qs('media') === 'all' || S.qs('media') === 'photos') local.media = S.qs('media');
+    applyOptions(false);
     var ok = await loadEvent();
     if (!ok) { setTimeout(boot, 10000); return; }
+    applyOptions(false);
     await loadPhotos();
-    timers.push(setInterval(loadPhotos, 3000));
-    timers.push(setInterval(rotateSpot, 6500));
-    timers.push(setInterval(function () { if (!isDemo) loadEvent(); }, 8000));
-    // keep the screen awake where supported
+    setInterval(loadPhotos, 3000);
+    setInterval(function () { if (!isDemo) loadEvent(); }, 8000);
     try { if (navigator.wakeLock) { var lock = await navigator.wakeLock.request('screen'); document.addEventListener('visibilitychange', async function () { if (!document.hidden) try { lock = await navigator.wakeLock.request('screen'); } catch (e) { } }); } } catch (e) { }
   })();
 })();

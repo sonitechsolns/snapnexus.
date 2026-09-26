@@ -2616,7 +2616,7 @@ window.SN_INLINE_ICONS = true;
     return 'c:' + t.bg.replace('#', '').toLowerCase() + ':' + t.accent.replace('#', '').toLowerCase() + ':' + (t.font || 0);
   };
   T.parse = function (str) {
-    str = String(str || 'default');
+    str = String(str || 'default').split('|')[0] || 'default';
     var base;
     if (str.indexOf('c:') === 0) {
       var p = str.split(':');
@@ -2674,6 +2674,35 @@ window.SN_INLINE_ICONS = true;
     }
     T.loadFonts(theme);
   };
+
+  /* ---------------------------------------------------- wall layout options */
+  // Stored after the theme in the same Events "theme" attribute:  '<theme>|w:<layout>:<secs>:<qr>:<media>'
+  // e.g. 'wedding|w:slideshow:10:corner:all'. Events without it use the defaults below.
+  var W = SN.wall = {};
+  W.LAYOUTS = [
+    { key: 'auto', label: 'Auto', hint: 'Slideshow at first, then Spotlight or Grid as photos pile up' },
+    { key: 'spotlight', label: 'Spotlight', hint: 'One big photo with the latest 8 around it' },
+    { key: 'slideshow', label: 'Slideshow', hint: 'One photo at a time, edge to edge' },
+    { key: 'split', label: 'Split', hint: 'Two photos side by side' },
+    { key: 'grid', label: 'Grid', hint: 'Equal tiles that swap one at a time' }
+  ];
+  W.SECS = [4, 6, 10, 15];
+  W.QR = [{ key: 'side', label: 'Sidebar' }, { key: 'corner', label: 'Corner' }, { key: 'hidden', label: 'Hidden' }];
+  W.DEFAULT = { layout: 'auto', secs: 6, qr: 'side', media: 'all' };
+  W.parse = function (str) {
+    var out = Object.assign({}, W.DEFAULT), part = String(str || '').split('|')[1] || '';
+    var p = part.split(':');
+    if (p[0] !== 'w') return out;
+    if (W.LAYOUTS.some(function (l) { return l.key === p[1]; })) out.layout = p[1];
+    if (W.SECS.indexOf(+p[2]) !== -1) out.secs = +p[2];
+    if (W.QR.some(function (q) { return q.key === p[3]; })) out.qr = p[3];
+    if (p[4] === 'photos' || p[4] === 'all') out.media = p[4];
+    return out;
+  };
+  W.encode = function (o) { return 'w:' + o.layout + ':' + o.secs + ':' + o.qr + ':' + o.media; };
+  // Combine a theme string (preset or custom) with wall options into what's stored
+  W.join = function (themeStr, opts) { return String(themeStr || 'default').split('|')[0] + '|' + W.encode(opts); };
+  W.themePart = function (str) { return String(str || 'default').split('|')[0] || 'default'; };
 
   /* ----------------------------------------------------------------- UI */
   var U = SN.ui = {};
