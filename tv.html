@@ -2891,7 +2891,7 @@ window.SN_INLINE_ICONS = true;
         var q = [Q.equal('event_id', eventId)];
         if (opt.groupId) q.push(Q.equal('group_id', opt.groupId));
         else if (opt.publicOnly) q.push(Q.isNull('group_id'));
-        return (opt.limit ? list(C.UPLOADS_COLLECTION_ID, q.concat([Q.limit(opt.limit)])).then(function (r) { return r.documents; }) : listAll(C.UPLOADS_COLLECTION_ID, q, 3000));
+        return (opt.limit ? list(C.UPLOADS_COLLECTION_ID, q.concat([Q.orderDesc('$createdAt'), Q.limit(opt.limit)])).then(function (r) { return r.documents; }) : listAll(C.UPLOADS_COLLECTION_ID, q, 3000));
       },
       putFile: async function (file, id) {
         var f = await st.createFile(C.BUCKET_ID, id || AW.ID.unique(), file);

@@ -607,7 +607,7 @@ window.SN_INLINE_ICONS = true;
         var q = [Q.equal('event_id', eventId)];
         if (opt.groupId) q.push(Q.equal('group_id', opt.groupId));
         else if (opt.publicOnly) q.push(Q.isNull('group_id'));
-        return (opt.limit ? list(C.UPLOADS_COLLECTION_ID, q.concat([Q.limit(opt.limit)])).then(function (r) { return r.documents; }) : listAll(C.UPLOADS_COLLECTION_ID, q, 3000));
+        return (opt.limit ? list(C.UPLOADS_COLLECTION_ID, q.concat([Q.orderDesc('$createdAt'), Q.limit(opt.limit)])).then(function (r) { return r.documents; }) : listAll(C.UPLOADS_COLLECTION_ID, q, 3000));
       },
       putFile: async function (file, id) {
         var f = await st.createFile(C.BUCKET_ID, id || AW.ID.unique(), file);
@@ -884,6 +884,18 @@ window.SN_INLINE_ICONS = true;
   .powered{margin-top:auto;padding-top:34px;text-align:center;font-size:.78rem;color:var(--muted)}
   .powered a{font-weight:700;color:var(--text)}
   .modal-box{background:var(--surface-solid);color:var(--text)}
+.g-count{font-weight:500;color:var(--muted);font-family:var(--body,inherit);font-size:.85rem;margin-left:6px}
+.cell{cursor:pointer;padding:0;border:0;display:block;width:100%}
+.cell:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.g-more{display:block;margin:14px auto 0}
+.viewer{padding:0;background:rgba(0,0,0,.92)}
+.viewer .v-stage{position:absolute;inset:56px 0 76px;display:flex;align-items:center;justify-content:center}
+.viewer .v-stage img,.viewer .v-stage video{max-width:100%;max-height:100%;object-fit:contain}
+.viewer .v-top{position:absolute;top:0;left:0;right:0;height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 10px 0 16px;color:#fff;font-size:.9rem}
+.viewer .v-top .btn-icon{position:static;transform:none;margin:0;color:#fff}
+.viewer .v-bar{position:absolute;left:0;right:0;bottom:0;height:76px;display:flex;align-items:center;justify-content:center;gap:12px;padding:0 16px}
+.viewer .v-nav{width:46px;height:46px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;font-size:1.6rem;line-height:1;cursor:pointer}
+.viewer .v-nav:disabled{opacity:.3;cursor:default}
 </style>
 </head>
 <body>
@@ -990,10 +1002,11 @@ window.SN_INLINE_ICONS = true;
 
     <section class="gallery">
       <div class="g-head">
-        <h2 id="gTitle">Latest on the wall</h2>
+        <h2><span id="gTitle">On the wall</span><span class="g-count" id="gCount"></span></h2>
         <button class="btn btn-ghost btn-sm" id="btnZip" hidden></button>
       </div>
       <div class="grid" id="grid"></div>
+      <button class="btn btn-ghost btn-sm g-more" id="btnMore" hidden></button>
     </section>
   </main>
 
@@ -1013,6 +1026,16 @@ window.SN_INLINE_ICONS = true;
   </div>
 </div>
 
+<div class="modal viewer" id="mView" aria-hidden="true" role="dialog" aria-label="Photo viewer">
+  <div class="v-top"><span id="vPos"></span><button class="btn btn-icon" data-close="mView" aria-label="Close"></button></div>
+  <div class="v-stage" id="vStage"></div>
+  <div class="v-bar">
+    <button class="v-nav" id="vPrev" aria-label="Previous">&#8249;</button>
+    <button class="btn btn-primary" id="vSave"></button>
+    <button class="v-nav" id="vNext" aria-label="Next">&#8250;</button>
+  </div>
+</div>
+
 <script>
 (function () {
   'use strict';
@@ -1023,7 +1046,8 @@ window.SN_INLINE_ICONS = true;
   SNx.$('#btnGallery').innerHTML = I('images') + 'Choose from gallery';
   SNx.$('#segPublic').innerHTML = I('monitor') + 'Big screen';
   SNx.$('#segGroup').innerHTML = I('lock') + 'Private group';
-  SNx.$('#btnZip').innerHTML = I('download') + 'Download';
+  SNx.$('#btnZip').innerHTML = I('download') + 'Download all';
+  SNx.$('#vSave').innerHTML = I('download') + 'Download';
   SNx.$$('[data-close]').forEach(function (b) { b.innerHTML = I('x'); });
 
   var eventId = SNx.qs('event');
@@ -1105,9 +1129,10 @@ window.SN_INLINE_ICONS = true;
     SNx.$('#btnLeave').hidden = !group;
     SNx.$('#segGroup').innerHTML = I('lock') + (group ? esc(group.name) : 'Private group');
     SNx.$('#whereNote').textContent = isGroup ? 'Only people in "' + group.name + '" can see these. They won\'t go on the big screen.' : 'Your photos appear on the big screen.';
-    SNx.$('#gTitle').textContent = isGroup ? group.name + ' · group photos' : 'Latest on the wall';
+    SNx.$('#gTitle').textContent = isGroup ? group.name + ' · group photos' : 'On the wall';
     SNx.$('#btnZip').hidden = !isGroup;
     target = isGroup ? 'group' : 'public';
+    resetGallery();
     refreshGallery();
   }
   var target = 'public';
@@ -1139,26 +1164,110 @@ window.SN_INLINE_ICONS = true;
     SNx.ui.busy(btn, false);
   });
 
-  /* ----- gallery ----- */
-  var lastSig = '';
-  async function refreshGallery() {
-    if (!ev) return;
-    try {
-      var docs = await SNx.api.uploads(eventId, target === 'group' && group ? { groupId: group.id, limit: 60 } : { publicOnly: true, limit: 60 });
-      if (target === 'public') docs = docs.filter(SNx.api.isPublic);
-      docs.sort(function (a, b) { return new Date(b.$createdAt) - new Date(a.$createdAt); });
-      docs = docs.slice(0, 12);
-      var sig = docs.map(function (d) { return d.$id; }).join(',');
-      if (sig === lastSig) return; lastSig = sig;
-      var grid = SNx.$('#grid');
-      if (!docs.length) { grid.innerHTML = '<p class="empty" style="grid-column:1/-1">' + (target === 'group' ? 'No photos in this group yet. Be the first!' : 'No photos yet. Be the first!') + '</p>'; return; }
-      grid.innerHTML = docs.map(function (d) {
-        var u = esc(d.file_url || '');
-        return SNx.isVideoUrl(d.file_url) ? '<div class="cell"><video src="' + u + '" muted playsinline preload="metadata"></video><span class="vid">' + I('play') + '</span></div>'
-          : '<div class="cell"><img src="' + u + '" alt="" loading="lazy"></div>';
-      }).join('');
-    } catch (e) { }
+  /* ----- gallery: every photo, newest first ----- */
+  // Full list on open/switch and every 10th poll (catches photos the host hid or deleted).
+  // Other polls only fetch the newest 60 and merge them in, so big events stay light on phones.
+  var PAGE = 36, shown = PAGE, items = [], known = {}, polls = 0, gTarget = '', loading = false, viewIdx = -1;
+  function resetGallery() { items = []; known = {}; shown = PAGE; polls = 0; gTarget = ''; lastSig = ''; SNx.$('#grid').innerHTML = ''; }
+  function galleryOpts(lim) {
+    var o = target === 'group' && group ? { groupId: group.id } : { publicOnly: true };
+    if (lim) o.limit = lim; return o;
   }
+  function newestFirst(a, b) { return new Date(b.$createdAt) - new Date(a.$createdAt); }
+  async function refreshGallery(full) {
+    if (!ev || loading) return;
+    var want = target + '|' + (group ? group.id : '');
+    if (want !== gTarget) { resetGallery(); gTarget = want; full = true; }
+    polls++; if (polls % 10 === 0) full = true;
+    loading = true;
+    try {
+      var docs = await SNx.api.uploads(eventId, galleryOpts(full ? 0 : 60));
+      if (want !== target + '|' + (group ? group.id : '')) return; // switched while loading
+      if (target === 'public') docs = docs.filter(SNx.api.isPublic);
+      if (full) { items = docs; known = {}; }
+      else { docs.forEach(function (d) { if (!known[d.$id]) items.push(d); }); }
+      items.forEach(function (d) { known[d.$id] = 1; });
+      items.sort(newestFirst);
+      draw();
+    } catch (e) { }
+    finally { loading = false; }
+  }
+  function cellHtml(d, i) {
+    var u = esc(d.file_url || '');
+    return '<button class="cell" type="button" data-i="' + i + '" aria-label="Open photo ' + (i + 1) + '">' +
+      (SNx.isVideoUrl(d.file_url) ? '<video src="' + u + '" muted playsinline preload="metadata"></video><span class="vid">' + I('play') + '</span>'
+        : '<img src="' + u + '" alt="" loading="lazy" decoding="async">') + '</button>';
+  }
+  var lastSig = '';
+  function draw() {
+    var grid = SNx.$('#grid'), more = SNx.$('#btnMore');
+    SNx.$('#gCount').textContent = items.length ? '· ' + items.length : '';
+    if (!items.length) {
+      lastSig = '';
+      grid.innerHTML = '<p class="empty" style="grid-column:1/-1">' + (target === 'group' ? 'No photos in this group yet. Be the first!' : 'No photos yet. Be the first!') + '</p>';
+      more.hidden = true; return;
+    }
+    var list = items.slice(0, shown);
+    var sig = list.map(function (d) { return d.$id; }).join(',');
+    if (sig !== lastSig) {
+      // keep existing <img> elements so photos don't reload/flicker on every poll
+      var old = {}; SNx.$$('#grid .cell').forEach(function (c) { if (c.dataset.id) old[c.dataset.id] = c; });
+      var frag = document.createDocumentFragment();
+      list.forEach(function (d, i) {
+        var c = old[d.$id];
+        if (!c) { var t = document.createElement('div'); t.innerHTML = cellHtml(d, i); c = t.firstChild; c.dataset.id = d.$id; }
+        c.dataset.i = i; c.setAttribute('aria-label', 'Open photo ' + (i + 1));
+        frag.appendChild(c);
+      });
+      grid.innerHTML = ''; grid.appendChild(frag); lastSig = sig;
+    }
+    var left = items.length - shown;
+    more.hidden = left <= 0;
+    if (left > 0) more.textContent = 'Show ' + Math.min(PAGE * 2, left) + ' more (' + left + ' left)';
+  }
+  SNx.$('#btnMore').addEventListener('click', function () { shown += PAGE * 2; draw(); });
+  SNx.$('#grid').addEventListener('click', function (e) {
+    var c = e.target.closest('.cell'); if (!c) return;
+    openViewer(+c.dataset.i);
+  });
+
+  /* ----- viewer ----- */
+  function openViewer(i) {
+    if (!items[i]) return; viewIdx = i;
+    var d = items[i], u = esc(d.file_url || '');
+    SNx.$('#vStage').innerHTML = SNx.isVideoUrl(d.file_url) ? '<video src="' + u + '" controls autoplay playsinline></video>' : '<img src="' + u + '" alt="">';
+    SNx.$('#vPos').textContent = (i + 1) + ' of ' + items.length;
+    SNx.$('#vPrev').disabled = i <= 0; SNx.$('#vNext').disabled = i >= items.length - 1;
+    if (!SNx.$('#mView').classList.contains('open')) SNx.ui.open('mView');
+  }
+  function closeViewerMedia() { var v = SNx.$('#vStage video'); if (v) v.pause(); }
+  SNx.$('#vPrev').addEventListener('click', function () { openViewer(viewIdx - 1); });
+  SNx.$('#vNext').addEventListener('click', function () { openViewer(viewIdx + 1); });
+  document.addEventListener('keydown', function (e) {
+    if (!SNx.$('#mView').classList.contains('open')) return;
+    if (e.key === 'ArrowLeft') openViewer(viewIdx - 1);
+    else if (e.key === 'ArrowRight') openViewer(viewIdx + 1);
+  });
+  new MutationObserver(function () { if (!SNx.$('#mView').classList.contains('open')) { closeViewerMedia(); SNx.$('#vStage').innerHTML = ''; } })
+    .observe(SNx.$('#mView'), { attributes: true, attributeFilter: ['class'] });
+  (function swipe() {
+    var x0 = null;
+    SNx.$('#vStage').addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+    SNx.$('#vStage').addEventListener('touchend', function (e) {
+      if (x0 === null) return; var dx = e.changedTouches[0].clientX - x0; x0 = null;
+      if (Math.abs(dx) > 50) openViewer(viewIdx + (dx < 0 ? 1 : -1));
+    });
+  })();
+  SNx.$('#vSave').addEventListener('click', async function () {
+    var d = items[viewIdx]; if (!d) return;
+    var btn = this; SNx.ui.busy(btn, true, 'Saving…');
+    try {
+      var b = await (await fetch(d.file_url)).blob();
+      saveBlob(b, 'snapnexus_' + (items.length - viewIdx) + extFor(b.type));
+      SNx.track && SNx.track('photo_downloaded');
+    } catch (e) { window.open(d.file_url, '_blank', 'noopener'); }
+    finally { SNx.ui.busy(btn, false); }
+  });
   SNx.$('#btnZip').addEventListener('click', async function () {
     if (!group || typeof JSZip === 'undefined') return SNx.ui.toast('Download isn\'t available right now.', 'err');
     var btn = this; SNx.ui.busy(btn, true, 'Zipping…');
@@ -1238,7 +1347,7 @@ window.SN_INLINE_ICONS = true;
     busy = false; SNx.$('#btnCamera').disabled = false; SNx.$('#btnGallery').disabled = false;
     SNx.$('#shootTitle').textContent = 'Tap to take a photo';
     if (sent) SNx.track('guest_upload', { files: sent, to: groupId ? 'group' : 'wall' });
-    if (sent) { SNx.ui.toast(sent + (sent > 1 ? ' files' : ' file') + (groupId ? ' shared with your group' : ' sent to the big screen'), 'ok'); lastSig = ''; refreshGallery(); }
+    if (sent) { SNx.ui.toast(sent + (sent > 1 ? ' files' : ' file') + (groupId ? ' shared with your group' : ' sent to the big screen'), 'ok'); refreshGallery(true); }
   }
 
   load();
